@@ -10,6 +10,7 @@ backend F_origin {
     .share_key = "fastly_service_id_govuk_staging";
 
     .ssl = true;
+    .ssl_hostname = "www-origin.staging.alphagov.co.uk";
 
     .probe = {
         .request = "HEAD / HTTP/1.1" "Host: www-origin.staging.alphagov.co.uk" "Connection: close";
@@ -32,6 +33,7 @@ backend F_mirror {
     .share_key = "fastly_service_id_govuk_staging";
 
     .ssl = true;
+    .ssl_hostname = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
 
     .probe = {
         .request = "HEAD / HTTP/1.1" "Host: www-origin.mirror.provider0.production.govuk.service.gov.uk" "Connection: close";
