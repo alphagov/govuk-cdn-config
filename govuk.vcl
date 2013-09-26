@@ -48,6 +48,25 @@ backend F_mirror {
 # << custom backends
 
 sub vcl_recv {
+  # >> normally from `request settings` UI
+  # Force SSL.
+  if (!req.http.Fastly-SSL) {
+     error 801 "Force SSL";
+  }
+
+  # Append to XFF. Unsure about this restart condition?
+  if (req.restarts == 0) {
+    }
+     if (!req.http.Fastly-FF) {
+       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
+     } else {
+       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
+     }
+
+  # Keep stale.
+  set req.grace = 86400s;
+  # << normally from `request settings` UI
+
   # >> custom recv
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
