@@ -75,6 +75,7 @@ sub vcl_recv {
   if (req.restarts > 0 || !req.backend.healthy) {
     set req.backend = F_mirror;
     set req.http.host = "<%= mirror_hostname %>";
+    set req.http.Fastly-Failover = "1";
   }
 
   # Unspoofable original client address.
