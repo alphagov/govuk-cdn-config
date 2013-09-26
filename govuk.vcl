@@ -4,9 +4,9 @@ backend F_origin {
     .dynamic = true;
     .port = "443";
     .host = "www-origin.staging.alphagov.co.uk";
-    .first_byte_timeout = 15s;
+    .first_byte_timeout = 120s;
     .max_connections = 200;
-    .between_bytes_timeout = 10s;
+    .between_bytes_timeout = 120s;
     .share_key = "fastly_service_id_govuk_staging";
 
     .ssl = true;
