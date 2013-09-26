@@ -72,7 +72,7 @@ sub vcl_recv {
   set req.backend = F_origin;
 
   # Failover to mirror.
-  if(req.restarts == 1 || !req.backend.healthy) {
+  if (req.restarts > 0 || !req.backend.healthy) {
     set req.backend = F_mirror;
     set req.http.host = "<%= mirror_hostname %>";
   }
