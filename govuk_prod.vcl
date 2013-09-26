@@ -3,17 +3,17 @@ backend F_origin {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "www-origin.staging.alphagov.co.uk";
+    .host = "www-origin.production.alphagov.co.uk";
     .first_byte_timeout = 120s;
     .max_connections = 200;
     .between_bytes_timeout = 120s;
-    .share_key = "fastly_service_id_govuk_staging";
+    .share_key = "fastly_service_id_govuk_prod";
 
     .ssl = true;
-    .ssl_hostname = "www-origin.staging.alphagov.co.uk";
+    .ssl_hostname = "www-origin.production.alphagov.co.uk";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: www-origin.staging.alphagov.co.uk" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: www-origin.production.alphagov.co.uk" "Connection: close";
         .threshold = 3;
         .window = 5;
         .timeout = 0.5s;
@@ -30,7 +30,7 @@ backend F_mirror {
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "fastly_service_id_govuk_staging";
+    .share_key = "fastly_service_id_govuk_prod";
 
     .ssl = true;
     .ssl_hostname = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
