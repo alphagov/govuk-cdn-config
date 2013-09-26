@@ -68,6 +68,15 @@ sub vcl_recv {
   # << normally from `request settings` UI
 
   # >> custom recv
+  # Default backend.
+  set req.backend = F_origin;
+
+  # Failover to mirror.
+  if(req.restarts == 1 || !req.backend.healthy) {
+    set req.backend = F_mirror;
+    set req.http.host = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
+  }
+
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
   # << custom recv
