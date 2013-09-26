@@ -76,9 +76,9 @@ sub vcl_error {
 #FASTLY error
 }
 
-sub vcl_pipe {
-#FASTLY pipe
-}
+# <<
+# pipe cannot be included.
+# >>
 
 sub vcl_pass {
 #FASTLY pass
