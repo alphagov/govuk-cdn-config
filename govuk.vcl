@@ -127,11 +127,5 @@ sub vcl_pass {
 }
 
 sub vcl_hash {
-  # >> not reproduced by macro
-  # `FASTLY hash` only appends `#####GENERATION#####`
-  set req.hash += req.url;
-  set req.hash += req.http.host;
-  set req.hash += "#####GENERATION#####";
-  return (hash);
-  # << not reproduced by macro
+#FASTLY hash
 }
