@@ -3,17 +3,17 @@ backend F_origin {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "www-origin.production.alphagov.co.uk";
+    .host = "<%= origin_hostname %>";
     .first_byte_timeout = 120s;
     .max_connections = 200;
     .between_bytes_timeout = 120s;
-    .share_key = "fastly_service_id_govuk_prod";
+    .share_key = "<%= service_id %>";
 
     .ssl = true;
-    .ssl_hostname = "www-origin.production.alphagov.co.uk";
+    .ssl_hostname = "<%= origin_hostname %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: www-origin.production.alphagov.co.uk" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= origin_hostname %>" "Connection: close";
         .threshold = 3;
         .window = 5;
         .timeout = 0.5s;
@@ -26,17 +26,17 @@ backend F_mirror {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
+    .host = "<%= mirror_hostname %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "fastly_service_id_govuk_prod";
+    .share_key = "<%= service_id %>";
 
     .ssl = true;
-    .ssl_hostname = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
+    .ssl_hostname = "<%= mirror_hostname %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: www-origin.mirror.provider0.production.govuk.service.gov.uk" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= mirror_hostname %>" "Connection: close";
         .threshold = 3;
         .window = 5;
         .timeout = 0.5s;
@@ -74,7 +74,7 @@ sub vcl_recv {
   # Failover to mirror.
   if(req.restarts == 1 || !req.backend.healthy) {
     set req.backend = F_mirror;
-    set req.http.host = "www-origin.mirror.provider0.production.govuk.service.gov.uk";
+    set req.http.host = "<%= mirror_hostname %>";
   }
 
   # Unspoofable original client address.
