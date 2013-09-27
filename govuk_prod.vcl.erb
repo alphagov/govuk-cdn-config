@@ -1,6 +1,6 @@
 # >> custom backends
 backend F_origin {
-    .connect_timeout = 1s;
+    .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
     .host = "<%= origin_hostname %>";
