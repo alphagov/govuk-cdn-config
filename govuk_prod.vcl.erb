@@ -14,12 +14,12 @@ backend F_origin {
 
     .probe = {
         .request = "HEAD / HTTP/1.1" "Host: <%= origin_hostname %>" "Connection: close";
-        .threshold = 3;
-        .window = 5;
-        .timeout = 0.5s;
-        .initial = 2;
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
         .expected_response = 200;
-        .interval = 5s;
+        .interval = 60s;
       }
 }
 backend F_mirror {
@@ -37,12 +37,12 @@ backend F_mirror {
 
     .probe = {
         .request = "HEAD / HTTP/1.1" "Host: <%= mirror_hostname %>" "Connection: close";
-        .threshold = 3;
-        .window = 5;
-        .timeout = 0.5s;
-        .initial = 2;
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
         .expected_response = 200;
-        .interval = 5s;
+        .interval = 60s;
       }
 }
 # << custom backends
