@@ -126,7 +126,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = 60s;
+    set beresp.ttl = <%= default_ttl %>s;
   }
   # << not reproduced by macro
 }
