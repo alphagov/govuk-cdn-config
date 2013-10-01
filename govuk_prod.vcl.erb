@@ -97,7 +97,7 @@ sub vcl_fetch {
 #FASTLY fetch
 
   # >> not reproduced by macro
-  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
     restart;
   }
 
@@ -115,7 +115,7 @@ sub vcl_fetch {
     return (pass);
   }
 
-  if (beresp.status == 500 || beresp.status == 503) {
+  if (beresp.status >= 500 && beresp.status <= 599) {
     set req.http.Fastly-Cachetype = "ERROR";
     set beresp.ttl = 1s;
     set beresp.grace = 5s;
