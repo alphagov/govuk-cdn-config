@@ -3,17 +3,17 @@ backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
-    .host = "<%= origin_hostname %>";
+    .host = "<%= config_hash['origin_hostname'] %>";
     .first_byte_timeout = 120s;
     .max_connections = 200;
     .between_bytes_timeout = 120s;
-    .share_key = "<%= service_id %>";
+    .share_key = "<%= config_hash['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= origin_hostname %>";
+    .ssl_hostname = "<%= config_hash['origin_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= origin_hostname %>" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= config_hash['origin_hostname'] %>" "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
@@ -26,17 +26,17 @@ backend F_mirror {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "<%= mirror_hostname %>";
+    .host = "<%= config_hash['mirror_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= service_id %>";
+    .share_key = "<%= config_hash['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= mirror_hostname %>";
+    .ssl_hostname = "<%= config_hash['mirror_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= mirror_hostname %>" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= config_hash['mirror_hostname'] %>" "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
@@ -74,7 +74,7 @@ sub vcl_recv {
   # Failover to mirror.
   if (req.restarts > 0 || !req.backend.healthy) {
     set req.backend = F_mirror;
-    set req.http.host = "<%= mirror_hostname %>";
+    set req.http.host = "<%= config_hash['mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
   }
 
@@ -126,7 +126,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = <%= default_ttl %>s;
+    set beresp.ttl = <%= config_hash['default_ttl'] %>s;
   }
   # << not reproduced by macro
 }
