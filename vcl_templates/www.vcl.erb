@@ -13,7 +13,7 @@ backend F_origin {
     .ssl_hostname = "<%= config_hash['origin_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= config_hash['origin_hostname'] %>" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= environment == 'staging' ? 'www.gov.uk' : config_hash['origin_hostname'] %>" "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
@@ -70,7 +70,10 @@ sub vcl_recv {
   # >> custom recv
   # Default backend.
   set req.backend = F_origin;
-
+<% if environment == 'staging' %>
+  # Force host header for staging.
+  set req.http.host = "www.gov.uk";
+<% end %>
   # Failover to mirror.
   if (req.restarts > 0 || !req.backend.healthy) {
     set req.backend = F_mirror;
