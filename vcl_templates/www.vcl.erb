@@ -100,7 +100,7 @@ sub vcl_fetch {
 #FASTLY fetch
 
   # >> not reproduced by macro
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     restart;
   }
 
