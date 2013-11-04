@@ -100,9 +100,11 @@ sub vcl_fetch {
 #FASTLY fetch
 
   # >> not reproduced by macro
+  # >> custom
   if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     restart;
   }
+  # << custom
 
   if(req.restarts > 0 ) {
     set beresp.http.Fastly-Restarts = req.restarts;
