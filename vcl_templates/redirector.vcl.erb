@@ -1,0 +1,126 @@
+# >> custom backends
+backend F_addr_redirector_production_alphagov_co_uk {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "80";
+    .host = "redirector.production.alphagov.co.uk";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "fastly_service_id_redirector_staging";
+
+
+    .probe = {
+        .request = "HEAD / HTTP/1.1"  "Host: redirector.production.alphagov.co.uk" "Connection: close";
+        .window = 5;
+        .threshold = 1;
+        .timeout = 2s;
+        .initial = 5;
+        .dummy = true;
+      }
+}
+# << custom backends
+
+sub vcl_recv {
+  # >> normally from `request settings` UI
+
+  # Append to XFF. Unsure about this restart condition?
+  if (req.restarts == 0) {
+    }
+     if (!req.http.Fastly-FF) {
+       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
+     } else {
+       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
+     }
+
+  # Keep stale.
+  set req.grace = 86400s;
+  # << normally from `request settings` UI
+
+  # >> custom recv
+  # Default backend.
+  set req.backend = F_addr_redirector_production_alphagov_co_uk;
+
+  # << custom recv
+
+#FASTLY recv
+
+  # >> not reproduced by macro
+  if (req.request != "HEAD" && req.request != "GET" && req.request != "PURGE") {
+    return(pass);
+  }
+
+  return(lookup);
+  # << not reproduced by macro
+}
+
+sub vcl_fetch {
+#FASTLY fetch
+
+  # >> not reproduced by macro
+
+  # These were in the generated VCL from Redirector:
+  set beresp.ttl = 86400s;
+  set beresp.grace = 86400s;
+
+  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+    restart;
+  }
+
+  if(req.restarts > 0 ) {
+    set beresp.http.Fastly-Restarts = req.restarts;
+  }
+
+  if (beresp.http.Set-Cookie) {
+    set req.http.Fastly-Cachetype = "SETCOOKIE";
+    return (pass);
+  }
+
+  if (beresp.http.Cache-Control ~ "private") {
+    set req.http.Fastly-Cachetype = "PRIVATE";
+    return (pass);
+  }
+
+  if (beresp.status == 500 || beresp.status == 503) {
+    set req.http.Fastly-Cachetype = "ERROR";
+    set beresp.ttl = 1s;
+    set beresp.grace = 5s;
+    return (deliver);
+  }
+
+  if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
+    # keep the ttl here
+  } else {
+    # apply the default ttl
+    set beresp.ttl = 3600s;
+  }
+  # << not reproduced by macro
+}
+
+sub vcl_hit {
+#FASTLY hit
+}
+
+sub vcl_miss {
+#FASTLY miss
+}
+
+sub vcl_deliver {
+#FASTLY deliver
+}
+
+sub vcl_error {
+#FASTLY error
+}
+
+# <<
+# pipe cannot be included.
+# >>
+
+sub vcl_pass {
+#FASTLY pass
+}
+
+sub vcl_hash {
+#FASTLY hash
+}
