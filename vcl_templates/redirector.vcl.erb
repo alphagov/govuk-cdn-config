@@ -7,7 +7,7 @@ backend F_addr_redirector_production_alphagov_co_uk {
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "fastly_service_id_redirector_staging";
+    .share_key = "<%= service_id %>";
 
 
     .probe = {
