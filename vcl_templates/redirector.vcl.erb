@@ -87,8 +87,6 @@ sub vcl_fetch {
 
   # >> not reproduced by macro
 
-  # These were in the generated VCL from Redirector:
-  set beresp.ttl = 86400s;
   set beresp.grace = 86400s;
 
   if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
