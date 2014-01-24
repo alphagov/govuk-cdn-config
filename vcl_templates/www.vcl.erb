@@ -22,21 +22,46 @@ backend F_origin {
         .interval = 60s;
       }
 }
-backend F_mirror {
+# Mirror backend for provider 0
+backend F_mirror0 {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "<%= config['mirror_hostname'] %>";
+    .host = "<%= config['provider0_mirror_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= config['mirror_hostname'] %>";
+    .ssl_hostname = "<%= config['provider0_mirror_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= config['mirror_hostname'] %>" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= config['provider0_mirror_hostname'] %>" "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 60s;
+      }
+}
+# Mirror backend for provider 1
+backend F_mirror1 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "443";
+    .host = "<%= config['provider1_mirror_hostname'] %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config['service_id'] %>";
+
+    .ssl = true;
+    .ssl_hostname = "<%= config['provider1_mirror_hostname'] %>";
+
+    .probe = {
+        .request = "HEAD / HTTP/1.1" "Host: <%= config['provider1_mirror_hostname'] %>" "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
@@ -46,7 +71,6 @@ backend F_mirror {
       }
 }
 # << custom backends
-
 sub vcl_recv {
   # >> normally from `request settings` UI
   # Force SSL.
@@ -76,8 +100,14 @@ sub vcl_recv {
 <% end %>
   # Failover to mirror.
   if (req.restarts > 0 || !req.backend.healthy) {
-    set req.backend = F_mirror;
-    set req.http.host = "<%= config['mirror_hostname'] %>";
+    set req.backend = F_mirror0;
+    set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
+    set req.http.Fastly-Failover = "1";
+  }
+  # FIXME: Prefer a fallback director if we move to Varnish 3
+  if (req.restarts > 1 || (req.backend == F_mirror0 && !req.backend.healthy)) {
+    set req.backend = F_mirror1;
+    set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
   }
 
@@ -101,7 +131,7 @@ sub vcl_fetch {
 
   # >> not reproduced by macro
   # >> custom
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 2 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     restart;
   }
   # << custom
