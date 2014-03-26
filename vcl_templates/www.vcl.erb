@@ -13,7 +13,7 @@ backend F_origin {
     .ssl_hostname = "<%= config['origin_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= environment == 'staging' ? 'www.gov.uk' : 'www-origin.production.alphagov.co.uk' %>" "Connection: close";
+        .request = "HEAD / HTTP/1.1" "Host: <%= environment == 'staging' ? 'www.gov.uk' : config['origin_hostname'] %>" "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
