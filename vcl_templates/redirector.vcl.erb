@@ -3,7 +3,7 @@ backend F_addr_redirector_production_alphagov_co_uk {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "80";
-    .host = "redirector.p1production.alphagov.co.uk";
+    .host = "redirector.production.alphagov.co.uk";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -24,7 +24,7 @@ backend F_addr_bouncer_production_alphagov_co_uk {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "80";
-    .host = "bouncer.p1production.alphagov.co.uk";
+    .host = "bouncer.production.alphagov.co.uk";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
