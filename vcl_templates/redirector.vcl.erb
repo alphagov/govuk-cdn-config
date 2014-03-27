@@ -1,4 +1,5 @@
 # >> custom backends
+<% if redirector_domains.size > 0 %>
 backend F_addr_redirector_production_alphagov_co_uk {
     .connect_timeout = 1s;
     .dynamic = true;
@@ -19,7 +20,8 @@ backend F_addr_redirector_production_alphagov_co_uk {
         .dummy = true;
       }
 }
-<% if bouncer_domains.size > 0 %>
+<% end %>
+
 backend F_addr_bouncer_production_alphagov_co_uk {
     .connect_timeout = 1s;
     .dynamic = true;
@@ -40,7 +42,7 @@ backend F_addr_bouncer_production_alphagov_co_uk {
         .dummy = true;
       }
 }
-<% end %>
+
 # << custom backends
 
 sub vcl_recv {
@@ -61,11 +63,12 @@ sub vcl_recv {
 
   # >> custom recv
   # Default backend.
-  set req.backend = F_addr_redirector_production_alphagov_co_uk;
 
-  <% if bouncer_domains.size > 0 %>
-  if (req.http.host == "<%= bouncer_domains.join('" || req.http.host == "') %>") {
-    set req.backend = F_addr_bouncer_production_alphagov_co_uk;
+  set req.backend = F_addr_bouncer_production_alphagov_co_uk;
+
+  <% if redirector_domains.size > 0 %>
+  if (req.http.host == "<%= redirector_domains.join('" || req.http.host == "') %>") {
+    set req.backend = F_addr_redirector_production_alphagov_co_uk;
   }
   <% end %>
 
