@@ -116,7 +116,7 @@ sub vcl_recv {
      }
 
   # Keep stale.
-  set req.grace = 86400s;
+  set req.grace = 24h;
   # << normally from `request settings` UI
 
   # >> custom recv
@@ -126,14 +126,19 @@ sub vcl_recv {
   # Force host header for staging.
   set req.http.host = "www.gov.uk";
 <% end %>
+
+  # Note that if (req.restarts == 1), we don't change the backend as
+  # we're attempting to serve from stale.
+
   # Failover to mirror.
-  if (req.restarts > 0 || !req.backend.healthy) {
+  if (req.restarts > 1 || !req.backend.healthy) {
     set req.backend = F_mirror0;
     set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
   }
+
   # FIXME: Prefer a fallback director if we move to Varnish 3
-  if (req.restarts > 1 || (req.backend == F_mirror0 && !req.backend.healthy)) {
+  if (req.restarts > 2 || (req.backend == F_mirror0 && !req.backend.healthy)) {
     set req.backend = F_mirror1;
     set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
@@ -157,13 +162,16 @@ sub vcl_recv {
 sub vcl_fetch {
 #FASTLY fetch
 
-  # >> not reproduced by macro
   # >> custom
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 2 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
-    restart;
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+    set beresp.saintmode = 60s;
+    return (restart);
   }
+
+  set beresp.grace = 24h;
   # << custom
 
+  # >> not reproduced by macro
   if(req.restarts > 0 ) {
     set beresp.http.Fastly-Restarts = req.restarts;
   }
