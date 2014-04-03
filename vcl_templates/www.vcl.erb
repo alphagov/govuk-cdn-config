@@ -131,7 +131,9 @@ sub vcl_recv {
   # we're attempting to serve from stale.
 
   # Failover to mirror.
-  if (req.restarts > 1 || !req.backend.healthy) {
+  if (req.http.X-VCL-Error || req.restarts > 1 || !req.backend.healthy) {
+    unset req.http.X-VCL-Error;
+
     set req.backend = F_mirror0;
     set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
@@ -215,6 +217,14 @@ sub vcl_deliver {
 }
 
 sub vcl_error {
+
+  # If this is our first attempt, assume origin is down but probe hasn't yet detected as unhealthy
+  # Set a marker that vcl_recv will pick up and set the backend to the first mirror accordingly
+  if (req.restarts < 3) {
+    set req.http.X-VCL-Error = "1";
+    return (restart);
+  }
+
 #FASTLY error
 }
 
