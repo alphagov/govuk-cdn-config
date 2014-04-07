@@ -74,9 +74,17 @@ backend F_mirror1 {
 # << custom backends
 
 acl purge {
-  "37.26.90.227";   # Platform 1 production
-  "37.26.93.252";   # Platform 1 mirrors
-  "31.210.241.100"; # Carrenza mirrors
+  "37.26.90.227";     # Platform 1 production
+  "37.26.93.252";     # Platform 1 mirrors
+  "31.210.241.100";   # Carrenza mirrors
+  "23.235.23.0"/20;   # Fastly cache node
+  "103.244.50.0"/24;  # Fastly cache node
+  "103.245.222.0"/23; # Fastly cache node
+  "103.245.224.0"/24; # Fastly cache node
+  "185.31.16.0"/22;   # Fastly cache node
+  "199.27.72.0"/21;   # Fastly cache node
+  "202.21.128.0"/24;  # Fastly cache node
+  "203.57.145.0"/24;  # Fastly cache node
 }
 
 sub vcl_recv {
