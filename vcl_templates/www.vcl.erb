@@ -221,8 +221,9 @@ sub vcl_deliver {
 
 sub vcl_error {
 
-  # If this is our first attempt, assume origin is down but probe hasn't yet detected as unhealthy
-  # Set a marker that vcl_recv will pick up and set the backend to the first mirror accordingly
+  # Assume we've hit vcl_error() because the backend is unavailable
+  # for the first two retries. By restarting, vcl_recv() will try
+  # serving from stale before failing over to the mirrors.
   if (req.restarts < 3) {
     return (restart);
   }
