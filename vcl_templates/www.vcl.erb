@@ -132,6 +132,9 @@ sub vcl_recv {
 
   # Failover to mirror.
   if (req.restarts > 1) {
+    # Don't serve from stale for mirrors
+    set req.grace = 0s;
+
     set req.backend = F_mirror0;
     set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
     set req.http.Fastly-Failover = "1";
@@ -168,7 +171,10 @@ sub vcl_fetch {
     return (restart);
   }
 
-  set beresp.grace = 24h;
+  if (req.restarts == 0) {
+    # Keep stale for origin
+    set beresp.grace = 24h;
+  }
   # << custom
 
   # >> not reproduced by macro
