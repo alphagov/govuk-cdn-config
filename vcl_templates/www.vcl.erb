@@ -115,7 +115,7 @@ sub vcl_recv {
        set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
      }
 
-  # Keep stale.
+  # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
   # << normally from `request settings` UI
 
