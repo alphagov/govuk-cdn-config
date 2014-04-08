@@ -134,17 +134,16 @@ sub vcl_recv {
   if (req.restarts > 1) {
     # Don't serve from stale for mirrors
     set req.grace = 0s;
+    set req.http.Fastly-Failover = "1";
 
     set req.backend = F_mirror0;
     set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
-    set req.http.Fastly-Failover = "1";
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
   if (req.restarts > 2) {
     set req.backend = F_mirror1;
     set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
-    set req.http.Fastly-Failover = "1";
   }
 
   # Unspoofable original client address.
