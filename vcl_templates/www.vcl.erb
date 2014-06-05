@@ -2,7 +2,7 @@
 backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
-    .port = "443";
+    .port = "<%= config.fetch('origin_port', 443) %>";
     .host = "<%= config['origin_hostname'] %>";
     .first_byte_timeout = 120s;
     .max_connections = 200;
@@ -26,7 +26,7 @@ backend F_origin {
 backend F_mirror0 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "443";
+    .port = "<%= config.fetch('provider0_mirror_port', 443) %>";
     .host = "<%= config['provider0_mirror_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
@@ -50,7 +50,7 @@ backend F_mirror0 {
 backend F_mirror1 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "443";
+    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
     .host = "<%= config['provider1_mirror_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
