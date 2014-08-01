@@ -105,15 +105,6 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
-  # Append to XFF. Unsure about this restart condition?
-  if (req.restarts == 0) {
-    }
-     if (!req.http.Fastly-FF) {
-       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
-     } else {
-       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
-     }
-
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
   # << normally from `request settings` UI
