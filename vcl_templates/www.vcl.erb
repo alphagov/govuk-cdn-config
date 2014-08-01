@@ -95,7 +95,6 @@ sub vcl_recv {
     if (client.ip ~ purge) {
       return (lookup);
     }
-    set req.request = "GET";
     error 403 "Forbidden";
   }
   # << custom recv
