@@ -73,7 +73,7 @@ backend F_mirror1 {
 
 # << custom backends
 
-acl purge {
+acl purge_ip_whitelist {
   "37.26.90.227";     # Platform 1 production
   "37.26.93.252";     # Platform 1 mirrors
   "31.210.241.100";   # Carrenza mirrors
@@ -92,7 +92,7 @@ sub vcl_recv {
   # >> custom recv
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
   if (req.request == "FASTLYPURGE") {
-    if (client.ip ~ purge) {
+    if (client.ip ~ purge_ip_whitelist) {
       return (lookup);
     }
     error 403 "Forbidden";
