@@ -185,6 +185,14 @@ sub vcl_fetch {
     return (pass);
   }
 
+  # << not reproduced by macro
+  # >> custom
+  if (beresp.http.Cache-Control ~ "no-(store|cache)") {
+    return (pass);
+  }
+  # << custom
+  # >> not reproduced by macro
+
   if (beresp.status >= 500 && beresp.status <= 599) {
     set req.http.Fastly-Cachetype = "ERROR";
     set beresp.ttl = 1s;
