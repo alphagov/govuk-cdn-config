@@ -25,7 +25,7 @@ backend F_origin {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 60s;
+        .interval = 10s;
     }
 }
 # Mirror backend for provider 0
@@ -52,7 +52,7 @@ backend F_mirror0 {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 60s;
+        .interval = 10s;
     }
 }
 # Mirror backend for provider 1
@@ -79,7 +79,7 @@ backend F_mirror1 {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 60s;
+        .interval = 10s;
     }
 }
 
