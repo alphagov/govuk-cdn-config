@@ -16,6 +16,7 @@ backend F_origin {
         .request =
             "HEAD / HTTP/1.1"
             "Host: <%= environment == 'staging' ? 'www.gov.uk' : config['origin_hostname'] %>"
+            "User-Agent: Varnish/fastly (healthcheck)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
 <% end %>
@@ -46,6 +47,7 @@ backend F_mirror0 {
         .request =
             "HEAD / HTTP/1.1"
             "Host: <%= config['provider0_mirror_hostname'] %>"
+            "User-Agent: Varnish/fastly (healthcheck)"
             "Connection: close";
         .threshold = 1;
         .window = 2;
@@ -73,6 +75,7 @@ backend F_mirror1 {
         .request =
             "HEAD / HTTP/1.1"
             "Host: <%= config['provider1_mirror_hostname'] %>"
+            "User-Agent: Varnish/fastly (healthcheck)"
             "Connection: close";
         .threshold = 1;
         .window = 2;
