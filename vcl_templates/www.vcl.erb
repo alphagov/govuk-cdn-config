@@ -13,14 +13,17 @@ backend F_origin {
     .ssl_hostname = "<%= config['origin_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= environment == 'staging' ? 'www.gov.uk' : config['origin_hostname'] %>" "Connection: close";
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= environment == 'staging' ? 'www.gov.uk' : config['origin_hostname'] %>"
+            "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
         .interval = 60s;
-      }
+    }
 }
 # Mirror backend for provider 0
 backend F_mirror0 {
@@ -37,14 +40,17 @@ backend F_mirror0 {
     .ssl_hostname = "<%= config['provider0_mirror_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= config['provider0_mirror_hostname'] %>" "Connection: close";
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config['provider0_mirror_hostname'] %>"
+            "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
         .interval = 60s;
-      }
+    }
 }
 # Mirror backend for provider 1
 backend F_mirror1 {
@@ -61,14 +67,17 @@ backend F_mirror1 {
     .ssl_hostname = "<%= config['provider1_mirror_hostname'] %>";
 
     .probe = {
-        .request = "HEAD / HTTP/1.1" "Host: <%= config['provider1_mirror_hostname'] %>" "Connection: close";
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config['provider1_mirror_hostname'] %>"
+            "Connection: close";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
         .interval = 60s;
-      }
+    }
 }
 
 # << custom backends
