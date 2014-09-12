@@ -159,10 +159,6 @@ sub vcl_recv {
     return(pass);
   }
 
-  if (req.http.Authorization) {
-    return (pass);
-  }
-
   return(lookup);
   # << not reproduced by macro
 }
