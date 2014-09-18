@@ -210,6 +210,13 @@ sub vcl_fetch {
     set beresp.ttl = <%= config['default_ttl'] %>s;
   }
   # << not reproduced by macro
+
+  # >> custom
+  # Override default.vcl behaviour of return(pass).
+  if (beresp.http.Set-Cookie) {
+    return (deliver);
+  }
+  # << custom
 }
 
 sub vcl_hit {
