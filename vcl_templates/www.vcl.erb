@@ -83,6 +83,16 @@ backend F_mirror1 {
     }
 }
 
+backend sick_force_grace {
+  .host = "localhost";
+  .port = "1";
+  .probe = {
+    .request = "invalid";
+    .interval = 365d;
+    .initial = 0;
+  }
+}
+
 # << custom backends
 
 acl purge_ip_whitelist {
@@ -129,8 +139,10 @@ sub vcl_recv {
   set req.http.host = "www.gov.uk";
 <% end %>
 
-  # Note that if (req.restarts == 1), we don't change the backend as
-  # we're attempting to serve from stale.
+  # Serve stale if it exists.
+  if (req.restarts > 0) {
+    set req.backend = sick_force_grace;
+  }
 
   # Failover to mirror.
   if (req.restarts > 1) {
