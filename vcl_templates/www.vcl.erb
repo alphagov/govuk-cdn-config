@@ -200,6 +200,10 @@ sub vcl_fetch {
     return (pass);
   }
 
+  if (beresp.http.Cache-Control ~ "max-age=0") {
+    return (pass);
+  }
+
   # << not reproduced by macro
   # >> custom
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
