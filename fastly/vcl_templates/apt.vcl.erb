@@ -34,6 +34,9 @@ sub vcl_recv {
       error 403 "Forbiddden";
     }
 
+    # Unspoofable original client address
+    set req.http.True-Client-IP = req.http.Fastly-Client-IP;
+
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
     }
