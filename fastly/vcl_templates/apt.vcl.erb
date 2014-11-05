@@ -6,9 +6,9 @@ backend F_apt {
     .dynamic = true;
     .port = "<%= config.fetch('apt_port', 8080) %>";
     .host = "<%= config['apt_hostname'] %>";
-    .first_byte_timeout = 120s;
+    .first_byte_timeout = 15s;
     .max_connections = 200;
-    .between_bytes_timeout = 120s;
+    .between_bytes_timeout = 10s;
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
