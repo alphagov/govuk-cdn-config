@@ -29,6 +29,11 @@ backend F_apt {
 sub vcl_recv {
 #FASTLY recv
 
+    # Prevent third parties from flushing CDN caches with FASTLYPURGE
+    if (req.request == "FASTLYPURGE") {
+      error 403 "Forbiddden";
+    }
+
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
     }
