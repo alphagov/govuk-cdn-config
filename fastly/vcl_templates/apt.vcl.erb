@@ -16,7 +16,7 @@ backend F_apt {
     .probe = {
         .request =
           "HEAD / HTTP/1.1"
-          "Host: origin.cdn-acceptance-test.alphagov.co.uk"
+          "Host: <%= config['apt_hostname'] %>"
           "Connection: close";
         .window = 5;
         .threshold = 1;
