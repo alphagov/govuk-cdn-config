@@ -4,7 +4,7 @@ C!
 backend F_apt {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "<%= config.fetch('apt_port', 8080) %>";
+    .port = "<%= config.fetch('apt_port', 443) %>";
     .host = "<%= config['apt_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
