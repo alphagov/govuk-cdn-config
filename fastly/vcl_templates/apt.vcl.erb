@@ -9,8 +9,6 @@ backend F_apt {
     .between_bytes_timeout = 10s;
     .share_key = "<%= config['service_id'] %>";
 
-    .ssl = true;
-
     .probe = {
         .request =
           "HEAD / HTTP/1.1"
