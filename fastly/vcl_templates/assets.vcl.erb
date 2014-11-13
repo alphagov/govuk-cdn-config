@@ -1,18 +1,18 @@
-backend F_Origin_Name {
+backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
-    .port = "443";
-    .host = "assets-origin.production.alphagov.co.uk";
+    .port = "<%= config.fetch('origin_port', '443') %>";
+    .host = "<%= config.fetch('origin_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "fastly_service_id_assets_prod";
+    .share_key = "<%= config.fetch('service_id') %>";
   
     .ssl = true;
-    .ssl_hostname = "assets-origin.production.alphagov.co.uk";
+    .ssl_hostname = "<%= config.fetch('origin_hostname') %>";
         
     .probe = {
-        .request = "HEAD /templates/503.html.erb HTTP/1.1" "Host: assets-origin.production.alphagov.co.uk" "Connection: close""User-Agent: Varnish/fastly (healthcheck)";
+    .request = "HEAD /templates/503.html.erb HTTP/1.1" "Host: <%= config.fetch('origin_hostname') %>" "Connection: close""User-Agent: Varnish/fastly (healthcheck)";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
@@ -38,7 +38,7 @@ sub vcl_recv {
 
     
   # default conditions
-  set req.backend = F_Origin_Name;
+  set req.backend = F_origin;
   # end default conditions
 
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
