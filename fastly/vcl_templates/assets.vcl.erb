@@ -12,7 +12,11 @@ backend F_origin {
     .ssl_hostname = "<%= config.fetch('origin_hostname') %>";
         
     .probe = {
-    .request = "HEAD /templates/503.html.erb HTTP/1.1" "Host: <%= config.fetch('origin_hostname') %>" "Connection: close""User-Agent: Varnish/fastly (healthcheck)";
+        .request =
+            "HEAD /templates/503.html.erb HTTP/1.1"
+            "Host: <%= config.fetch('origin_hostname') %>"
+            "Connection: close"
+            "User-Agent: Varnish/fastly (healthcheck)";
         .threshold = 1;
         .window = 2;
         .timeout = 5s;
