@@ -26,6 +26,9 @@ backend F_Origin_Name {
 
 
 sub vcl_recv {
+  # Unspoofable original client address
+  set req.http.True-Client-IP = req.http.Fastly-Client-IP;
+
 #FASTLY recv
 
     
@@ -36,22 +39,7 @@ sub vcl_recv {
     
   # default conditions
   set req.backend = F_Origin_Name;
-     
-# Header rewrite Set_True_Client_IP : 10
-
-    
-      set req.http.True-Client-IP = req.http.Fastly-Client-IP;
-            
-
-  
-
-  
   # end default conditions
-
-  
-      
-  
-
 
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
