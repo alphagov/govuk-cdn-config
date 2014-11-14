@@ -7,10 +7,10 @@ backend F_origin {
     .max_connections = 200;
     .between_bytes_timeout = 10s;
     .share_key = "<%= config.fetch('service_id') %>";
-  
+
     .ssl = true;
     .ssl_hostname = "<%= config.fetch('origin_hostname') %>";
-        
+
     .probe = {
         .request =
             "HEAD /templates/503.html.erb HTTP/1.1"
@@ -26,21 +26,15 @@ backend F_origin {
       }
 }
 
-
-
-
 sub vcl_recv {
   # Unspoofable original client address
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
 #FASTLY recv
 
-    
     set req.http.Fastly-Orig-Host = req.http.host;
     set req.http.host = "assets-origin.production.alphagov.co.uk";
-            
 
-    
   # default conditions
   set req.backend = F_origin;
   # end default conditions
@@ -48,7 +42,6 @@ sub vcl_recv {
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
     }
-
 
     return(lookup);
 }
@@ -60,7 +53,7 @@ sub vcl_fetch {
   if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
     restart;
   }
-  
+
   if(req.restarts > 0 ) {
     set beresp.http.Fastly-Restarts = req.restarts;
   }
@@ -80,8 +73,8 @@ sub vcl_fetch {
     set beresp.ttl = 1s;
     set beresp.grace = 5s;
     return (deliver);
-  }  
-  
+  }
+
 
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
     # keep the ttl here
