@@ -94,9 +94,8 @@ sub vcl_fetch {
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
     # keep the ttl here
   } else {
-        # apply the default ttl
-    set beresp.ttl = 60s;
-    
+    # apply the default ttl
+    set beresp.ttl = <%= config.fetch('default_ttl') %>s;
   }
 
   return(deliver);
