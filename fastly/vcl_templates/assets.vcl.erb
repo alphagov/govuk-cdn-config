@@ -27,6 +27,11 @@ backend F_origin {
 }
 
 sub vcl_recv {
+  # Prevent third-parties purging objects from edge.
+  if (req.request == "FASTLYPURGE") {
+    error 403 "Forbidden";
+  }
+
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
