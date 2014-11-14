@@ -23,7 +23,22 @@ backend F_addr_bouncer_production_alphagov_co_uk {
 
 # << custom backends
 
+acl purge_ip_whitelist {
+  "80.194.77.90"    # Aviation House
+  "80.194.77.100"   # Aviation House
+}
+
 sub vcl_recv {
+
+  # >> custom recv
+  # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
+  if (req.request == "FASTLYPURGE") {
+    if (client.ip ~ purge_ip_whitelist) {
+      return (lookup);
+    }
+    error 403 "Forbidden";
+  }
+
   # >> normally from `request settings` UI
 
   # Append to XFF. Unsure about this restart condition?
