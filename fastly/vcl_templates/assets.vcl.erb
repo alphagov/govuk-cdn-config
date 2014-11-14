@@ -56,6 +56,10 @@ sub vcl_fetch {
     return (pass);
   }
 
+  if (beresp.http.Cache-Control ~ "no-(store|cache)") {
+    return (pass);
+  }
+
   if (beresp.status == 500 || beresp.status == 503) {
     set req.http.Fastly-Cachetype = "ERROR";
     set beresp.ttl = 1s;
