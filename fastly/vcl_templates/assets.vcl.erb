@@ -51,11 +51,6 @@ sub vcl_fetch {
     set beresp.http.Fastly-Restarts = req.restarts;
   }
 
-  if (beresp.http.Set-Cookie) {
-    set req.http.Fastly-Cachetype = "SETCOOKIE";
-    return (pass);
-  }
-
   if (beresp.http.Cache-Control ~ "private") {
     set req.http.Fastly-Cachetype = "PRIVATE";
     return (pass);
