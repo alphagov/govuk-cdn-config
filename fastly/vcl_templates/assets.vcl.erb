@@ -27,6 +27,11 @@ backend F_origin {
 }
 
 sub vcl_recv {
+  # Force SSL.
+  if (!req.http.Fastly-SSL) {
+     error 801 "Force SSL";
+  }
+
   # Unspoofable original client address
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
