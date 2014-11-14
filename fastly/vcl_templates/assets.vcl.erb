@@ -32,9 +32,6 @@ sub vcl_recv {
 
 #FASTLY recv
 
-    set req.http.Fastly-Orig-Host = req.http.host;
-    set req.http.host = "assets-origin.production.alphagov.co.uk";
-
   # default conditions
   set req.backend = F_origin;
   # end default conditions
