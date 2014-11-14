@@ -32,10 +32,6 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  # default conditions
-  set req.backend = F_origin;
-  # end default conditions
-
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
     }
