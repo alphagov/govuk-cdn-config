@@ -65,20 +65,6 @@ sub vcl_recv {
 sub vcl_fetch {
 #FASTLY fetch
 
- # priority: 10
- if ( ! beresp.http.Cache-Control ) {
-  
-        
-      # Default cache policy
-      set beresp.ttl = 60s;
-      set beresp.grace = 2592000s;
-      
-    
- 
- 
- 
-  }
-
   if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
     restart;
   }
