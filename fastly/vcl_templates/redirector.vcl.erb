@@ -24,8 +24,8 @@ backend F_addr_bouncer_production_alphagov_co_uk {
 # << custom backends
 
 acl purge_ip_whitelist {
-  "80.194.77.90"    # Aviation House
-  "80.194.77.100"   # Aviation House
+  "80.194.77.90";    # Aviation House
+  "80.194.77.100";   # Aviation House
 }
 
 sub vcl_recv {
