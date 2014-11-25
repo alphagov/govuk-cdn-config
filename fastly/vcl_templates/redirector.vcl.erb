@@ -39,6 +39,8 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
+  # << custom recv
+
   # >> normally from `request settings` UI
 
   # Append to XFF. Unsure about this restart condition?
