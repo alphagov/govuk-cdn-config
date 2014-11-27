@@ -26,9 +26,18 @@ backend F_origin {
       }
 }
 
+acl purge_ip_whitelist {
+  "37.26.90.227";     # Platform 1 production
+  "37.26.93.252";     # Platform 1 mirrors
+  "31.210.241.100";   # Carrenza mirrors
+}
+
 sub vcl_recv {
   # Prevent third-parties purging objects from edge.
   if (req.request == "FASTLYPURGE") {
+    if (client.ip ~ purge_ip_whitelist) {
+      return (lookup);
+    }
     error 403 "Forbidden";
   }
 
