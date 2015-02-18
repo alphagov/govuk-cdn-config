@@ -166,9 +166,10 @@ sub vcl_recv {
 
 #FASTLY recv
 
-    if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-      return(pass);
-    }
+  # >> not reproduced by macro
+  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
+    return(pass);
+  }
 
   return(lookup);
   # << not reproduced by macro
