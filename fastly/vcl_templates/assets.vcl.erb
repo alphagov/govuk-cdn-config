@@ -14,7 +14,7 @@ backend F_origin {
 
     .probe = {
         .request =
-            "HEAD /templates/503.html.erb HTTP/1.1"
+            "HEAD /__canary__ HTTP/1.1"
             "Host: <%= environment == 'staging' ? 'assets.digital.cabinet-office.gov.uk' : config['origin_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
@@ -42,7 +42,7 @@ backend F_mirror0 {
 
     .probe = {
         .request =
-            "HEAD / HTTP/1.1"
+            "HEAD /__canary__ HTTP/1.1"
             "Host: <%= config['provider0_mirror_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
@@ -70,7 +70,7 @@ backend F_mirror1 {
 
     .probe = {
         .request =
-            "HEAD / HTTP/1.1"
+            "HEAD /__canary__ HTTP/1.1"
             "Host: <%= config['provider1_mirror_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
