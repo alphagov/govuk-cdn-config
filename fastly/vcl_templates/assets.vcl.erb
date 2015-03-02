@@ -15,7 +15,7 @@ backend F_origin {
     .probe = {
         .request =
             "HEAD /templates/503.html.erb HTTP/1.1"
-            "Host: <%= config.fetch('origin_hostname') %>"
+            "Host: <%= environment == 'staging' ? 'assets.digital.cabinet-office.gov.uk' : config['origin_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
         .threshold = 1;
