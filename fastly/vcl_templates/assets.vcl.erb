@@ -17,6 +17,9 @@ backend F_origin {
             "HEAD /__canary__ HTTP/1.1"
             "Host: <%= environment == 'staging' ? 'assets.digital.cabinet-office.gov.uk' : config['origin_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+<% if config['rate_limit_token'] %>
+            "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
+<% end %>
             "Connection: close";
         .threshold = 1;
         .window = 2;
