@@ -102,6 +102,11 @@ sub vcl_recv {
     error 405 "Method not allowed";
   }
 
+  if (req.url ~ "^/big-screen.*$") {
+    set req.http.x-redir = "https://www.gov.uk/performance" req.url;
+    error 750 "Moved Permanently";
+  }
+
   # Unspoofable client IP address
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
   # << custom recv
@@ -194,6 +199,12 @@ sub vcl_error {
     set obj.status = 301;
     set obj.response = "Moved Permanently";
     set obj.http.Location = "https://" req.http.host req.url;
+    synthetic {""};
+    return (deliver);
+  } else if (obj.status == 750) {
+    set obj.status = 301;
+    set obj.response = "Moved Permanently";
+    set obj.http.Location = req.http.x-redir;
     synthetic {""};
     return (deliver);
   }
