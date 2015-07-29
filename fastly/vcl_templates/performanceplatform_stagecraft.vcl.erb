@@ -15,7 +15,7 @@ backend F_api_origin {
     .probe = {
         .request =
             "HEAD /_status HTTP/1.1"
-            "Host: stagecraft.<%= config['http_host_domain_suffix'] %>"
+            "Host: stagecraft.<%= config['origin_domain_suffix'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -80,7 +80,7 @@ sub vcl_recv {
 
   # >> custom recv
 	set req.backend = F_api_origin;
-	set req.http.host = "stagecraft.<%= config['http_host_domain_suffix'] %>";
+	set req.http.host = "stagecraft.<%= config['origin_domain_suffix'] %>";
 
   # Serve stale if it exists.
   if (req.restarts > 0) {

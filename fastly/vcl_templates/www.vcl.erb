@@ -15,7 +15,7 @@ backend F_origin {
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= environment == 'staging' ? 'www.gov.uk' : config['origin_hostname'] %>"
+            "Host: <%= config['origin_hostname'] %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -137,10 +137,6 @@ sub vcl_recv {
   # >> custom recv
   # Default backend.
   set req.backend = F_origin;
-<% if environment == 'staging' %>
-  # Force host header for staging.
-  set req.http.host = "www.gov.uk";
-<% end %>
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
