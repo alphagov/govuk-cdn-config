@@ -89,6 +89,11 @@ sub vcl_recv {
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
+
+  # govuk request id. Allow setting this so we can trace a full request
+  if (!req.http.GOVUK-Request-Id) {
+    set req.http.GOVUK-Request-Id = server.identity + "-" + req.xid;
+  }
   # << custom recv
 
 #FASTLY recv
