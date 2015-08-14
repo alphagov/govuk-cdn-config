@@ -197,15 +197,18 @@ sub vcl_error {
 
   synthetic {"
     <!DOCTYPE html>
-      <head><title>Welcome to GOV.UK</title></head>
-      <style>
-        h1, p {
-          color:black;
-          font-family: sans-serif;
-        }
-      </style>
+    <html>
+      <head>
+        <title>Welcome to GOV.UK</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; }
+          header { background: black; }
+          h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
+          p { color: black; margin: 30px auto; max-width: 990px; }
+        </style>
+      </head>
       <body>
-        <h1>GOV.UK</h1>
+        <header><h1>GOV.UK</h1></header>
         <p>Sorry! We're having issues right now. Please try again later.</p>
       </body>
     </html>"};
