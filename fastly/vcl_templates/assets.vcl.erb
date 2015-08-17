@@ -267,19 +267,7 @@ sub vcl_error {
   }
 
   synthetic {"
-    <!DOCTYPE html>
-      <head><title>Welcome to GOV.UK</title></head>
-      <style>
-        h1, p {
-          color:black;
-          font-family: sans-serif;
-        }
-      </style>
-      <body>
-        <h1>GOV.UK</h1>
-        <p>Sorry! We're having issues right now. Please try again later.</p>
-      </body>
-    </html>"};
+    GOV.UK is experiencing technical difficulties now. Please try again later."};
 
   return (deliver);
 
