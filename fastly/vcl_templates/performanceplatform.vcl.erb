@@ -112,7 +112,7 @@ sub vcl_recv {
 
   # govuk request id. Allow setting this so we can trace a full request
   if (!req.http.GOVUK-Request-Id) {
-    set req.http.GOVUK-Request-Id = server.identity + "-" + req.xid;
+    set req.http.GOVUK-Request-Id = server.identity "-" req.xid;
   }
   # << custom recv
 
