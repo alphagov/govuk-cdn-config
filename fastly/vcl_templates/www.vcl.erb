@@ -120,6 +120,12 @@ acl purge_ip_whitelist {
 sub vcl_recv {
 
   # >> custom recv
+  # Return HTTP 405 ("method not allowed") for OPTIONS requests and return Allow header
+  if (req.request == "OPTIONS") {
+    error 405 "Method not allowed";
+    set beresp.http.Allow = "DELETE, GET, HEAD, POST, PUT"
+  }
+
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
   if (req.request == "FASTLYPURGE") {
     if (client.ip ~ purge_ip_whitelist) {
