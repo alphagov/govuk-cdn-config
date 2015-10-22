@@ -142,10 +142,12 @@ sub vcl_recv {
   # >> custom recv
   # Default backend.
   set req.backend = F_origin;
+  set req.http.Fastly-Backend-Name = "origin";
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
     set req.backend = sick_force_grace;
+    set req.http.Fastly-Backend-Name = "stale";
   }
 
   # Failover to mirror.
@@ -156,12 +158,14 @@ sub vcl_recv {
 
     set req.backend = F_mirror0;
     set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
+    set req.http.Fastly-Backend-Name = "mirror0";
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
   if (req.restarts > 2) {
     set req.backend = F_mirror1;
     set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
+    set req.http.Fastly-Backend-Name = "mirror1";
   }
 
   # Unspoofable original client address.
@@ -183,6 +187,8 @@ sub vcl_fetch {
 #FASTLY fetch
 
   # >> custom
+  set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
+
   if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     set beresp.saintmode = 5s;
     return (restart);
