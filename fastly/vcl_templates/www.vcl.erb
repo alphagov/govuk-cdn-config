@@ -262,6 +262,7 @@ sub vcl_error {
     set obj.status = 301;
     set obj.response = "Moved Permanently";
     set obj.http.Location = "https://" req.http.host req.url;
+    set obj.http.Fastly-Backend-Name = "force_ssl";
     synthetic {""};
     return (deliver);
   }
@@ -273,6 +274,7 @@ sub vcl_error {
     return (restart);
   }
 
+  set obj.http.Fastly-Backend-Name = "error";
   synthetic {"
     <!DOCTYPE html>
     <html>
