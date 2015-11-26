@@ -10,7 +10,13 @@ backend F_backend_origin {
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "backend.<%= config['origin_domain_suffix'] %>";
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', "backend.#{config['origin_domain_suffix']}") %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', "backend.#{config['origin_domain_suffix']}") %>";
 
     .probe = {
         .request =

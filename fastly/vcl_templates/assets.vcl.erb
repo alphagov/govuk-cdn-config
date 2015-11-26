@@ -10,7 +10,13 @@ backend F_origin {
     .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= config['origin_hostname'] %>";
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['origin_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['origin_hostname']) %>";
 
     .probe = {
         .request =
@@ -41,7 +47,13 @@ backend F_mirror0 {
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= config['provider0_mirror_hostname'] %>";
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider0_mirror_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider0_mirror_hostname']) %>";
 
     .probe = {
         .request =
@@ -69,7 +81,13 @@ backend F_mirror1 {
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
-    .ssl_hostname = "<%= config['provider1_mirror_hostname'] %>";
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider1_mirror_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider1_mirror_hostname']) %>";
 
     .probe = {
         .request =
