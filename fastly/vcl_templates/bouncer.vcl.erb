@@ -1,6 +1,6 @@
 # >> custom backends
 
-backend F_origin {
+backend F_origin0 {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "80";
@@ -13,6 +13,26 @@ backend F_origin {
 
     .probe = {
         .request = "HEAD / HTTP/1.1"  "Host: <%= @hostname %>" "Connection: close";
+        .window = 5;
+        .threshold = 1;
+        .timeout = 2s;
+        .initial = 5;
+        .dummy = true;
+      }
+}
+
+backend F_origin1 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "80";
+    .host = "bouncer-dr.<%= app_domain %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= service_id %>";
+
+    .probe = {
+        .request = "HEAD / HTTP/1.1"  "Host: bouncer-dr.<%= app_domain %>" "Connection: close";
         .window = 5;
         .threshold = 1;
         .timeout = 2s;
@@ -66,13 +86,22 @@ sub vcl_recv {
 
   # >> custom recv
   # Default backend.
-
-  set req.backend = F_origin;
+  set req.backend = F_origin0;
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
     set req.backend = sick_force_grace;
     set req.http.Fastly-Backend-Name = "stale";
+  }
+
+  # Failover to origin1.
+  if (req.restarts > 1) {
+    # Don't serve from stale from DR
+    set req.grace = 0s;
+    set req.http.Fastly-Failover = "1";
+
+    set req.backend = F_origin1;
+    set req.http.host = "bouncer-dr.<%= app_domain %>";
   }
 
   # << custom recv
@@ -145,7 +174,7 @@ sub vcl_deliver {
 sub vcl_error {
 
   # Assume we've hit vcl_error() because the backend is unavailable
-  if (req.restarts < 1) {
+  if (req.restarts < 2) {
     return (restart);
   }
 
