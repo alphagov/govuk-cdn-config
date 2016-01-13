@@ -44,13 +44,11 @@ sub vcl_recv {
   # >> normally from `request settings` UI
 
   # Append to XFF. Unsure about this restart condition?
-  if (req.restarts == 0) {
-    }
-     if (!req.http.Fastly-FF) {
-       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
-     } else {
-       set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
-     }
+  if (!req.http.Fastly-FF) {
+    set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
+  } else {
+    set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
+  }
 
   # Keep stale.
   set req.grace = 86400s;
