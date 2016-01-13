@@ -21,6 +21,16 @@ backend F_origin {
       }
 }
 
+backend sick_force_grace {
+  .host = "127.0.0.1";
+  .port = "1";
+  .probe = {
+    .request = "invalid";
+    .interval = 365d;
+    .initial = 0;
+  }
+}
+
 # << custom backends
 
 acl purge_ip_whitelist {
