@@ -139,6 +139,28 @@ sub vcl_error {
     return (restart);
   }
 
+  synthetic {"
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>GOV.UK Redirect</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; }
+          header { background: black; }
+          h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
+          p { color: black; margin: 30px auto; max-width: 990px; }
+        </style>
+      </head>
+      <body>
+        <header><h1>GOV.UK</h1></header>
+        <p>We are experiencing technical difficulties.</p>
+        <p>The page you requested may be available on <a href='https://www.gov.uk'>GOV.UK</a> or the <a href='http://www.nationalarchives.gov.uk/webarchive/'>UK Government Web Archive</a>.</p>
+      </body>
+    </html>"};
+
+  set obj.status = 503;
+  return (deliver);
+
 #FASTLY error
 }
 
