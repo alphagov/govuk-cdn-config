@@ -59,6 +59,12 @@ sub vcl_recv {
 
   set req.backend = F_origin;
 
+  # Serve stale if it exists.
+  if (req.restarts > 0) {
+    set req.backend = sick_force_grace;
+    set req.http.Fastly-Backend-Name = "stale";
+  }
+
   # << custom recv
 
 #FASTLY recv
@@ -80,7 +86,8 @@ sub vcl_fetch {
   set beresp.grace = 86400s;
 
   if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
-    restart;
+    set beresp.saintmode = 5s;
+    return (restart);
   }
 
   if(req.restarts > 0 ) {
@@ -126,6 +133,12 @@ sub vcl_deliver {
 }
 
 sub vcl_error {
+
+  # Assume we've hit vcl_error() because the backend is unavailable
+  if (req.restarts < 1) {
+    return (restart);
+  }
+
 #FASTLY error
 }
 
