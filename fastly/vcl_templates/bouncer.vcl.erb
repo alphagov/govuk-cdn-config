@@ -121,7 +121,7 @@ sub vcl_fetch {
 
   set beresp.grace = 86400s;
 
-  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 2 && (req.request == "GET" || req.request == "HEAD")) {
     set beresp.saintmode = 5s;
     return (restart);
   }
