@@ -101,7 +101,6 @@ sub vcl_recv {
     set req.http.Fastly-Failover = "1";
 
     set req.backend = F_origin1;
-    set req.http.host = "bouncer-dr.<%= app_domain %>";
   }
 
   # << custom recv
