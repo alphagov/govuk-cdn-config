@@ -145,6 +145,11 @@ sub vcl_recv {
     }
     error 403 "Forbidden";
   }
+
+  # Check whether the remote IP address is in the list of blocked IPs
+  if (table.lookup(ip_address_blacklist, client.ip)) {
+    error 403 "Forbidden";
+  }
   # << custom recv
 
   # >> normally from `request settings` UI
