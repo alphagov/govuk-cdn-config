@@ -1,0 +1,39 @@
+backend dummy {
+  .host = "127.0.0.1";
+  .port = "1";
+  .probe = {
+    .request = "invalid";
+    .initial = 0;
+    .interval = 365d;
+  }
+}
+
+sub vcl_recv {
+  return(error);
+}
+
+sub vcl_fetch {
+}
+
+sub vcl_hit {
+}
+
+sub vcl_miss {
+}
+
+sub vcl_deliver {
+}
+
+sub vcl_error {
+  set obj.status = 301;
+  set obj.response = "Moved Permanently";
+  set obj.http.Location = "https://www.gov.uk" req.url;
+  synthetic {""};
+  return (deliver);
+}
+
+sub vcl_pass {
+}
+
+sub vcl_hash {
+}

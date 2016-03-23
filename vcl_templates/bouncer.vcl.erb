@@ -1,0 +1,213 @@
+# >> custom backends
+
+backend F_origin0 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "80";
+    .host = "bouncer.<%= app_domain %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= service_id %>";
+
+
+    .probe = {
+        .request = "HEAD /healthcheck HTTP/1.1"  "Host: bouncer.<%= app_domain %>" "Connection: close";
+        .window = 5;
+        .threshold = 1;
+        .timeout = 2s;
+        .initial = 5;
+      }
+}
+
+backend F_origin1 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "80";
+    .host = "bouncer-dr.<%= app_domain %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= service_id %>";
+
+    .probe = {
+        .request = "HEAD /healthcheck HTTP/1.1"  "Host: bouncer-dr.<%= app_domain %>" "Connection: close";
+        .window = 5;
+        .threshold = 1;
+        .timeout = 2s;
+        .initial = 5;
+      }
+}
+
+backend sick_force_grace {
+  .host = "127.0.0.1";
+  .port = "1";
+  .probe = {
+    .request = "invalid";
+    .interval = 365d;
+    .initial = 0;
+  }
+}
+
+# << custom backends
+
+acl purge_ip_whitelist {
+  "80.194.77.90";    # Aviation House
+  "80.194.77.100";   # Aviation House
+}
+
+sub vcl_recv {
+
+  # >> custom recv
+  # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
+  if (req.request == "FASTLYPURGE") {
+    if (client.ip ~ purge_ip_whitelist) {
+      return (lookup);
+    }
+    error 403 "Forbidden";
+  }
+
+  # << custom recv
+
+  # >> normally from `request settings` UI
+
+  # Append to XFF. Unsure about this restart condition?
+  if (!req.http.Fastly-FF) {
+    set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For ", " client.ip;
+  } else {
+    set req.http.Fastly-Temp-XFF = req.http.X-Forwarded-For;
+  }
+
+  # Keep stale.
+  set req.grace = 86400s;
+  # << normally from `request settings` UI
+
+  # >> custom recv
+  # Default backend.
+  set req.backend = F_origin0;
+
+  # Serve stale if it exists.
+  if (req.restarts > 0) {
+    set req.backend = sick_force_grace;
+    set req.http.Fastly-Backend-Name = "stale";
+  }
+
+  # Failover to origin1.
+  if (req.restarts > 1) {
+    # Don't serve from stale from DR
+    set req.grace = 0s;
+    set req.http.Fastly-Failover = "1";
+
+    set req.backend = F_origin1;
+  }
+
+  # << custom recv
+
+#FASTLY recv
+
+  # >> not reproduced by macro
+  if (req.request != "HEAD" && req.request != "GET" && req.request != "PURGE") {
+    return(pass);
+  }
+
+  return(lookup);
+  # << not reproduced by macro
+}
+
+sub vcl_fetch {
+#FASTLY fetch
+
+  # >> not reproduced by macro
+
+  set beresp.grace = 86400s;
+
+  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 2 && (req.request == "GET" || req.request == "HEAD")) {
+    set beresp.saintmode = 5s;
+    return (restart);
+  }
+
+  if(req.restarts > 0 ) {
+    set beresp.http.Fastly-Restarts = req.restarts;
+  }
+
+  if (beresp.http.Set-Cookie) {
+    set req.http.Fastly-Cachetype = "SETCOOKIE";
+    return (pass);
+  }
+
+  if (beresp.http.Cache-Control ~ "private") {
+    set req.http.Fastly-Cachetype = "PRIVATE";
+    return (pass);
+  }
+
+  if (beresp.status == 500 || beresp.status == 503) {
+    set req.http.Fastly-Cachetype = "ERROR";
+    set beresp.ttl = 1s;
+    set beresp.grace = 5s;
+    return (deliver);
+  }
+
+  if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
+    # keep the ttl here
+  } else {
+    # apply the default ttl
+    set beresp.ttl = 3600s;
+  }
+  # << not reproduced by macro
+}
+
+sub vcl_hit {
+#FASTLY hit
+}
+
+sub vcl_miss {
+#FASTLY miss
+}
+
+sub vcl_deliver {
+#FASTLY deliver
+}
+
+sub vcl_error {
+
+  # Assume we've hit vcl_error() because the backend is unavailable
+  if (req.restarts < 2) {
+    return (restart);
+  }
+
+  synthetic {"
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>GOV.UK Redirect</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; }
+          header { background: black; }
+          h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
+          p { color: black; margin: 30px auto; max-width: 990px; }
+        </style>
+      </head>
+      <body>
+        <header><h1>GOV.UK</h1></header>
+        <p>We are experiencing technical difficulties.</p>
+        <p>The page you requested may be available on <a href='https://www.gov.uk'>GOV.UK</a> or the <a href='http://www.nationalarchives.gov.uk/webarchive/'>UK Government Web Archive</a>.</p>
+      </body>
+    </html>"};
+
+  set obj.status = 503;
+  return (deliver);
+
+#FASTLY error
+}
+
+# <<
+# pipe cannot be included.
+# >>
+
+sub vcl_pass {
+#FASTLY pass
+}
+
+sub vcl_hash {
+#FASTLY hash
+}

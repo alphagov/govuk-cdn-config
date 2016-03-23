@@ -1,0 +1,334 @@
+# >> custom backends
+backend F_origin {
+    .connect_timeout = 5s;
+    .dynamic = true;
+    .port = "<%= config.fetch('origin_port', 443) %>";
+    .host = "<%= config['origin_hostname'] %>";
+    .first_byte_timeout = 120s;
+    .max_connections = 200;
+    .between_bytes_timeout = 120s;
+    .share_key = "<%= config['service_id'] %>";
+
+    .ssl = true;
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['origin_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['origin_hostname']) %>";
+
+    .probe = {
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config['origin_hostname'] %>"
+            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+<% if config['rate_limit_token'] %>
+            "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
+<% end %>
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+    }
+}
+# Mirror backend for provider 0
+backend F_mirror0 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "<%= config.fetch('provider0_mirror_port', 443) %>";
+    .host = "<%= config['provider0_mirror_hostname'] %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config['service_id'] %>";
+
+    .ssl = true;
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider0_mirror_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider0_mirror_hostname']) %>";
+
+    .probe = {
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config['provider0_mirror_hostname'] %>"
+            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+    }
+}
+# Mirror backend for provider 1
+backend F_mirror1 {
+    .connect_timeout = 1s;
+    .dynamic = true;
+    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
+    .host = "<%= config['provider1_mirror_hostname'] %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config['service_id'] %>";
+
+    .ssl = true;
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider1_mirror_hostname']) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider1_mirror_hostname']) %>";
+
+    .probe = {
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config['provider1_mirror_hostname'] %>"
+            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+    }
+}
+
+backend sick_force_grace {
+  .host = "127.0.0.1";
+  .port = "1";
+  .probe = {
+    .request = "invalid";
+    .interval = 365d;
+    .initial = 0;
+  }
+}
+
+# << custom backends
+
+acl purge_ip_whitelist {
+  "37.26.90.227";     # Platform 1 production
+  "37.26.93.252";     # Platform 1 mirrors
+  "31.210.241.100";   # Carrenza mirrors
+<% if environment == 'staging' %>
+  "31.210.245.70";    # Carrenza Staging
+<% elsif environment == 'production' %>
+  "31.210.245.86";    # Carrenza Production
+<% end %>
+  "23.235.23.0"/20;   # Fastly cache node
+  "103.244.50.0"/24;  # Fastly cache node
+  "103.245.222.0"/23; # Fastly cache node
+  "103.245.224.0"/24; # Fastly cache node
+  "185.31.16.0"/22;   # Fastly cache node
+  "199.27.72.0"/21;   # Fastly cache node
+  "202.21.128.0"/24;  # Fastly cache node
+  "203.57.145.0"/24;  # Fastly cache node
+}
+
+sub vcl_recv {
+
+  # >> custom recv
+  # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
+  if (req.request == "FASTLYPURGE") {
+    if (client.ip ~ purge_ip_whitelist) {
+      return (lookup);
+    }
+    error 403 "Forbidden";
+  }
+
+  # Check whether the remote IP address is in the list of blocked IPs
+  if (table.lookup(ip_address_blacklist, client.ip)) {
+    error 403 "Forbidden";
+  }
+  # << custom recv
+
+  # >> normally from `request settings` UI
+  # Force SSL.
+  if (!req.http.Fastly-SSL) {
+     error 801 "Force SSL";
+  }
+
+  # Serve from stale for 24 hours if origin is sick
+  set req.grace = 24h;
+  # << normally from `request settings` UI
+
+  # >> custom recv
+  # Default backend.
+  set req.backend = F_origin;
+  set req.http.Fastly-Backend-Name = "origin";
+
+  # Serve stale if it exists.
+  if (req.restarts > 0) {
+    set req.backend = sick_force_grace;
+    set req.http.Fastly-Backend-Name = "stale";
+  }
+
+  # Failover to mirror.
+  if (req.restarts > 1) {
+    # Don't serve from stale for mirrors
+    set req.grace = 0s;
+    set req.http.Fastly-Failover = "1";
+
+    set req.backend = F_mirror0;
+    set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
+    set req.http.Fastly-Backend-Name = "mirror0";
+  }
+
+  # FIXME: Prefer a fallback director if we move to Varnish 3
+  if (req.restarts > 2) {
+    set req.backend = F_mirror1;
+    set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
+    set req.http.Fastly-Backend-Name = "mirror1";
+  }
+
+  # Unspoofable original client address.
+  set req.http.True-Client-IP = req.http.Fastly-Client-IP;
+  # << custom recv
+
+#FASTLY recv
+
+  # >> not reproduced by macro
+  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
+    return(pass);
+  }
+
+  return(lookup);
+  # << not reproduced by macro
+}
+
+sub vcl_fetch {
+#FASTLY fetch
+
+  # >> custom
+  set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
+
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+    set beresp.saintmode = 5s;
+    return (restart);
+  }
+
+  if (req.restarts == 0) {
+    # Keep stale for origin
+    set beresp.grace = 24h;
+  }
+  # << custom
+
+  # >> not reproduced by macro
+  if(req.restarts > 0 ) {
+    set beresp.http.Fastly-Restarts = req.restarts;
+  }
+
+  if (beresp.http.Cache-Control ~ "private") {
+    set req.http.Fastly-Cachetype = "PRIVATE";
+    return (pass);
+  }
+
+  if (beresp.http.Cache-Control ~ "max-age=0") {
+    return (pass);
+  }
+
+  # << not reproduced by macro
+  # >> custom
+  if (beresp.http.Cache-Control ~ "no-(store|cache)") {
+    return (pass);
+  }
+  # << custom
+  # >> not reproduced by macro
+
+  if (beresp.status >= 500 && beresp.status <= 599) {
+    set req.http.Fastly-Cachetype = "ERROR";
+    set beresp.ttl = 1s;
+    set beresp.grace = 5s;
+    return (deliver);
+  }
+
+  if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
+    # keep the ttl here
+  } else {
+    # apply the default ttl
+    set beresp.ttl = <%= config['default_ttl'] %>s;
+  }
+  # << not reproduced by macro
+
+  # >> custom
+  # Override default.vcl behaviour of return(pass).
+  if (beresp.http.Set-Cookie) {
+    return (deliver);
+  }
+  # << custom
+}
+
+sub vcl_hit {
+#FASTLY hit
+}
+
+sub vcl_miss {
+#FASTLY miss
+}
+
+sub vcl_deliver {
+#FASTLY deliver
+}
+
+sub vcl_error {
+  if (obj.status == 801) {
+    set obj.status = 301;
+    set obj.response = "Moved Permanently";
+    set obj.http.Location = "https://" req.http.host req.url;
+    set obj.http.Fastly-Backend-Name = "force_ssl";
+    synthetic {""};
+    return (deliver);
+  }
+
+  # Assume we've hit vcl_error() because the backend is unavailable
+  # for the first two retries. By restarting, vcl_recv() will try
+  # serving from stale before failing over to the mirrors.
+  if (req.restarts < 3) {
+    return (restart);
+  }
+
+  set obj.http.Fastly-Backend-Name = "error";
+  synthetic {"
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Welcome to GOV.UK</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; }
+          header { background: black; }
+          h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
+          p { color: black; margin: 30px auto; max-width: 990px; }
+        </style>
+      </head>
+      <body>
+        <header><h1>GOV.UK</h1></header>
+        <p>Sorry! We're having issues right now. Please try again later.</p>
+      </body>
+    </html>"};
+
+  return (deliver);
+
+#FASTLY error
+}
+
+# <<
+# pipe cannot be included.
+# >>
+
+sub vcl_pass {
+#FASTLY pass
+}
+
+sub vcl_hash {
+#FASTLY hash
+}
