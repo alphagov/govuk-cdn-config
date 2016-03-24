@@ -4,9 +4,9 @@ backend F_origin {
     .dynamic = true;
     .port = "<%= config.fetch('origin_port', 443) %>";
     .host = "<%= config['origin_hostname'] %>";
-    .first_byte_timeout = 120s;
+    .first_byte_timeout = 15s;
     .max_connections = 200;
-    .between_bytes_timeout = 120s;
+    .between_bytes_timeout = 10s;
     .share_key = "<%= config['service_id'] %>";
 
     .ssl = true;
