@@ -1,4 +1,3 @@
-# >> custom backends
 backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
@@ -114,7 +113,6 @@ backend sick_force_grace {
   }
 }
 
-# << custom backends
 
 acl purge_ip_whitelist {
   "37.26.90.227";     # Platform 1 production
@@ -137,7 +135,6 @@ acl purge_ip_whitelist {
 
 sub vcl_recv {
 
-  # >> custom recv
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
   if (req.request == "FASTLYPURGE") {
     if (client.ip ~ purge_ip_whitelist) {
@@ -150,9 +147,7 @@ sub vcl_recv {
   if (table.lookup(ip_address_blacklist, client.ip)) {
     error 403 "Forbidden";
   }
-  # << custom recv
 
-  # >> normally from `request settings` UI
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
@@ -160,9 +155,7 @@ sub vcl_recv {
 
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
-  # << normally from `request settings` UI
 
-  # >> custom recv
   # Default backend.
   set req.backend = F_origin;
   set req.http.Fastly-Backend-Name = "origin";
@@ -193,23 +186,19 @@ sub vcl_recv {
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
-  # << custom recv
 
 #FASTLY recv
 
-  # >> not reproduced by macro
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
   }
 
   return(lookup);
-  # << not reproduced by macro
 }
 
 sub vcl_fetch {
 #FASTLY fetch
 
-  # >> custom
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
   if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
@@ -221,9 +210,7 @@ sub vcl_fetch {
     # Keep stale for origin
     set beresp.grace = 24h;
   }
-  # << custom
 
-  # >> not reproduced by macro
   if(req.restarts > 0 ) {
     set beresp.http.Fastly-Restarts = req.restarts;
   }
@@ -237,13 +224,9 @@ sub vcl_fetch {
     return (pass);
   }
 
-  # << not reproduced by macro
-  # >> custom
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
     return (pass);
   }
-  # << custom
-  # >> not reproduced by macro
 
   if (beresp.status >= 500 && beresp.status <= 599) {
     set req.http.Fastly-Cachetype = "ERROR";
@@ -258,14 +241,11 @@ sub vcl_fetch {
     # apply the default ttl
     set beresp.ttl = <%= config['default_ttl'] %>s;
   }
-  # << not reproduced by macro
 
-  # >> custom
   # Override default.vcl behaviour of return(pass).
   if (beresp.http.Set-Cookie) {
     return (deliver);
   }
-  # << custom
 }
 
 sub vcl_hit {
@@ -321,9 +301,7 @@ sub vcl_error {
 #FASTLY error
 }
 
-# <<
 # pipe cannot be included.
-# >>
 
 sub vcl_pass {
 #FASTLY pass
