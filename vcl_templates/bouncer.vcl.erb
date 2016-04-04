@@ -1,4 +1,3 @@
-# >> custom backends
 
 backend F_origin0 {
     .connect_timeout = 1s;
@@ -49,7 +48,6 @@ backend sick_force_grace {
   }
 }
 
-# << custom backends
 
 acl purge_ip_whitelist {
   "80.194.77.90";    # Aviation House
@@ -58,7 +56,6 @@ acl purge_ip_whitelist {
 
 sub vcl_recv {
 
-  # >> custom recv
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
   if (req.request == "FASTLYPURGE") {
     if (client.ip ~ purge_ip_whitelist) {
@@ -67,9 +64,7 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
-  # << custom recv
 
-  # >> normally from `request settings` UI
 
   # Append to XFF. Unsure about this restart condition?
   if (!req.http.Fastly-FF) {
@@ -80,9 +75,7 @@ sub vcl_recv {
 
   # Keep stale.
   set req.grace = 86400s;
-  # << normally from `request settings` UI
 
-  # >> custom recv
   # Default backend.
   set req.backend = F_origin0;
 
@@ -101,23 +94,19 @@ sub vcl_recv {
     set req.backend = F_origin1;
   }
 
-  # << custom recv
 
 #FASTLY recv
 
-  # >> not reproduced by macro
   if (req.request != "HEAD" && req.request != "GET" && req.request != "PURGE") {
     return(pass);
   }
 
   return(lookup);
-  # << not reproduced by macro
 }
 
 sub vcl_fetch {
 #FASTLY fetch
 
-  # >> not reproduced by macro
 
   set beresp.grace = 86400s;
 
@@ -153,7 +142,6 @@ sub vcl_fetch {
     # apply the default ttl
     set beresp.ttl = 3600s;
   }
-  # << not reproduced by macro
 }
 
 sub vcl_hit {
@@ -200,9 +188,7 @@ sub vcl_error {
 #FASTLY error
 }
 
-# <<
 # pipe cannot be included.
-# >>
 
 sub vcl_pass {
 #FASTLY pass
