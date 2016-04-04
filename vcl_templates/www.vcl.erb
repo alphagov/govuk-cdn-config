@@ -3,11 +3,11 @@ backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "<%= config.fetch('origin_port', 443) %>";
-    .host = "<%= config['origin_hostname'] %>";
+    .host = "<%= config.fetch('origin_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config['service_id'] %>";
+    .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
@@ -15,13 +15,13 @@ backend F_origin {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['origin_hostname']) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['origin_hostname']) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config['origin_hostname'] %>"
+            "Host: <%= config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -40,11 +40,11 @@ backend F_mirror0 {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "<%= config.fetch('provider0_mirror_port', 443) %>";
-    .host = "<%= config['provider0_mirror_hostname'] %>";
+    .host = "<%= config.fetch('provider0_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config['service_id'] %>";
+    .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
@@ -52,13 +52,13 @@ backend F_mirror0 {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider0_mirror_hostname']) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider0_mirror_hostname']) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider0_mirror_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider0_mirror_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config['provider0_mirror_hostname'] %>"
+            "Host: <%= config.fetch('provider0_mirror_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
         .threshold = 1;
@@ -74,11 +74,11 @@ backend F_mirror1 {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
-    .host = "<%= config['provider1_mirror_hostname'] %>";
+    .host = "<%= config.fetch('provider1_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config['service_id'] %>";
+    .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
@@ -86,13 +86,13 @@ backend F_mirror1 {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['provider1_mirror_hostname']) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['provider1_mirror_hostname']) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider1_mirror_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider1_mirror_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config['provider1_mirror_hostname'] %>"
+            "Host: <%= config.fetch('provider1_mirror_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
         .threshold = 1;
@@ -180,14 +180,14 @@ sub vcl_recv {
     set req.http.Fastly-Failover = "1";
 
     set req.backend = F_mirror0;
-    set req.http.host = "<%= config['provider0_mirror_hostname'] %>";
+    set req.http.host = "<%= config.fetch('provider0_mirror_hostname') %>";
     set req.http.Fastly-Backend-Name = "mirror0";
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
   if (req.restarts > 2) {
     set req.backend = F_mirror1;
-    set req.http.host = "<%= config['provider1_mirror_hostname'] %>";
+    set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
     set req.http.Fastly-Backend-Name = "mirror1";
   }
 
@@ -256,7 +256,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = <%= config['default_ttl'] %>s;
+    set beresp.ttl = <%= config.fetch('default_ttl') %>s;
   }
   # << not reproduced by macro
 
