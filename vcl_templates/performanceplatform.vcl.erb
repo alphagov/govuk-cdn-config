@@ -2,11 +2,11 @@ backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "<%= config.fetch('origin_port', 443) %>";
-    .host = "<%= config['origin_hostname'] %>";
-    .first_byte_timeout = 120s;
+    .host = "<%= config.fetch('origin_hostname') %>";
+    .first_byte_timeout = 15s;
     .max_connections = 200;
-    .between_bytes_timeout = 120s;
-    .share_key = "<%= config['service_id'] %>";
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
@@ -14,13 +14,13 @@ backend F_origin {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config['origin_hostname']) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config['origin_hostname']) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config['origin_hostname'] %>"
+            "Host: <%= config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -93,9 +93,9 @@ sub vcl_recv {
 
   # Route request to application depending on HTTP method used
   if (req.request ~ "^(PUT|POST|DELETE)$") {
-    set req.http.Host = "backdrop-write.<%= config['domain_suffix'] %>";
+    set req.http.Host = "backdrop-write.<%= config.fetch('domain_suffix') %>";
   } else if (req.request ~ "^(GET|HEAD|OPTIONS)$") {
-    set req.http.Host = "backdrop-read.<%= config['domain_suffix'] %>";
+    set req.http.Host = "backdrop-read.<%= config.fetch('domain_suffix') %>";
   } else {
     error 405 "Method not allowed";
   }
@@ -163,7 +163,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = <%= config['default_ttl'] %>s;
+    set beresp.ttl = <%= config.fetch('default_ttl') %>s;
   }
 
   # Override default.vcl behaviour of return(pass).

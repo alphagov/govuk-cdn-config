@@ -2,11 +2,11 @@ backend F_api_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "<%= config.fetch('origin_port', 443) %>";
-    .host = "api.<%= config['origin_domain_suffix'] %>";
-    .first_byte_timeout = 120s;
+    .host = "api.<%= config.fetch('origin_domain_suffix') %>";
+    .first_byte_timeout = 15s;
     .max_connections = 200;
-    .between_bytes_timeout = 120s;
-    .share_key = "<%= config['service_id'] %>";
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config.fetch('service_id') %>";
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
@@ -20,7 +20,7 @@ backend F_api_origin {
     .probe = {
         .request =
             "HEAD /_status HTTP/1.1"
-            "Host: stagecraft.<%= config['origin_domain_suffix'] %>"
+            "Host: stagecraft.<%= config.fetch('origin_domain_suffix') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -79,7 +79,7 @@ sub vcl_recv {
   set req.grace = 24h;
 
 	set req.backend = F_api_origin;
-	set req.http.host = "stagecraft.<%= config['origin_domain_suffix'] %>";
+	set req.http.host = "stagecraft.<%= config.fetch('origin_domain_suffix') %>";
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
@@ -144,7 +144,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = <%= config['default_ttl'] %>s;
+    set beresp.ttl = <%= config.fetch('default_ttl') %>s;
   }
 
   # Override default.vcl behaviour of return(pass).
