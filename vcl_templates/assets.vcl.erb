@@ -20,7 +20,7 @@ backend F_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= environment == 'staging' ? 'assets.digital.cabinet-office.gov.uk' : config.fetch('origin_hostname') %>"
+            "Host: <%= environment == 'staging' ? 'assets.publishing.service.gov.uk' : config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -160,7 +160,7 @@ sub vcl_recv {
   set req.backend = F_origin;
 <% if environment == 'staging' %>
   # Force host header for staging.
-  set req.http.host = "assets.digital.cabinet-office.gov.uk";
+  set req.http.host = "assets.publishing.service.gov.uk";
 <% end %>
 
   # Serve stale if it exists.
