@@ -97,7 +97,7 @@ sub vcl_recv {
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
   # Route request to application depending on HTTP method used
-  if (req.request ~ "^(PUT|POST|DELETE)$") {
+  if (req.request ~ "^(PATCH|PUT|POST|DELETE)$") {
     set req.http.Host = "backdrop-write.<%= config.fetch('domain_suffix') %>";
   } else if (req.request ~ "^(GET|HEAD|OPTIONS)$") {
     set req.http.Host = "backdrop-read.<%= config.fetch('domain_suffix') %>";
