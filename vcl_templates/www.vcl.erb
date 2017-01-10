@@ -198,6 +198,17 @@ sub vcl_recv {
     return(pass);
   }
 
+  if (!req.http.Cookie:ABTest-Example) {
+    if (randombool(5,10)) {
+       set req.http.X-ABTest-Example = "A";
+    } else {
+       set req.http.X-ABTest-Example = "B";
+    }
+  } else {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.X-ABTest-Example = req.http.Cookie:ABTest-Example;
+  }
+
   return(lookup);
 }
 
@@ -262,6 +273,13 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+  # Set the A/B cookie
+  if (req.http.Cookie !~ "ABTest-Example") {
+    # Set a fairly short cookie expiry because this is just an A/B test demo.
+    # We should choose a longer expiry for a real A/B test.
+    add resp.http.Set-Cookie = "ABTest-Example=" req.http.X-ABTest-Example "; expires=" now + 1d;
+  }
+
 #FASTLY deliver
 }
 
