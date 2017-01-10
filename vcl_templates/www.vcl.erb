@@ -233,6 +233,14 @@ sub vcl_fetch {
     return (pass);
   }
 
+  # The only valid status from our mirrors is a 200. They cannot return e.g.
+  # a 301 status code. All errors from the mirrors are set to 503 as they
+  # cannot know whether or not a page actually exists (e.g. /search is a valid
+  # URL but the mirror cannot return it).
+  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "mirror") {
+    set beresp.status = 503;
+  }
+
   if (beresp.status >= 500 && beresp.status <= 599) {
     set req.http.Fastly-Cachetype = "ERROR";
     set beresp.ttl = 1s;
