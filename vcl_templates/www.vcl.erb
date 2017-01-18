@@ -198,7 +198,7 @@ sub vcl_recv {
     return(pass);
   }
 
-  if (!req.http.Cookie:ABTest-Example) {
+  if (req.http.Cookie !~ "ABTest-Example") {
     if (randombool(5,10)) {
        set req.http.X-ABTest-Example = "A";
     } else {
