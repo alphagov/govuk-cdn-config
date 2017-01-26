@@ -9,6 +9,13 @@ backend dummy {
 }
 
 sub vcl_recv {
+  # Force SSL.
+  if (!req.http.Fastly-SSL) {
+    error 801 "Force SSL";
+  } else {
+    error 802 "Redirect GOV.UK";
+  }
+
   return(error);
 }
 
@@ -25,9 +32,20 @@ sub vcl_deliver {
 }
 
 sub vcl_error {
-  set obj.status = 301;
-  set obj.response = "Moved Permanently";
-  set obj.http.Location = "https://www.gov.uk" req.url;
+  if (obj.status == 801) {
+    set obj.status = 301;
+    set obj.response = "Moved Permanently";
+    set obj.http.Location = "https://www.gov.uk" req.url;
+    set obj.http.Fastly-Backend-Name = "force_ssl";
+  }
+
+  if (obj.status == 802) {
+    set obj.status = 302;
+    set obj.response = "Moved Temporarily";
+    set obj.http.Location = "https://gov.uk";
+    set obj.http.Strict-Transport-Security = "max-age=63072000; preload";
+  }
+
   synthetic {""};
   return (deliver);
 }
