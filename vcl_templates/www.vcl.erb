@@ -282,7 +282,10 @@ sub vcl_miss {
 
 sub vcl_deliver {
   # Set the A/B cookie
-  if (req.http.Cookie !~ "ABTest-Example") {
+  # Only set the A/B example cookie if the request is to the A/B test page. This
+  # ensures that most visitors to the site aren't assigned an irrelevant test
+  # cookie.
+  if (req.url ~ "^/help/ab-testing" && req.http.Cookie !~ "ABTest-Example") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     # We should choose a longer expiry for a real A/B test.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
