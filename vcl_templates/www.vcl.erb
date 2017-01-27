@@ -200,9 +200,9 @@ sub vcl_recv {
 
   if (req.http.Cookie !~ "ABTest-Example") {
     if (randombool(5,10)) {
-       set req.http.GOVUK-ABTest-Example = "A";
+      set req.http.GOVUK-ABTest-Example = "B";
     } else {
-       set req.http.GOVUK-ABTest-Example = "B";
+      set req.http.GOVUK-ABTest-Example = "A";
     }
   } else {
     # Set the value of the header to whatever decision was previously made
