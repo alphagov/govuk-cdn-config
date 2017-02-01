@@ -198,15 +198,18 @@ sub vcl_recv {
     return(pass);
   }
 
-  if (req.http.Cookie !~ "ABTest-Example") {
+  # Make sure the original 'A' version is stored in the GOV.UK Mirror
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker" {
+    set req.http.GOVUK-ABTest-Example = "A";
+  } else if (req.http.Cookie ~ "ABTest-Example") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
+  } else {
     if (randombool(5,10)) {
       set req.http.GOVUK-ABTest-Example = "B";
     } else {
       set req.http.GOVUK-ABTest-Example = "A";
     }
-  } else {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
   }
 
   return(lookup);
@@ -285,7 +288,9 @@ sub vcl_deliver {
   # Only set the A/B example cookie if the request is to the A/B test page. This
   # ensures that most visitors to the site aren't assigned an irrelevant test
   # cookie.
-  if (req.url ~ "^/help/ab-testing" && req.http.Cookie !~ "ABTest-Example") {
+  if (req.url ~ "^/help/ab-testing"
+    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
+    && req.http.Cookie !~ "ABTest-Example") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     # We should choose a longer expiry for a real A/B test.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
