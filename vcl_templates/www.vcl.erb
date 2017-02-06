@@ -234,12 +234,13 @@ sub vcl_recv {
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
-
+  }
+  
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
-  # If the identifier cookie isn't present, set the header to a unique value),
-  # dervived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
+  # If the identifier cookie isn't present, set the header to a unique value,
+  # derived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
     set req.http.GOVUK-JS-Detection = digest.hash_sha1(now randomstr(64) req.http.host req.url req.http.Fastly-Client-IP server.identity);
 
   }
