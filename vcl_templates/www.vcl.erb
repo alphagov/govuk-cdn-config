@@ -199,7 +199,7 @@ sub vcl_recv {
   }
 
   # Make sure the original 'A' version is stored in the GOV.UK Mirror
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker" {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-Example = "A";
   } else if (req.http.Cookie ~ "ABTest-Example") {
     # Set the value of the header to whatever decision was previously made
