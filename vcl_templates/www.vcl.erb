@@ -212,6 +212,14 @@ sub vcl_recv {
     }
   }
 
+  if (req.http.Cookie ~ "JS-Detection") {
+    set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
+  } else {
+  # If the identifier cookie isn't present, set the header to a unique value,
+  # derived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
+    set req.http.GOVUK-JS-Detection = digest.hash_sha1(now randomstr(64) req.http.host req.url req.http.Fastly-Client-IP server.identity);
+  }
+
   return(lookup);
 }
 
@@ -294,6 +302,11 @@ sub vcl_deliver {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     # We should choose a longer expiry for a real A/B test.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
+  }
+
+  # Set the Javascript detection cookie
+  if (req.http.User-Agent !~ "^GOV\.UK Crawler Worker" && req.http.Cookie !~ "JS-Detection") {
+    add resp.http.Set-Cookie = "JS-Detection=" req.http.GOVUK-JS-Detection "; expires=" now + 5w "; path=/";
   }
 
 #FASTLY deliver
