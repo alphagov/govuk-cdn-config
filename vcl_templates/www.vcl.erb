@@ -296,16 +296,11 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
 
-  if (tls.client.protocol == "TLSv1.2") {
-    add resp.http.Set-Cookie = "TLSversion=TLSv1.2; max-age=0; secure";
-  } else if (tls.client.protocol == "TLSv1.1") {
-    add resp.http.Set-Cookie = "TLSversion=TLSv1.1; max-age=0; secure";
-  } else if (tls.client.protocol == "TLSv1") {
-    add resp.http.Set-Cookie = "TLSversion=TLSv1.0; max-age=0; secure";
-  } else {
-    add resp.http.Set-Cookie = "TLSversion=unknown; max-age=0; secure";
+  # Set the tls version session cookie with the raw protocol version from
+  # fastly only if it isn't already set
+  if (req.http.Cookie !~ "TLSversion") {
+    add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
-
 #FASTLY deliver
 }
 
