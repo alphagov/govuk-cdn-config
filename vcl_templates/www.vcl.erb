@@ -214,6 +214,12 @@ sub vcl_recv {
 
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-EducationNavigation = "A";
+  # Some users, such as remote testers, will be given a URL with a query string
+  # to place them into a specific bucket.
+  } else if (req.url ~ "[\?\&]ABTest-EducationNavigation=A(&|$)") {
+    set req.http.GOVUK-ABTest-EducationNavigation = "A";
+  } else if (req.url ~ "[\?\&]ABTest-EducationNavigation=B(&|$)") {
+    set req.http.GOVUK-ABTest-EducationNavigation = "B";
   } else if (req.http.Cookie ~ "ABTest-EducationNavigation") {
     # Set the value of the header to whatever decision was previously made
     set req.http.GOVUK-ABTest-EducationNavigation = req.http.Cookie:ABTest-EducationNavigation;
