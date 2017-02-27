@@ -212,6 +212,23 @@ sub vcl_recv {
     }
   }
 
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-EducationNavigation = "A";
+  } else if (req.http.Cookie ~ "ABTest-EducationNavigation") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-EducationNavigation = req.http.Cookie:ABTest-EducationNavigation;
+  } else {
+    # TODO: Once the education navigation A/B test starts, increase the
+    # probability of a user seeing the new 'B' version. When we do this, we MUST
+    # increase the cookie expiry time in vcl_deliver below.
+    # For now, always show users the original 'A' version.
+    if (randombool(0,10)) {
+      set req.http.GOVUK-ABTest-EducationNavigation = "B";
+    } else {
+      set req.http.GOVUK-ABTest-EducationNavigation = "A";
+    }
+  }
+
   return(lookup);
 }
 
@@ -284,7 +301,7 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
-  # Set the A/B cookie
+  # Set the A/B cookies
   # Only set the A/B example cookie if the request is to the A/B test page. This
   # ensures that most visitors to the site aren't assigned an irrelevant test
   # cookie.
@@ -292,8 +309,14 @@ sub vcl_deliver {
     && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
     && req.http.Cookie !~ "ABTest-Example") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
-    # We should choose a longer expiry for a real A/B test.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
+  }
+  if (req.http.Cookie !~ "ABTest-EducationNavigation") {
+    # TODO: Increase expiry time to 'now + 1y' when we start to assign users to
+    # the 'B' bucket. It is currently 1 day because users will all receive the
+    # 'A' cookie before the A/B test begins, and we need to make sure that they
+    # don't all get stuck with the 'A' version when the test starts.
+    add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 1d "; path=/";
   }
 
 #FASTLY deliver
