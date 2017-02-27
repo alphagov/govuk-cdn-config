@@ -296,6 +296,11 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
 
+  # Set the tls version session cookie with the raw protocol version from
+  # fastly only if it isn't already set
+  if (req.http.Cookie !~ "TLSversion") {
+    add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
+  }
 #FASTLY deliver
 }
 
