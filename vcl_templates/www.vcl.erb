@@ -317,7 +317,7 @@ sub vcl_deliver {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
-  if (req.http.Cookie !~ "ABTest-EducationNavigation") {
+  if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=") {
     # TODO: Increase expiry time to 'now + 1y' when we start to assign users to
     # the 'B' bucket. It is currently 1 day because users will all receive the
     # 'A' cookie before the A/B test begins, and we need to make sure that they
