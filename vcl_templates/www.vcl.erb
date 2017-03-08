@@ -325,9 +325,10 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 1d "; path=/";
   }
 
-  # Set the tls version session cookie with the raw protocol version from
-  # fastly only if it isn't already set
-  if (req.http.Cookie !~ "TLSversion") {
+  # Set the TLS version session cookie with the raw protocol version from
+  # Fastly only if it isn't already set. We also check for a value of (null)
+  # which occurs during http>https upgrading.
+  if (tls.client.protocol != "(null)" && req.http.Cookie !~ "TLSversion") {
     add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
 #FASTLY deliver
