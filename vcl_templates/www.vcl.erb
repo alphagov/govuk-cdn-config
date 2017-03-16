@@ -228,7 +228,7 @@ sub vcl_recv {
     # Set the value of the header to whatever decision was previously made
     set req.http.GOVUK-ABTest-EducationNavigation = req.http.Cookie:ABTest-EducationNavigation;
   } else {
-    if (randombool(1,10)) {
+    if (randombool(3,10)) {
       set req.http.GOVUK-ABTest-EducationNavigation = "B";
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
