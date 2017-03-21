@@ -234,7 +234,8 @@ sub vcl_recv {
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
-
+  }
+  
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
