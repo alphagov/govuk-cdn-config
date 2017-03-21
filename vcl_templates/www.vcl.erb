@@ -212,6 +212,7 @@ sub vcl_recv {
     }
   }
 
+
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-EducationNavigation = "A";
   # Some users, such as remote testers, will be given a URL with a query string
@@ -233,6 +234,14 @@ sub vcl_recv {
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
+
+  if (req.http.Cookie ~ "JS-Detection") {
+    set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
+  } else {
+  # If the identifier cookie isn't present, set the header to a unique value,
+  # derived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
+    set req.http.GOVUK-JS-Detection = digest.hash_sha1(now randomstr(64) req.http.host req.url req.http.Fastly-Client-IP server.identity);
+
   }
 
   return(lookup);
@@ -321,12 +330,20 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
   }
 
+
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
   # which can occur when trying to access over HTTP (http>https upgrading).
   if (tls.client.protocol && req.http.Cookie !~ "TLSversion") {
     add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
+
+  # Set the Javascript detection cookie
+  if (req.http.User-Agent !~ "^GOV\.UK Crawler Worker" && req.http.Cookie !~ "JS-Detection") {
+    add resp.http.Set-Cookie = "JS-Detection=" req.http.GOVUK-JS-Detection "; expires=" now + 5w "; path=/";
+  }
+
+
 #FASTLY deliver
 }
 
