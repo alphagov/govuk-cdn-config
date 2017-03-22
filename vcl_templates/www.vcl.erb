@@ -68,12 +68,12 @@ backend F_mirror0 {
         .interval = 10s;
     }
 }
-# Mirror backend for provider 1
-backend F_mirror1 {
+# Mirror backend for S3
+backend F_mirrorS3 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
-    .host = "<%= config.fetch('provider1_mirror_hostname') %>";
+    .port = "<%= config.fetch('s3_mirror_port', 443) %>";
+    .host = "<%= config.fetch('s3_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -85,13 +85,13 @@ backend F_mirror1 {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider1_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider1_mirror_hostname')) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('s3_mirror_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_hostname')) %>";
 
     .probe = {
         .request =
-            "HEAD / HTTP/1.1"
-            "Host: <%= config.fetch('provider1_mirror_hostname') %>"
+            "HEAD <%= config.fetch('s3_mirror_probe_request', '/') %> HTTP/1.1"
+            "Host: <%= config.fetch('s3_mirror_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
         .threshold = 1;
@@ -184,9 +184,26 @@ sub vcl_recv {
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
   if (req.restarts > 2) {
-    set req.backend = F_mirror1;
-    set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
-    set req.http.Fastly-Backend-Name = "mirror1";
+    set req.backend = F_mirrorS3;
+    set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
+    set req.http.Fastly-Backend-Name = "mirrorS3";
+
+    # Home page: S3 request returns 200, we need to rewrite to request index.html
+    if (req.url ~ "^/?([?#].*)?$") {
+      set req.url = regsub(req.url, "^/?([?#].*)?$", "/index.html\1");
+    }
+    # First time: try /prefix/URI
+    if (req.restarts == 3) {
+      set req.url = regsub(req.url, "^(.*)$", "/<%= config.fetch('s3_mirror_prefix') %>\1");
+    }
+    # Second time: try /prefix/URI.html
+    if (req.restarts == 4) {
+      set req.url = regsub(req.url, "^([^?#]*)([?#].*)?$", "\1.html\2");
+    }
+    # Third time: try /prefix/URI/index.html
+    if (req.restarts == 5) {
+      set req.url = regsub(req.url, "^([^?#]*)\.html([?#].*)?$", "\1/index.html\2");
+    }
   }
 
   # Unspoofable original client address.
@@ -273,6 +290,12 @@ sub vcl_fetch {
     return (restart);
   }
 
+  # Retries for S3 mirror with different URIs
+  if ((beresp.status == 403 || beresp.status == 404) && beresp.http.Fastly-Backend-Name ~ "S3" && req.restarts >= 3 && req.restarts < 6 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+    set beresp.saintmode = 5s;
+    return (restart);
+  }
+
   if (req.restarts == 0) {
     # Keep stale for origin
     set beresp.grace = 24h;
@@ -315,6 +338,12 @@ sub vcl_fetch {
   } else {
     # apply the default ttl
     set beresp.ttl = <%= config.fetch('default_ttl') %>s;
+
+    # S3 does not set cache headers by default. Override TTL and add cache-control with 15 minutes
+    if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
+      set beresp.ttl = 900s;
+      set beresp.http.Cache-Control = "max-age=900";
+    }
   }
 
   # Override default.vcl behaviour of return(pass).
