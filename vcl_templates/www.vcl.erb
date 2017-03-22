@@ -253,11 +253,6 @@ sub vcl_recv {
   } else if (req.http.Cookie ~ "ABTest-Benchmarking") {
     # Set the value of the header to whatever decision was previously made
     set req.http.GOVUK-ABTest-Benchmarking = req.http.Cookie:ABTest-Benchmarking;
-  } else {
-    # We default everyone to A, because remote testers will have a param in the
-    # URL to add them to the B group. In this test, we don't want anyone else
-    # having the B variant.
-    set req.http.GOVUK-ABTest-Benchmarking = "A";
   }
 
   return(lookup);
