@@ -235,7 +235,7 @@ sub vcl_recv {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
   }
-
+  
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
@@ -243,21 +243,6 @@ sub vcl_recv {
   # derived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
     set req.http.GOVUK-JS-Detection = digest.hash_sha1(now randomstr(64) req.http.host req.url req.http.Fastly-Client-IP server.identity);
 
-  }
-
-  # Rules for GOVUK-ABTest-Benchmarking
-  if (req.url ~ "[\?\&]ABTest-Benchmarking=A(&|$)") {
-    set req.http.GOVUK-ABTest-Benchmarking = "A";
-  } else if (req.url ~ "[\?\&]ABTest-Benchmarking=B(&|$)") {
-    set req.http.GOVUK-ABTest-Benchmarking = "B";
-  } else if (req.http.Cookie ~ "ABTest-Benchmarking") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-Benchmarking = req.http.Cookie:ABTest-Benchmarking;
-  } else {
-    # We default everyone to A, because remote testers will have a param in the
-    # URL to add them to the B group. In this test, we don't want anyone else
-    # having the B variant.
-    set req.http.GOVUK-ABTest-Benchmarking = "A";
   }
 
   return(lookup);
@@ -342,16 +327,10 @@ sub vcl_deliver {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
-
-  # Set A/B cookie for ABTest-EducationNavigation valid for 1 year
   if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
   }
 
-  # Set A/B cookie for ABTest-Benchmarking valid for 7 days only
-  if (req.http.Cookie !~ "ABTest-Benchmarking" || req.url ~ "[\?\&]ABTest-Benchmarking=") {
-    add resp.http.Set-Cookie = "ABTest-Benchmarking=" req.http.GOVUK-ABTest-Benchmarking"; expires=" now + 7d "; path=/";
-  }
 
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
