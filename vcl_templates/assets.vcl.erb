@@ -155,7 +155,7 @@ sub vcl_recv {
 
   # Serve and log an empty response for analytics purposes
   if (req.url ~ "^/static/a\?") {
-     error 802 "Empty for analytics logging";
+     error 802 "OK";
   }
 
   # Serve from stale for 24 hours if origin is sick
