@@ -68,39 +68,42 @@ backend F_mirror0 {
         .interval = 10s;
     }
 }
-# Mirror backend for provider 1
-backend F_mirror1 {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
-    .host = "<%= config.fetch('provider1_mirror_hostname') %>";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
 
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider1_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider1_mirror_hostname')) %>";
+backend F_mirrorS3 {
+  .connect_timeout = 1s;
+  .dynamic = true;
+  .host = "<%= config.fetch('s3_bucket_mirror_hostname') %>";
+  .port = "<%= config.fetch('s3_bucket_port', 443) %>";
+  .first_byte_timeout = 15s;
+  .max_connections = 200;
+  .between_bytes_timeout = 10s;
+  .share_key = "<%= config.fetch('service_id') %>";
 
-    .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: <%= config.fetch('provider1_mirror_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
+  .ssl = true;
+  .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+  .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+  <%- if config['ssl_ciphers'] -%>
+  .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+  <%- end -%>
+  .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('s3_bucket_mirror_hostname')) %>";
+  .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_bucket_mirror_hostname')) %>";
+
+  .probe = {
+    .request =
+      "HEAD /index.html HTTP/1.1"
+      "Host: <%= config.fetch('s3_bucket_mirror_hostname') %>"
+      "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+      "Authorization: AWS <%= config.fetch('s3_bucket_access_id') %>:" +
+        digest.base64_hex(digest.hmac_sha1("<%= config.fetch('s3_bucket_secret_key')",
+          req.request LF LF LF req.http.Date LF "/<%= config.fetch('s3_bucket_name')" req.url.path
+        ))
+      "Connection: close";
+    .threshold = 1;
+    .window = 2;
+    .timeout = 5s;
+    .initial = 1;
+    .expected_response = 200;
+    .interval = 10s;
 }
 
 backend sick_force_grace {
@@ -138,6 +141,7 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
+# "called at the beginning of a request, after the complete request has been received and parsed"
 sub vcl_recv {
 
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
@@ -183,10 +187,20 @@ sub vcl_recv {
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
+  # If there are two fails try amazon S3
   if (req.restarts > 2) {
-    set req.backend = F_mirror1;
-    set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
-    set req.http.Fastly-Backend-Name = "mirror1";
+    set req.backend = F_mirrorS3;
+    set req.http.Date = now;
+    set req.http.host = "<%= config.fetch('s3_bucket_mirror_hostname') %>";
+    set req.http.Fastly-Backend-Name = "mirrorS3";
+    # S3 requests need authorization via headers.
+    # See http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
+    # and https://docs.fastly.com/guides/integrations/amazon-s3#a-detailed-look-at-the-source-field
+    set req.http.Authorization = "AWS <%= config.fetch('s3_bucket_access_id') %>:" +
+      digest.base64_hex(digest.hmac_sha1("<%= config.fetch('s3_bucket_secret_key')",
+        req.request LF LF LF req.http.Date LF "/<%= config.fetch('s3_bucket_name')" req.url.path
+      ))
+
   }
 
   # Unspoofable original client address.
@@ -249,7 +263,7 @@ sub vcl_recv {
 }
 
 sub vcl_fetch {
-#FASTLY fetch
+#FASTLY fetch "called after a document has been successfully retrieved from the backend"
 
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
@@ -278,6 +292,18 @@ sub vcl_fetch {
 
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
     return (pass);
+  }
+
+  if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
+    # Remove the amazon headers from the cached object
+    unset obj.http.X-Amz-Id-2;
+    unset obj.http.X-Amz-Meta-Group;
+    unset obj.http.X-Amz-Meta-Owner;
+    unset obj.http.X-Amz-Meta-Permissions;
+    unset obj.http.X-Amz-Request-Id;
+
+    set obj.ttl = 1w;
+    set obj.grace = 30s;
   }
 
   # The only valid status from our mirrors is a 200. They cannot return e.g.
