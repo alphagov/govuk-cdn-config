@@ -274,6 +274,7 @@ sub vcl_error {
 
   if (obj.status == 802) {
     set obj.http.Content-Type = "text/plain";
+    set obj.http.Access-Control-Allow-Origin = "*";
     set obj.status = 200;
     synthetic {""};
     return(deliver);
