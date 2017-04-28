@@ -35,11 +35,11 @@ backend F_origin {
       }
 }
 # Mirror backend for provider 0
-backend F_mirror0 {
+backend F_mirror1 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "<%= config.fetch('provider0_mirror_port', 443) %>";
-    .host = "<%= config.fetch('provider0_mirror_hostname') %>";
+    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
+    .host = "<%= config.fetch('provider1_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -51,13 +51,13 @@ backend F_mirror0 {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider0_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider0_mirror_hostname')) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider1_mirror_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider1_mirror_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= config.fetch('provider0_mirror_hostname') %>"
+            "Host: <%= config.fetch('provider1_mirror_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
             "Connection: close";
         .threshold = 1;
@@ -179,8 +179,8 @@ sub vcl_recv {
     set req.grace = 0s;
     set req.http.Fastly-Failover = "1";
 
-    set req.backend = F_mirror0;
-    set req.http.host = "<%= config.fetch('provider0_mirror_hostname') %>";
+    set req.backend = F_mirror1;
+    set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
