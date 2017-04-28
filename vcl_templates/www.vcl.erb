@@ -250,7 +250,21 @@ sub vcl_recv {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
   }
-  
+
+
+  # TODO: Rename the A/B test. `SearchQuestionQueries` is just an example.
+  if (req.http.Cookie ~ "ABTest-SearchQuestionQueries") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-SearchQuestionQueries = req.http.Cookie:ABTest-SearchQuestionQueries;
+  } else {
+    # TODO: Increase the percentage to start the A/B test
+    if (randombool(0,10)) {
+      set req.http.GOVUK-ABTest-SearchQuestionQueries = "B";
+    } else {
+      set req.http.GOVUK-ABTest-SearchQuestionQueries = "A";
+    }
+  }
+
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
@@ -353,6 +367,10 @@ sub vcl_deliver {
   }
   if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
+  }
+  if (req.http.Cookie !~ "ABTest-SearchQuestionQueries") {
+    # TODO: Decide on the cookie expiry time before starting the A/B test
+    add resp.http.Set-Cookie = "ABTest-SearchQuestionQueries=" req.http.GOVUK-ABTest-SearchQuestionQueries "; expires=" now + 365d "; path=/";
   }
 
 
