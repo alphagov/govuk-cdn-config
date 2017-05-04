@@ -250,7 +250,28 @@ sub vcl_recv {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
   }
-  
+
+  <% ['SearchMatchLength'].each do |test_name| %>
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-<%= test_name %> = "A";
+  # Some users, such as remote testers, will be given a URL with a query string
+  # to place them into a specific bucket.
+  } else if (req.url ~ "[\?\&]ABTest-<%= test_name %>=A(&|$)") {
+    set req.http.GOVUK-ABTest-<%= test_name %> = "A";
+  } else if (req.url ~ "[\?\&]ABTest-<%= test_name %>=B(&|$)") {
+    set req.http.GOVUK-ABTest-<%= test_name %> = "B";
+  } else if (req.http.Cookie ~ "ABTest-<%= test_name %>") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-<%= test_name %> = req.http.Cookie:ABTest-<%= test_name %>;
+  } else {
+    if (randombool(3,10)) {
+      set req.http.GOVUK-ABTest-<%= test_name %> = "B";
+    } else {
+      set req.http.GOVUK-ABTest-<%= test_name %> = "A";
+    }
+  }
+  <% end %>
+
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
@@ -354,7 +375,11 @@ sub vcl_deliver {
   if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
   }
-
+  <% ['SearchMatchLength'].each do |test_name| %>
+  if (req.http.Set-Cookie !~ "ABTest-<%= test_name %>" || req.url ~ "[\?\&]ABTest-<%= test_name %>=") {
+    add resp.http.Set-Cookie = "ABTest-<%= test_name %>=" req.http.GOVUK-ABTest-<%= test_name %> "; expires=" now + 1d "; path=/";
+  }
+  <% end %>
 
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
