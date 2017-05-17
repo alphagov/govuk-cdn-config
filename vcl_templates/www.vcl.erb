@@ -250,7 +250,36 @@ sub vcl_recv {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
   }
-  
+
+  # Begin dynamic section
+  <% ab_tests.each do |test| %>
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-<%= test['name'] %> = "A";
+
+  } else if (req.url ~ "[\?\&]ABTest-<%= test['name'] %>=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-<%= test['name'] %> = "A";
+
+  } else if (req.url ~ "[\?\&]ABTest-<%= test['name'] %>=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-<%= test['name'] %> = "B";
+
+  } else if (req.http.Cookie ~ "ABTest-<%= test['name'] %>") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-<%= test['name'] %> = req.http.Cookie:ABTest-<%= test['name'] %>;
+
+  } else {
+    if (randombool(<%= test['b_percentage'] %>, 100)) {
+      set req.http.GOVUK-ABTest-<%= test['name'] %> = "B";
+    } else {
+      set req.http.GOVUK-ABTest-<%= test['name'] %> = "A";
+    }
+  }
+  <% end %>
+  # End dynamic section
+
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
@@ -355,6 +384,13 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
   }
 
+  # Begin dynamic section
+  <% ab_tests.each do |test| %>
+  if (req.http.Cookie !~ "ABTest-<%= test['name'] %>" || req.url ~ "[\?\&]ABTest-<%= test['name'] %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+    add resp.http.Set-Cookie = "ABTest-<%= test['name'] %>=" req.http.GOVUK-ABTest-<%= test['name'] %> "; expires=" now + <%= test['expiry'] %> "; path=/";
+  }
+  <% end %>
+  # End dynamic section
 
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
