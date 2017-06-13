@@ -227,7 +227,6 @@ sub vcl_recv {
     }
   }
 
-
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-EducationNavigation = "A";
   # Some users, such as remote testers, will be given a URL with a query string
@@ -248,6 +247,20 @@ sub vcl_recv {
       set req.http.GOVUK-ABTest-EducationNavigation = "B";
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
+    }
+  }
+
+  if (req.url ~ "[\?\&]ABTest-NavigationTest=NoBlueBox(&|$)") {
+    set req.http.GOVUK-ABTest-NavigationTest = "NoBlueBox";
+  } else if (req.url ~ "[\?\&]ABTest-NavigationTest=ShowBlueBox(&|$)") {
+    set req.http.GOVUK-ABTest-NavigationTest = "ShowBlueBox";
+  } else if (req.http.Cookie ~ "ABTest-NavigationTest") {
+    set req.http.GOVUK-ABTest-NavigationTest = req.http.Cookie:ABTest-NavigationTest;
+  } else if (req.http.GOVUK-ABTest-EducationNavigation ~ "B") {
+    if (randombool(5,10)) {
+      set req.http.GOVUK-ABTest-NavigationTest = "ShowBlueBox";
+    } else {
+      set req.http.GOVUK-ABTest-NavigationTest = "NoBlueBox";
     }
   }
 
@@ -384,6 +397,14 @@ sub vcl_deliver {
   }
   if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
+  }
+
+  # Only set the Blue Box cookie if we are on the B group of EducationNavigation
+  # test.
+  if (req.http.GOVUK-ABTest-EducationNavigation ~ "B") {
+    if (req.http.Cookie !~ "ABTest-NavigationTest" || req.url ~ "[\?\&]ABTest-NavigationTest=" || req.url ~ "^/education(\/|\?|$)") {
+      add resp.http.Set-Cookie = "ABTest-NavigationTest=" req.http.GOVUK-ABTest-NavigationTest "; expires=" now + 30d "; path=/";
+    }
   }
 
   # Begin dynamic section
