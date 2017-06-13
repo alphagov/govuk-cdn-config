@@ -246,16 +246,6 @@ sub vcl_recv {
   } else {
     if (randombool(3,10)) {
       set req.http.GOVUK-ABTest-EducationNavigation = "B";
-
-      # On only new sessions assigned to the new navigation, we should split the
-      # traffic so 50% see the new blue box and the other 50% don't.
-      if (randombool(5,10)) {
-        # This is equivalent to the A group, or control group
-        set req.http.GOVUK-ABTest-NavigationTest = "NoBlueBox";
-      } else {
-        # This is equivalent to the B group, with modifications
-        set req.http.GOVUK-ABTest-NavigationTest = "ShowBlueBox";
-      }
     } else {
       set req.http.GOVUK-ABTest-EducationNavigation = "A";
     }
@@ -394,10 +384,6 @@ sub vcl_deliver {
   }
   if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
-  }
-
-  if (req.http.Cookie !~ "ABTest-NavigationTest" || req.url ~ "[\?\&]ABTest-NavigationTest=" || req.url ~ "^/education(\/|\?|$)") {
-    add resp.http.Set-Cookie = "ABTest-NavigationTest=" req.http.GOVUK-ABTest-NavigationTest "; expires=" now + 30d "; path=/";
   }
 
   # Begin dynamic section
