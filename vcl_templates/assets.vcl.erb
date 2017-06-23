@@ -163,6 +163,7 @@ sub vcl_recv {
 
   # Default backend.
   set req.backend = F_origin;
+  set req.http.Fastly-Backend-Name = "origin";
 <% if environment == 'staging' %>
   # Force host header for staging.
   set req.http.host = "assets.publishing.service.gov.uk";
@@ -171,6 +172,7 @@ sub vcl_recv {
   # Serve stale if it exists.
   if (req.restarts > 0) {
     set req.backend = sick_force_grace;
+    set req.http.Fastly-Backend-Name = "stale";
   }
 
   # Failover to mirror.
@@ -180,6 +182,7 @@ sub vcl_recv {
     set req.http.Fastly-Failover = "1";
 
     set req.backend = F_mirror1;
+    set req.http.Fastly-Backend-Name = "mirror1";
     set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
   }
 
