@@ -265,33 +265,35 @@ sub vcl_recv {
   }
 
   # Begin dynamic section
-  <% ab_tests.each do |test| %>
-  if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-<%= test %> = "A";
+  <% if ab_tests %>
+      <% ab_tests.each do |test| %>
+      if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+        if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+          set req.http.GOVUK-ABTest-<%= test %> = "A";
 
-    } else if (req.url ~ "[\?\&]ABTest-<%= test %>=A(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-<%= test %> = "A";
+        } else if (req.url ~ "[\?\&]ABTest-<%= test %>=A(&|$)") {
+          # Some users, such as remote testers, will be given a URL with a query string
+          # to place them into a specific bucket.
+          set req.http.GOVUK-ABTest-<%= test %> = "A";
 
-    } else if (req.url ~ "[\?\&]ABTest-<%= test %>=B(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-<%= test %> = "B";
+        } else if (req.url ~ "[\?\&]ABTest-<%= test %>=B(&|$)") {
+          # Some users, such as remote testers, will be given a URL with a query string
+          # to place them into a specific bucket.
+          set req.http.GOVUK-ABTest-<%= test %> = "B";
 
-    } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
-      # Set the value of the header to whatever decision was previously made
-      set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
+        } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
+          # Set the value of the header to whatever decision was previously made
+          set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
 
-    } else {
-      if (randombool(std.atoi(table.lookup(ab_test_b_percentages, "<%= test %>")), 100)) {
-        set req.http.GOVUK-ABTest-<%= test %> = "B";
-      } else {
-        set req.http.GOVUK-ABTest-<%= test %> = "A";
+        } else {
+          if (randombool(std.atoi(table.lookup(ab_test_b_percentages, "<%= test %>")), 100)) {
+            set req.http.GOVUK-ABTest-<%= test %> = "B";
+          } else {
+            set req.http.GOVUK-ABTest-<%= test %> = "A";
+          }
+        }
       }
-    }
-  }
+      <% end %>
   <% end %>
   # End dynamic section
 
@@ -408,14 +410,16 @@ sub vcl_deliver {
   }
 
   # Begin dynamic section
-  declare local var.expiry TIME;
-  <% ab_tests.each do |test| %>
-  if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-    if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
-      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; expires=" var.expiry "; path=/";
-    }
-  }
+  <% if ab_tests %>
+    declare local var.expiry TIME;
+    <% ab_tests.each do |test| %>
+      if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+        if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
+          add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; expires=" var.expiry "; path=/";
+        }
+      }
+    <% end %>
   <% end %>
   # End dynamic section
 
