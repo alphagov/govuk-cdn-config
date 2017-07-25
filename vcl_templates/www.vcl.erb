@@ -236,7 +236,7 @@ sub vcl_recv {
     set req.http.GOVUK-ABTest-EducationNavigation = "A";
   } else if (req.url ~ "[\?\&]ABTest-EducationNavigation=B(&|$)") {
     set req.http.GOVUK-ABTest-EducationNavigation = "B";
-  } else if (req.url ~ "^/education(\/|\?|$)") {
+  } else if (req.url ~ "^/education(\/|\?|$)" || req.url ~ "^/childcare-parenting(\/|\?|$)") {
     # If a user goes to a new navigation page, add them automatically to the B
     # group, so they can see a consistent navigation throughout.
     set req.http.GOVUK-ABTest-EducationNavigation = "B";
@@ -384,7 +384,10 @@ sub vcl_deliver {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
-  if (req.http.Cookie !~ "ABTest-EducationNavigation" || req.url ~ "[\?\&]ABTest-EducationNavigation=" || req.url ~ "^/education(\/|\?|$)") {
+  if (req.http.Cookie !~ "ABTest-EducationNavigation"
+    || req.url ~ "[\?\&]ABTest-EducationNavigation="
+    || req.url ~ "^/education(\/|\?|$)"
+    || req.url ~ "^/childcare-parenting(\/|\?|$)") {
     add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
   }
 
