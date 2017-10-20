@@ -1,0 +1,50 @@
+<%#
+  Lack of indentation of ERB conditionals is intentional,
+  the output of this template is formatted vcl code.
+-%>
+# Begin dynamic section
+<% if ab_tests -%>
+<% alphabet = ('A'..'Z').to_a -%>
+<% ab_tests.each do |test_config| -%>
+<%# test_config is a hash like { "MyTest" => [60, 20, 20] } -%>
+<% test_config.each do |test, variants| -%>
+if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-<%= test %> = "A";
+<% variants.size.times do |n| -%>
+<% letter = alphabet[n] -%>
+  } else if (req.url ~ "[\?\&]ABTest-<%= test %>=<%= letter %>(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-<%= test %> = "<%= letter %>";
+<% end -%>
+  } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
+  } else {
+<% denominator = variants.inject(0, :+) -%>
+<%  (0...variants.size).each do |idx| -%>
+<%
+  previous_percentage = variants[idx - 1]
+  percentage = variants[idx]
+  letter = alphabet[idx]
+-%>
+<% if idx == 0 -%>
+    if (randombool(<%=  percentage %>, <%= denominator %>)) {
+      set req.http.GOVUK-ABTest-<%= test %> = "A";
+<% elsif idx < (variants.size - 1) -%>
+<% denominator -= previous_percentage -%>
+    } else if (randombool(<%= percentage %>, <%= denominator %>)) {
+      set req.http.GOVUK-ABTest-<%= test %> = "<%= letter %>";
+<% else -%>
+    } else {
+      set req.http.GOVUK-ABTest-<%= test %> = "<%= letter %>";
+    }
+<% end -%>
+<% end # (0...variants.size).each-%>
+  }
+}
+<% end # test_config.each -%>
+<% end # ab_tests.each -%>
+<% end # if ab_tests -%>
+# End dynamic section

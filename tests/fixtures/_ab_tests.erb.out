@@ -1,0 +1,58 @@
+# Begin dynamic section
+if (table.lookup(active_ab_tests, "MyTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-MyTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-MyTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-MyTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-MyTest=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-MyTest = "B";
+  } else if (req.http.Cookie ~ "ABTest-MyTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-MyTest = req.http.Cookie:ABTest-MyTest;
+  } else {
+    if (randombool(50, 100)) {
+      set req.http.GOVUK-ABTest-MyTest = "A";
+    } else {
+      set req.http.GOVUK-ABTest-MyTest = "B";
+    }
+  }
+}
+if (table.lookup(active_ab_tests, "YourTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-YourTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-YourTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-YourTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-YourTest=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-YourTest = "B";
+  } else if (req.url ~ "[\?\&]ABTest-YourTest=C(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-YourTest = "C";
+  } else if (req.url ~ "[\?\&]ABTest-YourTest=D(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-YourTest = "D";
+  } else if (req.http.Cookie ~ "ABTest-YourTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-YourTest = req.http.Cookie:ABTest-YourTest;
+  } else {
+    if (randombool(40, 100)) {
+      set req.http.GOVUK-ABTest-YourTest = "A";
+    } else if (randombool(20, 60)) {
+      set req.http.GOVUK-ABTest-YourTest = "B";
+    } else if (randombool(20, 40)) {
+      set req.http.GOVUK-ABTest-YourTest = "C";
+    } else {
+      set req.http.GOVUK-ABTest-YourTest = "D";
+    }
+  }
+}
+# End dynamic section
