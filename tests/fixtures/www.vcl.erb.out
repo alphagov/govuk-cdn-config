@@ -239,23 +239,33 @@ sub vcl_recv {
     # Begin dynamic section
 if (table.lookup(active_ab_tests, "ATest") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-ATest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ATest=A(&|$)") {
+    set req.http.GOVUK-ABTest-ATest = "meh";
+  } else if (req.url ~ "[\?\&]ABTest-ATest=meh(&|$)") {
     # Some users, such as remote testers, will be given a URL with a query string
     # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ATest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ATest=B(&|$)") {
+    set req.http.GOVUK-ABTest-ATest = "meh";
+  } else if (req.url ~ "[\?\&]ABTest-ATest=boom(&|$)") {
     # Some users, such as remote testers, will be given a URL with a query string
     # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ATest = "B";
+    set req.http.GOVUK-ABTest-ATest = "boom";
   } else if (req.http.Cookie ~ "ABTest-ATest") {
     # Set the value of the header to whatever decision was previously made
     set req.http.GOVUK-ABTest-ATest = req.http.Cookie:ABTest-ATest;
   } else {
-    if (randombool(50, 100)) {
-      set req.http.GOVUK-ABTest-ATest = "A";
+    declare local var.denominator_ATest INTEGER;
+    declare local var.denominator_ATest_meh INTEGER;
+    declare local var.nominator_ATest_meh INTEGER;
+    set var.nominator_ATest_meh = std.atoi(table.lookup(ATest_test_percentages, "meh"));
+    set var.denominator_ATest += var.nominator_ATest_meh;
+    declare local var.denominator_ATest_boom INTEGER;
+    declare local var.nominator_ATest_boom INTEGER;
+    set var.nominator_ATest_boom = std.atoi(table.lookup(ATest_test_percentages, "boom"));
+    set var.denominator_ATest += var.nominator_ATest_boom;
+    set var.denominator_ATest_meh = var.denominator_ATest;
+    if (randombool(var.nominator_ATest_meh, var.denominator_ATest_meh)) {
+      set req.http.GOVUK-ABTest-ATest = "meh";
     } else {
-      set req.http.GOVUK-ABTest-ATest = "B";
+      set req.http.GOVUK-ABTest-ATest = "boom";
     }
   }
 }

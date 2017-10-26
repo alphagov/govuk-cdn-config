@@ -18,7 +18,7 @@ describe "VCL template" do
       "default_ttl" => "5000",
     }
     environment = "test"
-    ab_tests = [{ "ATest" => [50, 50] }]
+    ab_tests = [{ "ATest" => %w(meh boom) }]
 
     template_path = File.join(cwd, "../vcl_templates/www.vcl.erb")
 		@expected_vcl ||= File.new(File.join(cwd, "fixtures/www.vcl.erb.out")).read
@@ -26,7 +26,7 @@ describe "VCL template" do
   end
 
   it "renders the AB tests partial" do
-    assert_includes(@rendered_vcl, %Q(set req.http.GOVUK-ABTest-ATest = \"A\";))
+    assert_includes(@rendered_vcl, %Q(set req.http.GOVUK-ABTest-ATest = \"meh\";))
   end
 
   it "renders the expiry statements" do
@@ -43,8 +43,8 @@ describe "AB Tests partial" do
   before do
     partial_path = File.join(cwd, "../vcl_templates/_ab_tests.erb")
     ab_tests = [
-      { "MyTest" => [50, 50] },
-      { "YourTest" => [40, 20, 20, 20]}
+      { "MyTest" => %w(foo bar) },
+      { "YourTest" => %w(variant1 variant2 variant3 variant4)}
     ]
 		@expected ||= File.new(File.join(cwd, "fixtures/_ab_tests.erb.out")).read
     @rendered ||= ERB.new(File.new(partial_path).read, nil, "-").result(binding)
