@@ -255,11 +255,11 @@ if (table.lookup(active_ab_tests, "ATest") == "true") {
     declare local var.denominator_ATest INTEGER;
     declare local var.denominator_ATest_meh INTEGER;
     declare local var.nominator_ATest_meh INTEGER;
-    set var.nominator_ATest_meh = std.atoi(table.lookup(ATest_test_percentages, "meh"));
+    set var.nominator_ATest_meh = std.atoi(table.lookup(ATest_percentages, "meh"));
     set var.denominator_ATest += var.nominator_ATest_meh;
     declare local var.denominator_ATest_boom INTEGER;
     declare local var.nominator_ATest_boom INTEGER;
-    set var.nominator_ATest_boom = std.atoi(table.lookup(ATest_test_percentages, "boom"));
+    set var.nominator_ATest_boom = std.atoi(table.lookup(ATest_percentages, "boom"));
     set var.denominator_ATest += var.nominator_ATest_boom;
     set var.denominator_ATest_meh = var.denominator_ATest;
     if (randombool(var.nominator_ATest_meh, var.denominator_ATest_meh)) {

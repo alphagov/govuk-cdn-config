@@ -44,11 +44,7 @@ end
 
 describe "AB Tests partial" do
   let(:expected) do
-		@expected ||= File.new(File.join(cwd, "fixtures/_ab_tests.erb.out")).read
-  end
-
-  let(:partial_path) do
-    File.join(cwd, "../vcl_templates/_ab_tests.erb")
+    @expected ||= File.new(File.join(cwd, "fixtures/_multivariate_tests.vcl.erb.out")).read
   end
 
   let!(:ab_tests) do
@@ -59,6 +55,7 @@ describe "AB Tests partial" do
   end
 
   subject do
+    partial_path = File.join(cwd, "../vcl_templates/_multivariate_tests.vcl.erb")
     @rendered ||= ERB.new(File.new(partial_path).read, nil, "-").result(binding)
   end
 

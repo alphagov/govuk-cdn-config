@@ -251,8 +251,8 @@ sub vcl_recv {
     }
   }
 
-  <% ab_tests_template_path = File.join(File.dirname(__FILE__), "vcl_templates/_ab_tests.erb") -%>
-  <%= ERB.new(File.new(ab_tests_template_path).read, nil, "-", "_erbout2").result(binding) %>
+  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
+  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;

@@ -17,11 +17,11 @@ if (table.lookup(active_ab_tests, "MyTest") == "true") {
     declare local var.denominator_MyTest INTEGER;
     declare local var.denominator_MyTest_foo INTEGER;
     declare local var.nominator_MyTest_foo INTEGER;
-    set var.nominator_MyTest_foo = std.atoi(table.lookup(MyTest_test_percentages, "foo"));
+    set var.nominator_MyTest_foo = std.atoi(table.lookup(MyTest_percentages, "foo"));
     set var.denominator_MyTest += var.nominator_MyTest_foo;
     declare local var.denominator_MyTest_bar INTEGER;
     declare local var.nominator_MyTest_bar INTEGER;
-    set var.nominator_MyTest_bar = std.atoi(table.lookup(MyTest_test_percentages, "bar"));
+    set var.nominator_MyTest_bar = std.atoi(table.lookup(MyTest_percentages, "bar"));
     set var.denominator_MyTest += var.nominator_MyTest_bar;
     set var.denominator_MyTest_foo = var.denominator_MyTest;
     if (randombool(var.nominator_MyTest_foo, var.denominator_MyTest_foo)) {
@@ -57,19 +57,19 @@ if (table.lookup(active_ab_tests, "YourTest") == "true") {
     declare local var.denominator_YourTest INTEGER;
     declare local var.denominator_YourTest_variant1 INTEGER;
     declare local var.nominator_YourTest_variant1 INTEGER;
-    set var.nominator_YourTest_variant1 = std.atoi(table.lookup(YourTest_test_percentages, "variant1"));
+    set var.nominator_YourTest_variant1 = std.atoi(table.lookup(YourTest_percentages, "variant1"));
     set var.denominator_YourTest += var.nominator_YourTest_variant1;
     declare local var.denominator_YourTest_variant2 INTEGER;
     declare local var.nominator_YourTest_variant2 INTEGER;
-    set var.nominator_YourTest_variant2 = std.atoi(table.lookup(YourTest_test_percentages, "variant2"));
+    set var.nominator_YourTest_variant2 = std.atoi(table.lookup(YourTest_percentages, "variant2"));
     set var.denominator_YourTest += var.nominator_YourTest_variant2;
     declare local var.denominator_YourTest_variant3 INTEGER;
     declare local var.nominator_YourTest_variant3 INTEGER;
-    set var.nominator_YourTest_variant3 = std.atoi(table.lookup(YourTest_test_percentages, "variant3"));
+    set var.nominator_YourTest_variant3 = std.atoi(table.lookup(YourTest_percentages, "variant3"));
     set var.denominator_YourTest += var.nominator_YourTest_variant3;
     declare local var.denominator_YourTest_variant4 INTEGER;
     declare local var.nominator_YourTest_variant4 INTEGER;
-    set var.nominator_YourTest_variant4 = std.atoi(table.lookup(YourTest_test_percentages, "variant4"));
+    set var.nominator_YourTest_variant4 = std.atoi(table.lookup(YourTest_percentages, "variant4"));
     set var.denominator_YourTest += var.nominator_YourTest_variant4;
     set var.denominator_YourTest_variant1 = var.denominator_YourTest;
     set var.denominator_YourTest_variant2 = var.denominator_YourTest_variant1;
