@@ -24,7 +24,7 @@ if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
 <% variants.each do |variant| -%>
     declare local var.denominator_<%= test %>_<%= variant %> INTEGER;
     declare local var.nominator_<%= test %>_<%= variant %> INTEGER;
-    set var.nominator_<%= test %>_<%= variant %> = std.atoi(table.lookup(<%= test %>_percentages, "<%= variant %>"));
+    set var.nominator_<%= test %>_<%= variant %> = std.atoi(table.lookup(<%= test.downcase %>_percentages, "<%= variant %>"));
     set var.denominator_<%= test %> += var.nominator_<%= test %>_<%= variant %>;
 <% end -%>
 <% variants.each_with_index do |variant, idx| -%>
