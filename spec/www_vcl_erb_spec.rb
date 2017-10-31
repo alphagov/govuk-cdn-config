@@ -18,7 +18,7 @@ RSpec.describe "VCL template" do
     }
   end
   let!(:environment) { "test" }
-  let!(:ab_tests) { [{ "ATest" => %w(meh boom) }] }
+  let!(:ab_tests) { [{ "ATest" => %w(meh boom) }, { "Example" => %w(A B) }] }
 
 	let(:expected) do
     @expected_vcl ||= File.new(File.join(cwd, "fixtures/www.vcl.erb.out")).read
@@ -39,6 +39,10 @@ RSpec.describe "VCL template" do
 
   it "renders the formatted vcl" do
     expect(subject).to eq(expected)
+  end
+
+  it "doesn't set a cookie for the 'Example' test" do
+    expect(subject).not_to include(%Q(add resp.http.Set-Cookie = "ABTest-<%= test %>=))
   end
 end
 
