@@ -1,30 +1,25 @@
 backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
-    .port = "<%= config.fetch('origin_port', 443) %>";
-    .host = "<%= config.fetch('origin_hostname') %>";
+    .port = "443";
+    .host = "foo";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
+    .share_key = "123";
 
     .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
+    .ssl_check_cert = always;
+    .min_tls_version = "1.2";
+    .ssl_cert_hostname = "foo";
+    .ssl_sni_hostname = "foo";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config.fetch('origin_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
-<% if config['rate_limit_token'] %>
-            "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
-<% end %>
+            "Host: foo"
+            "User-Agent: Fastly healthcheck (git version: )"
+
             "Connection: close";
         .threshold = 1;
         .window = 2;
@@ -38,27 +33,24 @@ backend F_origin {
 backend F_mirror1 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "<%= config.fetch('provider1_mirror_port', 443) %>";
-    .host = "<%= config.fetch('provider1_mirror_hostname') %>";
+    .port = "443";
+    .host = "foo";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
+    .share_key = "123";
 
     .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('provider1_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('provider1_mirror_hostname')) %>";
+    .ssl_check_cert = always;
+    .min_tls_version = "1.2";
+    .ssl_cert_hostname = "foo";
+    .ssl_sni_hostname = "foo";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: <%= config.fetch('provider1_mirror_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+            "Host: foo"
+            "User-Agent: Fastly healthcheck (git version: )"
             "Connection: close";
         .threshold = 1;
         .window = 2;
@@ -72,27 +64,24 @@ backend F_mirror1 {
 backend F_mirrorS3 {
     .connect_timeout = 1s;
     .dynamic = true;
-    .port = "<%= config.fetch('s3_mirror_port', 443) %>";
-    .host = "<%= config.fetch('s3_mirror_hostname') %>";
+    .port = "443";
+    .host = "bar";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
+    .share_key = "123";
 
     .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('s3_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_hostname')) %>";
+    .ssl_check_cert = always;
+    .min_tls_version = "1.2";
+    .ssl_cert_hostname = "bar";
+    .ssl_sni_hostname = "bar";
 
     .probe = {
         .request =
-            "HEAD <%= config.fetch('s3_mirror_probe_request', '/') %> HTTP/1.1"
-            "Host: <%= config.fetch('s3_mirror_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+            "HEAD / HTTP/1.1"
+            "Host: bar"
+            "User-Agent: Fastly healthcheck (git version: )"
             "Connection: close";
         .threshold = 1;
         .window = 2;
@@ -117,11 +106,7 @@ backend sick_force_grace {
 acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
-<% if environment == 'staging' %>
-  "31.210.245.70";    # Carrenza Staging
-<% elsif environment == 'production' %>
-  "31.210.245.86";    # Carrenza Production
-<% end %>
+
   "23.235.32.0"/20;   # Fastly cache node
   "43.249.72.0"/22;   # Fastly cache node
   "103.244.50.0"/24;  # Fastly cache node
@@ -178,14 +163,14 @@ sub vcl_recv {
     set req.http.Fastly-Failover = "1";
 
     set req.backend = F_mirror1;
-    set req.http.host = "<%= config.fetch('provider1_mirror_hostname') %>";
+    set req.http.host = "foo";
     set req.http.Fastly-Backend-Name = "mirror1";
   }
 
   # FIXME: Prefer a fallback director if we move to Varnish 3
   if (req.restarts > 2) {
     set req.backend = F_mirrorS3;
-    set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
+    set req.http.host = "bar";
     set req.http.Fastly-Backend-Name = "mirrorS3";
 
     # Requests to home page, rewrite to index.html
@@ -201,7 +186,7 @@ sub vcl_recv {
       set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
     }
     # Add bucket directory prefix to all the requests
-    set req.url = "/<%= config.fetch('s3_mirror_prefix') %>" req.url;
+    set req.url = "/foo_" req.url;
   }
 
   # Unspoofable original client address.
@@ -236,8 +221,73 @@ sub vcl_recv {
     }
   }
 
-  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
-  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
+    # Begin dynamic section
+if (table.lookup(active_ab_tests, "ATest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-ATest = "meh";
+  } else if (req.url ~ "[\?\&]ABTest-ATest=meh(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-ATest = "meh";
+  } else if (req.url ~ "[\?\&]ABTest-ATest=boom(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-ATest = "boom";
+  } else if (req.http.Cookie ~ "ABTest-ATest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-ATest = req.http.Cookie:ABTest-ATest;
+  } else {
+    declare local var.denominator_ATest INTEGER;
+    declare local var.denominator_ATest_meh INTEGER;
+    declare local var.nominator_ATest_meh INTEGER;
+    set var.nominator_ATest_meh = std.atoi(table.lookup(atest_percentages, "meh"));
+    set var.denominator_ATest += var.nominator_ATest_meh;
+    declare local var.denominator_ATest_boom INTEGER;
+    declare local var.nominator_ATest_boom INTEGER;
+    set var.nominator_ATest_boom = std.atoi(table.lookup(atest_percentages, "boom"));
+    set var.denominator_ATest += var.nominator_ATest_boom;
+    set var.denominator_ATest_meh = var.denominator_ATest;
+    if (randombool(var.nominator_ATest_meh, var.denominator_ATest_meh)) {
+      set req.http.GOVUK-ABTest-ATest = "meh";
+    } else {
+      set req.http.GOVUK-ABTest-ATest = "boom";
+    }
+  }
+}
+if (table.lookup(active_ab_tests, "Example") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-Example = "A";
+  } else if (req.url ~ "[\?\&]ABTest-Example=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-Example = "A";
+  } else if (req.url ~ "[\?\&]ABTest-Example=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-Example = "B";
+  } else if (req.http.Cookie ~ "ABTest-Example") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
+  } else {
+    declare local var.denominator_Example INTEGER;
+    declare local var.denominator_Example_A INTEGER;
+    declare local var.nominator_Example_A INTEGER;
+    set var.nominator_Example_A = std.atoi(table.lookup(example_percentages, "A"));
+    set var.denominator_Example += var.nominator_Example_A;
+    declare local var.denominator_Example_B INTEGER;
+    declare local var.nominator_Example_B INTEGER;
+    set var.nominator_Example_B = std.atoi(table.lookup(example_percentages, "B"));
+    set var.denominator_Example += var.nominator_Example_B;
+    set var.denominator_Example_A = var.denominator_Example;
+    if (randombool(var.nominator_Example_A, var.denominator_Example_A)) {
+      set req.http.GOVUK-ABTest-Example = "A";
+    } else {
+      set req.http.GOVUK-ABTest-Example = "B";
+    }
+  }
+}
+# End dynamic section
+
 
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
@@ -305,7 +355,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = <%= config.fetch('default_ttl') %>s;
+    set beresp.ttl = 5000s;
 
     # S3 does not set cache headers by default. Override TTL and add cache-control with 15 minutes
     if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
@@ -347,21 +397,13 @@ sub vcl_deliver {
   }
 
   # Begin dynamic section
-<% if ab_tests -%>
   declare local var.expiry TIME;
-<% ab_tests.each do |test_config| -%>
-<% test_config.each do |test, _| -%>
-<% unless test == "Example" -%>
-  if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-    if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
-      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; expires=" var.expiry "; path=/";
+  if (table.lookup(active_ab_tests, "ATest") == "true") {
+    if (req.http.Cookie !~ "ABTest-ATest" || req.url ~ "[\?\&]ABTest-ATest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ATest"))));
+      add resp.http.Set-Cookie = "ABTest-ATest=" req.http.GOVUK-ABTest-ATest "; expires=" var.expiry "; path=/";
     }
   }
-<% end # unless -%>
-<% end # test_config.each -%>
-<% end # ab_tests.each -%>
-<% end # if -%>
   # End dynamic section
 
   # Set the TLS version session cookie with the raw protocol version from
