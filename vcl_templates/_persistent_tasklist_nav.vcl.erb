@@ -1,0 +1,16 @@
+<%#
+Lack of indentation of ERB conditionals is intentional,
+the output of this template is formatted vcl code.
+-%>
+# Begin Tasklist-Nav section
+if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+  set req.http.GOVUK-Tasklist-Nav = "";
+} else if (req.url ~ "[\?\&]Tasklist-Nav=<%= variant %>(&|$)") {
+  # Some users, such as remote testers, will be given a URL with a query string
+  # to show a specific tasklist.
+  set req.http.GOVUK-Tasklist-Nav = "<%= variant %>";
+} else if (req.http.Cookie ~ "Tasklist-Nav") {
+  # Set the value of the header to whatever cookie was set
+  set req.http.GOVUK-Tasklist-Nav = req.http.Cookie:Tasklist-Nav;
+}
+# End Tasklist-Nav section

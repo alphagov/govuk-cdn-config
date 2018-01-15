@@ -216,6 +216,10 @@ sub vcl_recv {
   <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
   <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
+  <% tasklist_template_path = File.join(File.dirname(__FILE__), "vcl_templates/_persistent_tasklist_nav.vcl.erb") -%>
+  <%= ERB.new(File.new(tasklist_template_path).read, nil, "-", "_erbout3").result(binding) %>
+
+
   if (req.http.Cookie ~ "JS-Detection") {
     set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
   } else {
@@ -334,6 +338,13 @@ sub vcl_deliver {
 <% end # ab_tests.each -%>
 <% end # if -%>
   # End dynamic section
+
+  # Set Tasklist-Nav cookies
+  if (req.http.Cookie !~ "Tasklist-Nav" || req.http.Cookie:Tasklist-Nav !== req.http.GOVUK-Tasklist-Nav || req.url ~ "[\?\&]Tasklist-Nav" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+    set var.expiry = time.add(now, std.integer2time(86400));
+    add resp.http.Set-Cookie = "Tasklist-Nav=" req.http.GOVUK-Tasklist-Nav "; expires=" var.expiry "; path=/";
+  }
+  #
 
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
