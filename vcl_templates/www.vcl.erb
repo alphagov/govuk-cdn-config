@@ -335,6 +335,10 @@ sub vcl_deliver {
 <% end # if -%>
   # End dynamic section
 
+  # Experiment with preloading the font. Tijmen will remove this after the 28th
+  # of February (if it's still there after that time, please remind him).
+  add resp.http.Link = "<//assets.publishing.service.gov.uk/static/fonts-5ff8c53913434afd0072a480d7cfca67cace4c8d03f6ef96b78a4455728ce745.css>; rel=preload; as=style; nopush";
+
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
   # which can occur when trying to access over HTTP (http>https upgrading).
