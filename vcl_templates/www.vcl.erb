@@ -335,7 +335,7 @@ sub vcl_deliver {
 <% end # if -%>
   # End dynamic section
 
-  add resp.http.Link = "<https://assets-origin.staging.publishing.service.gov.uk>; rel=preconnect";
+  add resp.http.Link = "<//assets-origin.staging.publishing.service.gov.uk>; rel=preconnect";
 
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
