@@ -207,6 +207,11 @@ sub vcl_recv {
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
+  # Set TLS version request header for requests to the Licensify application
+  if (req.url ~ "^/apply-for-a-licence/.*") {
+    set req.http.TLSversion = tls.client.protocol;
+  }
+
 #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
