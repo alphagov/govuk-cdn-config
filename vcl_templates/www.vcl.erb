@@ -207,6 +207,12 @@ sub vcl_recv {
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
+  # Set a TLSversion request header for requests going to the Licensify application
+  # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
+  if (req.url ~ "^/apply-for-a-licence/.*") {
+    set req.http.TLSversion = tls.client.protocol;
+  }
+
 #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
