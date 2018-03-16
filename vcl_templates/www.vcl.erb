@@ -214,7 +214,7 @@ sub vcl_recv {
   }
 
   # CloudPiercer verification request
-  if (req.url == "/5e7e068e537feab33c14a0dc05e0e95a.html") {
+  if (req.url == "/f17a9a7f0ab797c6ef2081db011e27d1.html") {
     error 900 "Fastly Internal";
   }
 
@@ -380,7 +380,7 @@ sub vcl_error {
   # CloudPiercer verification request
   if (obj.status == 900) {
     set obj.http.Content-Type = "text/html";
-    synthetic {"cloudpiercer-verification=bf2333746b21b1be2670dbed9d112f28"};
+    synthetic {"cloudpiercer-verification=1520bb59db703f103c972edd87d0bb31"};
     return(deliver);
   }
 
