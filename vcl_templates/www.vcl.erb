@@ -213,6 +213,11 @@ sub vcl_recv {
     set req.http.TLSversion = tls.client.protocol;
   }
 
+  # CloudPiercer verification request
+  if (req.url == "/5e7e068e537feab33c14a0dc05e0e95a.html") {
+    error 900 "Fastly Internal";
+  }
+
 #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
@@ -353,6 +358,11 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "JS-Detection=" req.http.GOVUK-JS-Detection "; expires=" now + 5w "; path=/";
   }
 
+  # CloudPiercer verification request
+  if (resp.status == 900 ) {
+     set resp.status = 200;
+     set resp.response = "OK";
+  }
 
 #FASTLY deliver
 }
@@ -365,6 +375,13 @@ sub vcl_error {
     set obj.http.Fastly-Backend-Name = "force_ssl";
     synthetic {""};
     return (deliver);
+  }
+
+  # CloudPiercer verification request
+  if (obj.status == 900) {
+    set obj.http.Content-Type = "text/html";
+    synthetic {"cloudpiercer-verification=bf2333746b21b1be2670dbed9d112f28"};
+    return(deliver);
   }
 
   # Assume we've hit vcl_error() because the backend is unavailable
