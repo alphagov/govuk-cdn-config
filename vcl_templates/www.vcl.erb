@@ -138,6 +138,14 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
+<% if environment == 'staging' %>
+acl office_ip_addresses {
+  <% config.fetch('office_ip_addresses', []).each do |ip_address| %>
+  "<%= ip_address %>";
+  <% end %>
+}
+<% end %>
+
 sub vcl_recv {
 
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
@@ -147,6 +155,13 @@ sub vcl_recv {
     }
     error 403 "Forbidden";
   }
+
+  <% if environment == 'staging' %>
+  # Only allow connections from the office IP addresses in staging
+  if (! (client.ip ~ office_ip_addresses)) {
+    error 403 "Forbidden";
+  }
+  <% end %>
 
   # Check whether the remote IP address is in the list of blocked IPs
   if (table.lookup(ip_address_blacklist, client.ip)) {
