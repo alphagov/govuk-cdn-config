@@ -138,7 +138,7 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
-<% if environment == 'staging' %>
+<% if environment == 'staging' || environment == 'integration' %>
 acl office_ip_addresses {
   <% config.fetch('office_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
@@ -156,8 +156,8 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
-  <% if environment == 'staging' %>
-  # Only allow connections from the office IP addresses in staging
+  <% if environment == 'staging' || environment == 'integration' %>
+  # Only allow connections from the office IP addresses in staging and integration
   if (! (client.ip ~ office_ip_addresses)) {
     error 403 "Forbidden";
   }
