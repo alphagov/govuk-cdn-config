@@ -20,7 +20,7 @@ backend F_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= environment == 'staging' ? 'assets.publishing.service.gov.uk' : config.fetch('origin_hostname') %>"
+            "Host: <%= environment == 'staging' || environment == 'integration' ? 'assets.publishing.service.gov.uk' : config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -164,8 +164,8 @@ sub vcl_recv {
   # Default backend.
   set req.backend = F_origin;
   set req.http.Fastly-Backend-Name = "origin";
-<% if environment == 'staging' %>
-  # Force host header for staging.
+<% if environment == 'staging' || environment == 'integration' %>
+  # Force host header for staging and integration.
   set req.http.host = "assets.publishing.service.gov.uk";
 <% end %>
 
