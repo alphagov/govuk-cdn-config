@@ -139,8 +139,8 @@ acl purge_ip_whitelist {
 }
 
 <% if environment == 'staging' || environment == 'integration' %>
-acl office_ip_addresses {
-  <% config.fetch('office_ip_addresses', []).each do |ip_address| %>
+acl allowed_ip_addresses {
+  <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
   <% end %>
 }
@@ -157,8 +157,8 @@ sub vcl_recv {
   }
 
   <% if environment == 'staging' || environment == 'integration' %>
-  # Only allow connections from the office IP addresses in staging and integration
-  if (! (client.ip ~ office_ip_addresses)) {
+  # Only allow connections from allowed IP addresses in staging and integration
+  if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }
   <% end %>
