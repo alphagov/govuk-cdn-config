@@ -26,7 +26,7 @@ backend F_origin {
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
 <% end %>
 <% if config['basic_authentication'] %>
-            "Authorization: Basic <%= config['base_authentication'] %>"
+            "Authorization: Basic <%= config['basic_authentication'] %>"
 <% end %>
             "Connection: close";
         .threshold = 1;
