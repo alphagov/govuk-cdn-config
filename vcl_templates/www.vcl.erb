@@ -22,12 +22,12 @@ backend F_origin {
             "HEAD / HTTP/1.1"
             "Host: <%= config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
-<% if config['rate_limit_token'] %>
+<% if config['rate_limit_token'] -%>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
-<% end %>
-<% if config['basic_authentication'] %>
+<% end -%>
+<% if config['basic_authentication'] -%>
             "Authorization: Basic <%= config['basic_authentication'] %>"
-<% end %>
+<% end -%>
             "Connection: close";
         .threshold = 1;
         .window = 2;
