@@ -141,7 +141,7 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
-<% if environment == 'staging' || environment == 'integration' %>
+<% if environment == 'staging' %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
@@ -159,8 +159,8 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
-  <% if environment == 'staging' || environment == 'integration' %>
-  # Only allow connections from allowed IP addresses in staging and integration
+  <% if environment == 'staging' %>
+  # Only allow connections from allowed IP addresses in staging
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }
@@ -170,6 +170,13 @@ sub vcl_recv {
   if (table.lookup(ip_address_blacklist, client.ip)) {
     error 403 "Forbidden";
   }
+
+  <% if config['basic_authentication'] %>
+  # Check whether the basic auth credentials are correct in integration
+  if (req.http.Authorization != "Basic <%= config['basic_authentication'] %>") {
+    error 401 "Unauthorized";
+  }
+  <% end %>
 
   # Force SSL.
   if (!req.http.Fastly-SSL) {
@@ -390,6 +397,14 @@ sub vcl_error {
     synthetic {""};
     return (deliver);
   }
+
+  <% if config['basic_authentication'] %>
+  if (obj.status == 401) {
+    set obj.http.WWW-Authenticate = "Basic realm=Enter the GOV.UK username/password (not your personal username/password)";
+    synthetic {""};
+    return (deliver);
+  }
+  <% end %>
 
   # Assume we've hit vcl_error() because the backend is unavailable
   # for the first two retries. By restarting, vcl_recv() will try
