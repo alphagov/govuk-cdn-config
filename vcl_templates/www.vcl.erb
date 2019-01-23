@@ -400,7 +400,7 @@ sub vcl_error {
 
   <% if config['basic_authentication'] %>
   if (obj.status == 401) {
-    set obj.http.WWW-Authenticate = "Basic realm=Enter the GOV.UK username/password (not your personal username/password)";
+    set obj.http.WWW-Authenticate = "Basic";
     synthetic {""};
     return (deliver);
   }
