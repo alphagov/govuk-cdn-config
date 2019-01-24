@@ -7,4 +7,4 @@ YAML files, using Fastly's [API](https://docs.fastly.com/api/).
 
 ## Licence
 
-[MIT License](LICENCE)
+[MIT License](LICENSE.MD)
