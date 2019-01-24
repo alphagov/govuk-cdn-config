@@ -183,6 +183,12 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
+  # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
+  # This is to avoid a Denial of Service "attack" from certain government machines.
+  if (req.url ~ "(?i)^/autodiscover/autodiscover.xml") {
+    error 404 "Not Found";
+  }
+
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
