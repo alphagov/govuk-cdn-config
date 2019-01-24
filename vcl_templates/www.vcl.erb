@@ -262,6 +262,10 @@ sub vcl_recv {
 
   }
 
+  if (req.url ~ "(?i)^/autodiscover/autodiscover.xml") {
+    error 404 "Not Found";
+  }
+
   return(lookup);
 }
 
