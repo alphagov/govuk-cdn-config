@@ -19,7 +19,6 @@ backend F_origin {
             "HEAD / HTTP/1.1"
             "Host: foo"
             "User-Agent: Fastly healthcheck (git version: )"
-
             "Connection: close";
         .threshold = 1;
         .window = 2;
@@ -123,6 +122,8 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
+
+
 sub vcl_recv {
 
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
@@ -133,14 +134,24 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
+  
+
   # Check whether the remote IP address is in the list of blocked IPs
   if (table.lookup(ip_address_blacklist, client.ip)) {
     error 403 "Forbidden";
   }
 
+  
+
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
+  }
+
+  # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
+  # This is to avoid a Denial of Service "attack" from certain government machines.
+  if (req.url ~ "(?i)^/autodiscover/autodiscover.xml") {
+    error 404 "Not Found";
   }
 
   # Serve from stale for 24 hours if origin is sick
@@ -192,33 +203,17 @@ sub vcl_recv {
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
+  # Set a TLSversion request header for requests going to the Licensify application
+  # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
+  if (req.url ~ "^/apply-for-a-licence/.*") {
+    set req.http.TLSversion = tls.client.protocol;
+  }
+
+
 #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
-  }
-
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-EducationNavigation = "A";
-  # Some users, such as remote testers, will be given a URL with a query string
-  # to place them into a specific bucket.
-  } else if (req.url ~ "[\?\&]ABTest-EducationNavigation=A(&|$)") {
-    set req.http.GOVUK-ABTest-EducationNavigation = "A";
-  } else if (req.url ~ "[\?\&]ABTest-EducationNavigation=B(&|$)") {
-    set req.http.GOVUK-ABTest-EducationNavigation = "B";
-  } else if (req.url ~ "^/education(\/|\?|$)" || req.url ~ "^/childcare-parenting(\/|\?|$)") {
-    # If a user goes to a new navigation page, add them automatically to the B
-    # group, so they can see a consistent navigation throughout.
-    set req.http.GOVUK-ABTest-EducationNavigation = "B";
-  } else if (req.http.Cookie ~ "ABTest-EducationNavigation") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-EducationNavigation = req.http.Cookie:ABTest-EducationNavigation;
-  } else {
-    if (randombool(5,10)) {
-      set req.http.GOVUK-ABTest-EducationNavigation = "B";
-    } else {
-      set req.http.GOVUK-ABTest-EducationNavigation = "A";
-    }
   }
 
     # Begin dynamic section
@@ -389,12 +384,6 @@ sub vcl_deliver {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
   }
-  if (req.http.Cookie !~ "ABTest-EducationNavigation"
-    || req.url ~ "[\?\&]ABTest-EducationNavigation="
-    || req.url ~ "^/education(\/|\?|$)"
-    || req.url ~ "^/childcare-parenting(\/|\?|$)") {
-    add resp.http.Set-Cookie = "ABTest-EducationNavigation=" req.http.GOVUK-ABTest-EducationNavigation "; expires=" now + 365d "; path=/";
-  }
 
   # Begin dynamic section
   declare local var.expiry TIME;
@@ -431,6 +420,8 @@ sub vcl_error {
     synthetic {""};
     return (deliver);
   }
+
+  
 
   # Assume we've hit vcl_error() because the backend is unavailable
   # for the first two retries. By restarting, vcl_recv() will try
