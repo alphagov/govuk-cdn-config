@@ -26,3 +26,7 @@ frontend:
     service_id: asj298asgy2j9asdf
   preview:
     service_id: 9uask39agyhskasoj
+
+test:
+  production:
+    service_id: 123321abc
