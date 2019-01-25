@@ -7,4 +7,6 @@ gem "fastly", "~> 1.4"
 
 group :test do
   gem "rspec"
+  gem "webmock"
+  gem "climate_control"
 end
