@@ -1,8 +1,10 @@
 # GOV.UK CDN config
 
 Configuration for GOV.UK's content delivery network (CDN).
-Deployed using [fastly-configure](https://github.com/alphagov/fastly-configure) via [jenkins](https://github.com/alphagov/fastly-configure/blob/master/jenkins.sh)
 
-## Tests
+Configures the [Fastly CDN](https://fastly.com) from version-controllable VCL and
+YAML files, using Fastly's [API](https://docs.fastly.com/api/).
 
-There are some specs to validate the output for dynamic sections of VCL templating.
+## Licence
+
+[MIT License](LICENSE.MD)
