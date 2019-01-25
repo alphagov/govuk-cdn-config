@@ -1,3 +1,6 @@
+require 'yaml'
+require 'fastly'
+
 class DeployCDN
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
