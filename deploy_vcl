@@ -6,6 +6,6 @@ require 'fastly'
 require 'yaml'
 
 require_relative './lib/render_template'
-require_relative './lib/deploy_vcl'
+require_relative './lib/deploy_cdn'
 
-deploy_the_vcl!
+DeployCDN.new.deploy_the_vcl!
