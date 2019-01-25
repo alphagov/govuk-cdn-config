@@ -1,6 +1,40 @@
 class DeployCDN
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
+  def deploy_the_vcl!
+    configuration, environment, config = get_config(ARGV)
+
+    ['FASTLY_USER', 'FASTLY_PASS'].each do |envvar|
+      if ENV[envvar].nil?
+        raise "#{envvar} is not set in the environment"
+      end
+    end
+
+    username = ENV['FASTLY_USER']
+    password = ENV['FASTLY_PASS']
+
+    @f = Fastly.new({ :user => username, :password => password })
+    config['git_version'] = get_git_version
+
+    service = @f.get_service(config['service_id'])
+    version = get_dev_version(service)
+    puts "Current version: #{version.number}"
+    puts "Configuration: #{configuration}"
+    puts "Environment: #{environment}"
+
+    vcl = RenderTemplate.render_template(configuration, environment, config, version)
+    delete_ui_objects(service.id, version.number)
+    upload_vcl(version, vcl)
+    diff_vcl(service, version)
+
+    modify_settings(version, config['default_ttl'])
+
+    validate_config(version)
+    version.activate!
+  end
+
+private
+
   def get_config(args)
     raise "Usage: #{$0} <configuration> <environment>" unless args.size == 2
 
@@ -86,37 +120,5 @@ class DeployCDN
     unless valid_hash.fetch('status') == "ok"
       raise "ERROR: Invalid configuration:\n" + valid_hash.fetch('msg')
     end
-  end
-
-  def deploy_the_vcl!
-    configuration, environment, config = get_config(ARGV)
-
-    ['FASTLY_USER', 'FASTLY_PASS'].each do |envvar|
-      if ENV[envvar].nil?
-        raise "#{envvar} is not set in the environment"
-      end
-    end
-
-    username = ENV['FASTLY_USER']
-    password = ENV['FASTLY_PASS']
-
-    @f = Fastly.new({ :user => username, :password => password })
-    config['git_version'] = get_git_version
-
-    service = @f.get_service(config['service_id'])
-    version = get_dev_version(service)
-    puts "Current version: #{version.number}"
-    puts "Configuration: #{configuration}"
-    puts "Environment: #{environment}"
-
-    vcl = RenderTemplate.render_template(configuration, environment, config, version)
-    delete_ui_objects(service.id, version.number)
-    upload_vcl(version, vcl)
-    diff_vcl(service, version)
-
-    modify_settings(version, config['default_ttl'])
-
-    validate_config(version)
-    version.activate!
   end
 end
