@@ -9,4 +9,5 @@ group :test do
   gem "rspec"
   gem "webmock"
   gem "climate_control"
+  gem "simplecov"
 end
