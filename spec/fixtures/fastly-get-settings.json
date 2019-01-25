@@ -1,0 +1,8 @@
+{
+  "general.default_host": "",
+  "general.default_ttl": 3600,
+  "general.stale_if_error": false,
+  "general.stale_if_error_ttl": 43200,
+  "service_id": "123321abc",
+  "version": 3
+}

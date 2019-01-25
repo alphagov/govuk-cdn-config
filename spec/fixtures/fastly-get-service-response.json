@@ -1,0 +1,42 @@
+{
+  "comment": "",
+  "created_at": "2016-04-27T19:40:49+00:00",
+  "customer_id": "x4xCwxxJxGCx123Rx5xTx",
+  "deleted_at": null,
+  "id": "123321abc",
+  "name": "test-service",
+  "publish_key": "3c18bd0f5ada8f0cf54724d86c514a8eac4c9b75",
+  "updated_at": "2016-04-27T19:40:49+00:00",
+  "versions": [
+    {
+      "active": null,
+      "backend": 1,
+      "comment": "",
+      "created_at": "2016-04-27T19:40:49",
+      "deleted_at": null,
+      "deployed": null,
+      "locked": "1",
+      "number": "1",
+      "service": "123321abc",
+      "service_id": "123321abc",
+      "staging": null,
+      "testing": null,
+      "updated_at": "2016-05-09T16:27:00"
+    },
+    {
+      "active": true,
+      "backend": 1,
+      "comment": "",
+      "created_at": "2016-04-27T19:40:49",
+      "deleted_at": null,
+      "deployed": null,
+      "locked": "1",
+      "number": "2",
+      "service": "123321abc",
+      "service_id": "123321abc",
+      "staging": null,
+      "testing": null,
+      "updated_at": "2016-05-09T16:27:00"
+    }
+  ]
+}
