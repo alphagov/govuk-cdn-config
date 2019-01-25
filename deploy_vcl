@@ -6,4 +6,4 @@ require 'erb'
 require_relative './lib/render_template'
 require_relative './lib/deploy_cdn'
 
-DeployCDN.new.deploy_the_vcl!
+DeployCDN.new.deploy_the_vcl!(ARGV)

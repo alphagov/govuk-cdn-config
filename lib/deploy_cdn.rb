@@ -4,8 +4,8 @@ require 'fastly'
 class DeployCDN
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
-  def deploy_the_vcl!
-    configuration, environment, config = get_config(ARGV)
+  def deploy_the_vcl!(argv)
+    configuration, environment, config = get_config(argv)
 
     ['FASTLY_USER', 'FASTLY_PASS'].each do |envvar|
       if ENV[envvar].nil?
