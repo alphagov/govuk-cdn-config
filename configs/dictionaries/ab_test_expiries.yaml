@@ -1,0 +1,10 @@
+# Expiry values are in seconds
+# 1 day = 86400
+# Add a new test in the following way
+# eg
+# ---
+# ExampleTest: 86400
+---
+Example: 86400
+RelatedLinksAATest: 2419200  # 4 weeks
+ViewDrivingLicence: 259200
