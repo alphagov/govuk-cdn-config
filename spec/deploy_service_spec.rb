@@ -1,5 +1,5 @@
-describe DeployCDN do
-  describe '#deploy_the_vcl' do
+describe DeployService do
+  describe '#deploy' do
     it 'deploys the VCL' do
       # This call is made by the Fastly library when you call `Fastly.new`
       stub_request(:post, "https://api.fastly.com/login").to_return(body: "{}")
@@ -57,10 +57,10 @@ describe DeployCDN do
       stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")
 
-      deployer = DeployCDN.new
+      deployer = DeployService.new
 
       ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        deployer.deploy_the_vcl!(%w[test production])
+        deployer.deploy!(%w[test production])
       end
     end
   end

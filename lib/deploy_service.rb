@@ -1,7 +1,7 @@
-class DeployCDN
+class DeployService
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
-  def deploy_the_vcl!(argv)
+  def deploy!(argv)
     configuration, environment, config = get_config(argv)
 
     %w[FASTLY_USER FASTLY_PASS].each do |envvar|

@@ -1,5 +1,5 @@
 describe DeployBouncer do
-  describe '#deploy_the_vcl' do
+  describe '#deploy' do
     it 'deploys the VCL for bouncer' do
       # This call is made by the Fastly library when you call `Fastly.new`
       stub_request(:post, "https://api.fastly.com/login").to_return(body: "{}")
