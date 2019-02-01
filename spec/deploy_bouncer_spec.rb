@@ -59,6 +59,10 @@ describe DeployBouncer do
       stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/generated_vcl").
         to_return(body: "{}")
 
+      # Check that the new config is good
+      stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/validate").
+        to_return(body: JSON.dump(status: "ok"))
+
       # Activate the version we've just created
       stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")

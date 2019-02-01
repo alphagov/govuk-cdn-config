@@ -68,8 +68,7 @@ class DeployBouncer
       if (diff.to_s == '') && extra_configured.empty? && extra_existing.empty?
         debug_output("No changes detected; not activating dev version")
       else
-        puts "Activating version #{version.number}".blue
-        version.activate!
+        change.activate!
       end
     end
   end

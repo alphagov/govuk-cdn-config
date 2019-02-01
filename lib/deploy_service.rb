@@ -22,8 +22,7 @@ class DeployService
 
     modify_settings(version, config['default_ttl'])
 
-    validate_config(version)
-    version.activate!
+    change.activate!
   end
 
 private
@@ -50,11 +49,5 @@ private
       "general.default_ttl"  => ttl,
     )
     settings.save!
-  end
-
-  def validate_config(version)
-    unless version.validate
-      raise "ERROR: Invalid configuration:\n" + valid_hash.fetch('msg')
-    end
   end
 end

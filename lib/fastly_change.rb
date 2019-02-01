@@ -65,4 +65,14 @@ class FastlyChange
       end
     end
   end
+
+  def activate!
+    is_valid_vcl, message = development_version.validate
+
+    unless is_valid_vcl
+      raise "ERROR: Invalid configuration:\n #{message}"
+    end
+
+    puts "Activating version #{development_version.number}".blue
+  end
 end
