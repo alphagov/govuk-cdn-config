@@ -72,7 +72,7 @@ class DeployBouncer
       end
 
       if extra_configured.any?
-        add_domains(user, password, service.id, version.number, extra_configured)
+        add_domains(service.id, version.number, extra_configured)
       end
 
       vcl = render_vcl(service.id, app_domain)
@@ -154,12 +154,11 @@ class DeployBouncer
     end
   end
 
-  def add_domains(user, password, service_id, version, domains)
-    adder = Fastly.new(user: user, password: password)
+  def add_domains(service_id, version, domains)
     domains.each do |domain|
       begin
         puts "Adding #{domain} to the configuration".green
-        adder.create_domain(service_id: service_id, version: version, name: domain, comment: '')
+        @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: '')
       rescue StandardError
         puts "Cannot add #{domain}, is it owned by another customer?".red
       end
