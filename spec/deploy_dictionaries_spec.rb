@@ -27,7 +27,7 @@ describe DeployDictionaries do
         to_return(body: "{}")
 
       ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        DeployDictionaries.new.deploy!(['test', 'production'])
+        DeployDictionaries.new.deploy!(%w[test production])
       end
     end
   end

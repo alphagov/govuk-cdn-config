@@ -22,13 +22,13 @@ describe DeployBouncer do
 
       stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/domain").
         with(
-          body: {"comment"=>"", "name"=>"www.example.com", "service_id"=>"123321abc", "version"=>"3"}
+          body: { "comment" => "", "name" => "www.example.com", "service_id" => "123321abc", "version" => "3" }
         ).
         to_return(body: "{}")
 
       stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/domain").
         with(
-          body: {"comment"=>"", "name"=>"www2.example.com", "service_id"=>"123321abc", "version"=>"3"}
+          body: { "comment" => "", "name" => "www2.example.com", "service_id" => "123321abc", "version" => "3" }
         ).
         to_return(body: "{}")
 

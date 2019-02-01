@@ -9,15 +9,15 @@ class DeployDictionaries
     username = ENV['FASTLY_USER']
     password = ENV['FASTLY_PASS']
 
-    if username.nil? or password.nil?
+    if username.nil? || password.nil?
       puts "Fastly credentials are not set. Exiting."
       exit 1
     end
 
-    @fastly = Fastly.new({
-      :user => username,
-      :password => password,
-    })
+    @fastly = Fastly.new(
+      user: username,
+      password: password,
+    )
 
     service = @fastly.get_service(config['service_id'])
 
@@ -25,7 +25,7 @@ class DeployDictionaries
     puts "Using version #{version.number} of #{service.name}"
 
     expected_dictionaries = Dir.glob("configs/dictionaries/*.yaml").map { |filename| File.basename(filename, '.yaml') }
-    existing_dictionaries = version.dictionaries.map { |dictionary| dictionary.name }
+    existing_dictionaries = version.dictionaries.map(&:name)
 
     # Clean up dictionaries which are no longer used
     dictionaries_to_remove = existing_dictionaries - expected_dictionaries
@@ -41,7 +41,7 @@ class DeployDictionaries
 
     dictionaries_to_add.each do |name|
       puts "Creating dictionary: #{name}"
-      @fastly.create_dictionary(:service_id => service.id, :version => version.number, :name => name)
+      @fastly.create_dictionary(service_id: service.id, version: version.number, name: name)
     end
 
     version.dictionaries.each do |dictionary|
@@ -51,13 +51,13 @@ class DeployDictionaries
       items_to_add = expected_items.reject { |key, _| existing_items.map(&:item_key).include?(key) }
       items_to_add.each do |key, value|
         puts "Creating dictionary item: #{key} => #{value} in #{dictionary.name}"
-        @fastly.create_dictionary_item(:service_id => service.id, :dictionary_id => dictionary.id, :item_key => key, :item_value => value)
+        @fastly.create_dictionary_item(service_id: service.id, dictionary_id: dictionary.id, item_key: key, item_value: value)
       end
 
       items_to_update = existing_items.select { |item| expected_items.include?(item.item_key) }
       items_to_update.each do |item|
         new_value = expected_items[item.item_key]
-        if (item.item_value != new_value.to_s)
+        if item.item_value != new_value.to_s
           puts "Updating dictionary item #{item.item_key} from '#{item.item_value}' to '#{new_value}' in #{dictionary.name}"
           item.item_value = new_value
           @fastly.update_dictionary_item(item)
@@ -88,7 +88,7 @@ class DeployDictionaries
 
     raise "Unknown vhost/environment combination" unless config_hash
 
-    return vhost, environment, config_hash
+    [vhost, environment, config_hash]
   end
 
   def get_dev_version(service)

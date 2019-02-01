@@ -20,7 +20,7 @@ RSpec.describe "VCL template" do
   let!(:environment) { "test" }
   let!(:ab_tests) { [{ "ATest" => %w(meh boom) }, { "Example" => %w(A B) }] }
 
-	let(:expected) do
+  let(:expected) do
     @expected_vcl ||= File.new(File.join(cwd, "fixtures/www.vcl.erb.out")).read
   end
   subject do
@@ -29,11 +29,11 @@ RSpec.describe "VCL template" do
   end
 
   it "renders the AB tests partial" do
-    expect(subject).to include(%Q(set req.http.GOVUK-ABTest-ATest = \"meh\";))
+    expect(subject).to include(%(set req.http.GOVUK-ABTest-ATest = \"meh\";))
   end
 
   it "renders the expiry statements" do
-    statement = %Q(set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ATest"))));)
+    statement = %(set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ATest"))));)
     expect(subject).to include(statement)
   end
 
@@ -42,7 +42,7 @@ RSpec.describe "VCL template" do
   end
 
   it "doesn't set a cookie for the 'Example' test" do
-    expect(subject).not_to include(%Q(add resp.http.Set-Cookie = "ABTest-<%= test %>=))
+    expect(subject).not_to include(%(add resp.http.Set-Cookie = "ABTest-<%= test %>=))
   end
 end
 
@@ -54,7 +54,7 @@ describe "AB Tests partial" do
   let!(:ab_tests) do
     [
       { "MyTest" => %w(foo bar) },
-      { "YourTest" => %w(variant1 variant2 variant3 variant4)}
+      { "YourTest" => %w(variant1 variant2 variant3 variant4) }
     ]
   end
 

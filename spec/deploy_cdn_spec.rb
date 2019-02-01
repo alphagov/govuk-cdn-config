@@ -62,7 +62,7 @@ describe DeployCDN do
       deployer = DeployCDN.new
 
       ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        deployer.deploy_the_vcl!(['test', 'production'])
+        deployer.deploy_the_vcl!(%w[test production])
       end
     end
   end
