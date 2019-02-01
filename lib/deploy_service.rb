@@ -5,19 +5,23 @@ class DeployService
     service_name = ENV.fetch("SERVICE_NAME")
     environment = ENV.fetch("ENVIRONMENT")
 
+    change = FastlyChange.new(service_id: config["service_id"])
+
     @fastly = FastlyClient.client
+    service = change.service
+
+    version = change.development_version
+
     config['git_version'] = get_git_version
 
-    service = @fastly.get_service(config['service_id'])
-    version = get_dev_version(service)
     puts "Current version: #{version.number}"
     puts "Configuration: #{service_name}"
     puts "Environment: #{environment}"
 
     vcl = RenderTemplate.render_template(service_name, environment, config)
     delete_ui_objects(service.id, version.number)
-    upload_vcl(version, vcl)
-    diff_vcl(service, version)
+    change.upload_vcl!(vcl)
+    change.output_vcl_diff
 
     modify_settings(version, config['default_ttl'])
 
@@ -42,14 +46,6 @@ private
     ref
   end
 
-  def get_dev_version(service)
-    # Sometimes the latest version isn't the development version.
-    version = service.version
-    version = version.clone if version.active?
-
-    version
-  end
-
   def delete_ui_objects(service_id, version_number)
     # Delete objects created by the UI. We want VCL to be the source of truth.
     # Most of these don't have real objects in the Fastly API gem.
@@ -71,36 +67,6 @@ private
       "general.default_ttl"  => ttl,
     )
     settings.save!
-  end
-
-  def upload_vcl(version, contents)
-    vcl_name = 'main'
-
-    begin
-      version.vcl(vcl_name) && version.delete_vcl(vcl_name)
-    rescue Fastly::Error => e
-      puts e.inspect
-    end
-
-    vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
-  end
-
-  def diff_vcl(service, version_new)
-    version_current = service.versions.find(&:active?)
-
-    if version_current.nil?
-      raise 'There are no active versions of this configuration'
-    end
-
-    diff = Diffy::Diff.new(
-      version_current.generated_vcl.content,
-      version_new.generated_vcl.content,
-      context: 3
-    )
-
-    puts "Diff versions: #{version_current.number} -> #{version_new.number}"
-    puts diff.to_s(:color)
   end
 
   def validate_config(version)

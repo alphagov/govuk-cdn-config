@@ -18,10 +18,12 @@ class DeployBouncer
       dry_run = false
     end
 
-    @fastly = FastlyClient.client
-    service = @fastly.get_service(service_id)
+    change = FastlyChange.new(service_id: service_id)
 
-    version = get_dev_version(service)
+    @fastly = FastlyClient.client
+    service = change.service
+
+    version = change.development_version
 
     transitioned_hostnames = TransitionDomains.new.all
 
@@ -60,8 +62,8 @@ class DeployBouncer
       vcl = RenderTemplate.render_template("bouncer", nil, config)
 
       delete_ui_objects(service.id, version.number)
-      upload_vcl(version, vcl)
-      diff = diff_vcl(service, version)
+      change.upload_vcl!(vcl)
+      diff = change.output_vcl_diff
 
       if (diff.to_s == '') && extra_configured.empty? && extra_existing.empty?
         debug_output("No changes detected; not activating dev version")
@@ -83,14 +85,6 @@ class DeployBouncer
     if ENV["FASTLY_DEBUG"] == "TRUE"
       puts output.blue
     end
-  end
-
-  def get_dev_version(service)
-    # Sometimes the latest version isn't the development version.
-    version = service.version
-    version = version.clone if coerce_boolean(version.active)
-
-    version
   end
 
   def get_existing_domains(user, password, service_id, version)
@@ -123,19 +117,6 @@ class DeployBouncer
     end
   end
 
-  def upload_vcl(version, contents)
-    vcl_name = 'main'
-
-    begin
-      version.vcl(vcl_name) && version.delete_vcl(vcl_name)
-    rescue Fastly::Error => e
-      puts e.inspect
-    end
-
-    vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
-  end
-
   def delete_ui_objects(service_id, version_number)
     # Delete objects created by the UI. We want VCL to be the source of truth.
     # Most of these don't have real objects in the Fastly API gem.
@@ -148,20 +129,6 @@ class DeployBouncer
         raise 'Delete failed' unless resp
       end
     end
-  end
-
-  def diff_vcl(service, version_new)
-    version_current = service.versions.find { |version| coerce_boolean(version.active) }
-    diff = Diffy::Diff.new(
-      version_current.generated_vcl.content,
-      version_new.generated_vcl.content,
-      context: 3
-    )
-
-    puts "Diff versions: #{version_current.number} -> #{version_new.number}"
-    puts diff.to_s(:color)
-
-    diff
   end
 
   class TransitionDomains
