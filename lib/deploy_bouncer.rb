@@ -199,7 +199,8 @@ class DeployBouncer
 
     begin
       version.vcl(vcl_name) && version.delete_vcl(vcl_name)
-    rescue Fastly::Error
+    rescue Fastly::Error => e
+      puts e.inspect
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
