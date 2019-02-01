@@ -9,18 +9,18 @@ class DeployService
 
     version = change.development_version
 
-    config['git_version'] = get_git_version
-
     puts "Current version: #{version.number}"
     puts "Configuration: #{service_name}"
     puts "Environment: #{environment}"
+
+    config['git_version'] = get_git_version
 
     vcl = RenderTemplate.render_template(service_name, environment, config)
     change.delete_ui_objects!
     change.upload_vcl!(vcl)
     change.output_vcl_diff
 
-    modify_settings(version, config['default_ttl'])
+    modify_settings!(version, config['default_ttl'])
 
     change.activate!
   end
@@ -42,7 +42,7 @@ private
     ref
   end
 
-  def modify_settings(version, ttl)
+  def modify_settings!(version, ttl)
     settings = version.settings
     settings.settings.update(
       "general.default_host" => "",

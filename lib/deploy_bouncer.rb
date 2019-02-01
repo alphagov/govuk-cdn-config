@@ -47,11 +47,11 @@ class DeployBouncer
       p extra_existing
     else
       if extra_existing.any?
-        delete_domains(user, password, service.id, version.number, extra_existing)
+        delete_domains!(user, password, service.id, version.number, extra_existing)
       end
 
       if extra_configured.any?
-        add_domains(service.id, version.number, extra_configured)
+        add_domains!(service.id, version.number, extra_configured)
       end
 
       config = {
@@ -96,7 +96,7 @@ class DeployBouncer
     domains.sort
   end
 
-  def delete_domains(user, password, service_id, version, domains)
+  def delete_domains!(user, password, service_id, version, domains)
     deleter = Fastly::Client.new(user: user, password: password)
     domains.each do |domain|
       puts "Deleting #{domain} from the config".yellow
@@ -105,7 +105,7 @@ class DeployBouncer
     end
   end
 
-  def add_domains(service_id, version, domains)
+  def add_domains!(service_id, version, domains)
     domains.each do |domain|
       begin
         puts "Adding #{domain} to the configuration".green
