@@ -104,9 +104,7 @@ private
   end
 
   def validate_config(version)
-    # version.validate doesn't return the right thing.
-    valid_hash = @fastly.client.get(Fastly::Version.put_path(version) + '/validate')
-    unless valid_hash.fetch('status') == "ok"
+    unless version.validate
       raise "ERROR: Invalid configuration:\n" + valid_hash.fetch('msg')
     end
   end
