@@ -2,7 +2,9 @@
 
 set -e
 
-git clone 'git@github.com:alphagov/cdn-configs.git'
+# Copy secrets over into /configs
+rm -rf cdn-configs
+git clone git@github.com:alphagov/cdn-configs.git
 
 cp cdn-configs/fastly/fastly.yaml .
 
