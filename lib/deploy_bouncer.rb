@@ -52,7 +52,13 @@ class DeployBouncer
         add_domains(service.id, version.number, extra_configured)
       end
 
-      vcl = render_vcl(service.id, app_domain)
+      config = {
+        "app_domain" => app_domain,
+        "service_id" => service_id,
+      }
+
+      vcl = RenderTemplate.render_template("bouncer", nil, config)
+
       delete_ui_objects(service.id, version.number)
       upload_vcl(version, vcl)
       diff = diff_vcl(service, version)
@@ -115,13 +121,6 @@ class DeployBouncer
         puts "Cannot add #{domain}, is it owned by another customer?".red
       end
     end
-  end
-
-  def render_vcl(service_id, app_domain)
-    vcl_file = "vcl_templates/bouncer.vcl.erb"
-    vcl_contents = ERB.new(File.read(vcl_file)).result(binding)
-
-    vcl_contents
   end
 
   def upload_vcl(version, contents)
