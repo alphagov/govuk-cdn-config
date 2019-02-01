@@ -7,7 +7,7 @@ RSpec::Core::RakeTask.new(:spec) do |t|
 end
 
 task :lint do
-  sh "govuk-lint-ruby"
+  sh "govuk-lint-ruby lib spec"
 end
 
 task default: %i[spec lint]
