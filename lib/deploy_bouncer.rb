@@ -118,8 +118,6 @@ class DeployBouncer
   end
 
   def render_vcl(service_id, app_domain)
-    @app_domain = app_domain
-
     vcl_file = "vcl_templates/bouncer.vcl.erb"
     vcl_contents = ERB.new(File.read(vcl_file)).result(binding)
 
