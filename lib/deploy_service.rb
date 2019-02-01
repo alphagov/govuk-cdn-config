@@ -2,7 +2,7 @@ class DeployService
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
   def deploy!
-    configuration = ENV.fetch("SERVICE_NAME")
+    service_name = ENV.fetch("SERVICE_NAME")
     environment = ENV.fetch("ENVIRONMENT")
 
     @fastly = FastlyClient.client
@@ -11,10 +11,10 @@ class DeployService
     service = @fastly.get_service(config['service_id'])
     version = get_dev_version(service)
     puts "Current version: #{version.number}"
-    puts "Configuration: #{configuration}"
+    puts "Configuration: #{service_name}"
     puts "Environment: #{environment}"
 
-    vcl = RenderTemplate.render_template(configuration, environment, config)
+    vcl = RenderTemplate.render_template(service_name, environment, config)
     delete_ui_objects(service.id, version.number)
     upload_vcl(version, vcl)
     diff_vcl(service, version)
@@ -42,9 +42,9 @@ private
     ref
   end
 
-  def get_dev_version(configuration)
+  def get_dev_version(service)
     # Sometimes the latest version isn't the development version.
-    version = configuration.version
+    version = service.version
     version = version.clone if version.active?
 
     version
@@ -86,8 +86,8 @@ private
     @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
   end
 
-  def diff_vcl(configuration, version_new)
-    version_current = configuration.versions.find(&:active?)
+  def diff_vcl(service, version_new)
+    version_current = service.versions.find(&:active?)
 
     if version_current.nil?
       raise 'There are no active versions of this configuration'
