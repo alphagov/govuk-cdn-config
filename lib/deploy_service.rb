@@ -1,8 +1,9 @@
 class DeployService
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
-  def deploy!(argv)
-    configuration, environment, config = get_config(argv)
+  def deploy!
+    configuration = ENV.fetch("SERVICE_NAME")
+    environment = ENV.fetch("ENVIRONMENT")
 
     @fastly = FastlyClient.client
     config['git_version'] = get_git_version
@@ -26,16 +27,12 @@ class DeployService
 
 private
 
-  def get_config(args)
-    raise "Usage: #{$0} <configuration> <environment>" unless args.size == 2
-
-    configuration = args[0]
-    environment = args[1]
-    config_hash = CONFIGS[configuration][environment] rescue nil
-
-    raise "ERROR: Unknown configuration/environment combination. Check this combination exists in fastly.yaml." unless config_hash
-
-    [configuration, environment, config_hash]
+  def config
+    @config ||= begin
+      service_name = ENV.fetch("SERVICE_NAME")
+      environment = ENV.fetch("ENVIRONMENT")
+      CONFIGS[service_name][environment] || raise("Unknown service/environment combination")
+    end
   end
 
   def get_git_version

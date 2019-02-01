@@ -1,9 +1,7 @@
 class DeployDictionaries
   CONFIGS = YAML.load_file("fastly.yaml")
 
-  def deploy!(argv)
-    config = get_config(argv)
-
+  def deploy!
     @fastly = FastlyClient.client
 
     service = @fastly.get_service(config['service_id'])
@@ -65,12 +63,12 @@ class DeployDictionaries
     version.activate!
   end
 
-  def get_config(args)
-    raise "Usage: #{$0} <vhost> <environment>" unless args.size == 2
-
-    vhost = args[0]
-    environment = args[1]
-    CONFIGS[vhost][environment] || raise("Unknown vhost/environment combination")
+  def config
+    @config ||= begin
+      service_name = ENV.fetch("SERVICE_NAME")
+      environment = ENV.fetch("ENVIRONMENT")
+      CONFIGS[service_name][environment] || raise("Unknown service/environment combination")
+    end
   end
 
   def get_dev_version(service)

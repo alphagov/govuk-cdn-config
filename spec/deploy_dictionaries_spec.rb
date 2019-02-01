@@ -24,8 +24,8 @@ describe DeployDictionaries do
       stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")
 
-      ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        DeployDictionaries.new.deploy!(%w[test production])
+      ClimateControl.modify SERVICE_NAME: "test", ENVIRONMENT: "production", FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
+        DeployDictionaries.new.deploy!
       end
     end
   end

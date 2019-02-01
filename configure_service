@@ -2,4 +2,4 @@
 
 require_relative './lib/requires'
 
-DeployService.new.deploy!(ARGV)
+DeployService.new.deploy!

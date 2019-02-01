@@ -59,8 +59,8 @@ describe DeployService do
 
       deployer = DeployService.new
 
-      ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        deployer.deploy!(%w[test production])
+      ClimateControl.modify SERVICE_NAME: "test", ENVIRONMENT: "production", FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
+        deployer.deploy!
       end
     end
   end
