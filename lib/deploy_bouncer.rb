@@ -18,44 +18,21 @@ class DeployBouncer
       dry_run = false
     end
 
-    # A comma-separated list of hostnames will override the JSON output from Transition
-    hostnames = []
-    if ENV['HOSTNAMES']
-      hostnames = ENV['HOSTNAMES'].split(',')
-    end
-
     @fastly = FastlyClient.client
     service = @fastly.get_service(service_id)
 
     version = get_dev_version(service)
 
-    hosts_api_results = get_hosts(hostnames)
+    transitioned_hostnames = TransitionDomains.new.all
 
     existing_domains = get_existing_domains(user, password, service.id, version.number)
-    configured_domains = get_configured_domains(hosts_api_results)
-
-    number_of_domains = configured_domains.length
-    status_string = "there are #{number_of_domains} domains configured in the Transition app."
-    limit_string = 'The limit for the Production Bouncer service (3deosa3b6uKT8IimBYcAv) is 3500.'
-    more_info_string = 'See https://fastly.zendesk.com/hc/en-us/requests/7356 for more information.'
-
-    if number_of_domains >= 3500
-      puts "Error: #{status_string}".red
-      puts limit_string.red
-      puts more_info_string.red
-      exit 1
-    elsif number_of_domains > 3000
-      puts "Warning: #{status_string}".blue
-      puts limit_string.blue
-      puts more_info_string.blue
-    end
 
     # The intersection is the set of elements common to both arrays
-    intersection = existing_domains & configured_domains
+    intersection = existing_domains & transitioned_hostnames
 
     # Find out the differences
     extra_existing = existing_domains - intersection
-    extra_configured = configured_domains - intersection
+    extra_configured = transitioned_hostnames - intersection
 
     # Test whether we have any changes to make
     if dry_run
@@ -108,31 +85,6 @@ class DeployBouncer
     version = version.clone if coerce_boolean(version.active)
 
     version
-  end
-
-  def get_hosts(hostnames)
-    if hostnames.empty?
-      io = open('https://transition.publishing.service.gov.uk/hosts.json')
-      json = JSON.parse(io.read)
-      hosts = json['results']
-    else
-      hosts = hostnames.map { |domain| { 'hostname' => domain } }
-    end
-
-    hosts
-  end
-
-  def get_configured_domains(hosts_api_results)
-    configured_domains = Array.new
-    hosts_api_results.each do |host|
-      debug_output("Configured domain: #{host['hostname']}")
-      configured_domains << host['hostname']
-    end
-    if configured_domains.compact.empty?
-      raise 'No hosts found in Transition hosts API'
-    end
-
-    configured_domains.sort
   end
 
   def get_existing_domains(user, password, service_id, version)
@@ -213,5 +165,35 @@ class DeployBouncer
     puts diff.to_s(:color)
 
     diff
+  end
+
+  class TransitionDomains
+    def all
+      number_of_domains = transitioned_hostnames.length
+      status_string = "there are #{number_of_domains} domains configured in the Transition app."
+      limit_string = "The limit for the `Production Bouncer` service is 3500."
+      more_info_string = "See https://fastly.zendesk.com/hc/en-us/requests/7356 for more information"
+
+      if number_of_domains >= 3500
+        puts "Error: #{status_string}".red
+        puts limit_string.red
+        puts more_info_string.red
+        exit 1
+      elsif number_of_domains > 3000
+        puts "Warning: #{status_string}".blue
+        puts limit_string.blue
+        puts more_info_string.blue
+      end
+
+      transitioned_hostnames
+    end
+
+    def transitioned_hostnames
+      @transitioned_hostnames ||= begin
+        io = open('https://transition.publishing.service.gov.uk/hosts.json')
+        json = JSON.parse(io.read)
+        json['results'].map { |host| host['hostname'] }.sort
+      end
+    end
   end
 end
