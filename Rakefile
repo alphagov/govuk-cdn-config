@@ -11,3 +11,19 @@ task :lint do
 end
 
 task default: %i[spec lint]
+
+require_relative './lib/requires'
+
+namespace :deploy do
+  task :bouncer do
+    DeployBouncer.new.deploy!
+  end
+
+  task :dictionaries do
+    DeployDictionaries.new.deploy!
+  end
+
+  task :service do
+    DeployService.new.deploy!
+  end
+end
