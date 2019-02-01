@@ -2,18 +2,9 @@ class DeployService
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
   def deploy!(argv)
-    %w[FASTLY_USER FASTLY_PASS].each do |envvar|
-      if ENV[envvar].nil?
-        raise "#{envvar} is not set in the environment"
-      end
-    end
-
-    username = ENV["FASTLY_USER"]
-    password = ENV["FASTLY_PASS"]
-
     configuration, environment, config = get_config(argv)
 
-    @f = Fastly.new(user: username, password: password)
+    @f = FastlyClient.client
     config['git_version'] = get_git_version
 
     service = @f.get_service(config['service_id'])

@@ -2,21 +2,9 @@ class DeployDictionaries
   CONFIGS = YAML.load_file("fastly.yaml")
 
   def deploy!(argv)
-    %w[FASTLY_USER FASTLY_PASS].each do |envvar|
-      if ENV[envvar].nil?
-        raise "#{envvar} is not set in the environment"
-      end
-    end
-
-    username = ENV["FASTLY_USER"]
-    password = ENV["FASTLY_PASS"]
-
     config = get_config(argv)
 
-    @fastly = Fastly.new(
-      user: username,
-      password: password,
-    )
+    @fastly = FastlyClient.client
 
     service = @fastly.get_service(config['service_id'])
 

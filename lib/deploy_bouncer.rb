@@ -1,6 +1,6 @@
 class DeployBouncer
   def deploy!
-    %w[FASTLY_USER FASTLY_PASS APP_DOMAIN FASTLY_SERVICE_ID].each do |envvar|
+    %w[APP_DOMAIN FASTLY_SERVICE_ID].each do |envvar|
       if ENV[envvar].nil?
         raise "#{envvar} is not set in the environment"
       end
@@ -24,7 +24,7 @@ class DeployBouncer
       hostnames = ENV['HOSTNAMES'].split(',')
     end
 
-    @f = Fastly.new(user: user, password: password)
+    @f = FastlyClient.client
     service = @f.get_service(service_id)
 
     version = get_dev_version(service)
