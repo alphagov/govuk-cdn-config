@@ -14,7 +14,7 @@ class DeployService
     puts "Configuration: #{configuration}"
     puts "Environment: #{environment}"
 
-    vcl = RenderTemplate.render_template(configuration, environment, config, version)
+    vcl = RenderTemplate.render_template(configuration, environment, config)
     delete_ui_objects(service.id, version.number)
     upload_vcl(version, vcl)
     diff_vcl(service, version)

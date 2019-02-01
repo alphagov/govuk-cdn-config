@@ -21,7 +21,7 @@ RSpec.describe "VCL generation" do
 
     %w[production staging integration].each do |environment|
       it "renders the #{service} VCL for #{environment} correctly" do
-        generated_vcl = RenderTemplate.render_template(service, environment, config, "unused variable")
+        generated_vcl = RenderTemplate.render_template(service, environment, config)
         expected_vcl_filename = "spec/test-outputs/#{service}-#{environment}.out.vcl"
 
         if ENV["REGENERATE_EXPECTATIONS"]
