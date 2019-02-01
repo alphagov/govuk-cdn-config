@@ -61,7 +61,7 @@ class DeployBouncer
 
       vcl = RenderTemplate.render_template("bouncer", nil, config)
 
-      delete_ui_objects(service.id, version.number)
+      change.delete_ui_objects!
       change.upload_vcl!(vcl)
       diff = change.output_vcl_diff
 
@@ -113,20 +113,6 @@ class DeployBouncer
         @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: '')
       rescue StandardError
         puts "Cannot add #{domain}, is it owned by another customer?".red
-      end
-    end
-  end
-
-  def delete_ui_objects(service_id, version_number)
-    # Delete objects created by the UI. We want VCL to be the source of truth.
-    # Most of these don't have real objects in the Fastly API gem.
-    to_delete = %w{backend healthcheck condition request_settings cache_settings response_object header gzip}
-    to_delete.each do |type|
-      type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
-      @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
-        puts "Deleting #{type}: #{name}"
-        resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
-        raise 'Delete failed' unless resp
       end
     end
   end

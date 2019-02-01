@@ -48,4 +48,21 @@ class FastlyChange
 
     diff
   end
+
+  def delete_ui_objects!
+    service_id = service.id
+    version_number = development_version.number
+
+    # Delete objects created by the UI. We want VCL to be the source of truth.
+    # Most of these don't have real objects in the Fastly API gem.
+    to_delete = %w{backend healthcheck request_settings cache_settings response_object header gzip}
+    to_delete.each do |type|
+      type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
+      @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
+        puts "Deleting #{type}: #{name}"
+        resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
+        raise 'Delete failed' unless resp
+      end
+    end
+  end
 end
