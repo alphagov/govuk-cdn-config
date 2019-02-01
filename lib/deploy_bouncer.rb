@@ -1,28 +1,15 @@
 class DeployBouncer
   def deploy!
-    if ENV['APP_DOMAIN']
-      app_domain = ENV['APP_DOMAIN']
-    else
-      abort("APP_DOMAIN environment variable is not set")
+    %w[FASTLY_USER FASTLY_PASS APP_DOMAIN FASTLY_SERVICE_ID].each do |envvar|
+      if ENV[envvar].nil?
+        raise "#{envvar} is not set in the environment"
+      end
     end
 
-    if ENV["FASTLY_USER"]
-      user = ENV["FASTLY_USER"]
-    else
-      abort("FASTLY_USER environment variable is not set")
-    end
-
-    if ENV["FASTLY_PASS"]
-      password = ENV["FASTLY_PASS"]
-    else
-      abort("FASTLY_PASS environment variable is not set")
-    end
-
-    if ENV["FASTLY_SERVICE_ID"]
-      service_id = ENV["FASTLY_SERVICE_ID"]
-    else
-      abort("FASTLY_SERVICE_ID environment variable is not set")
-    end
+    app_domain = ENV['APP_DOMAIN']
+    user = ENV["FASTLY_USER"]
+    password = ENV["FASTLY_PASS"]
+    service_id = ENV["FASTLY_SERVICE_ID"]
 
     if ENV["FASTLY_DRY_RUN"]
       puts "Starting dry run..."

@@ -2,14 +2,16 @@ class DeployDictionaries
   CONFIGS = YAML.load_file("fastly.yaml")
 
   def deploy!(argv)
-    config = get_config(argv)
-    username = ENV['FASTLY_USER']
-    password = ENV['FASTLY_PASS']
-
-    if username.nil? || password.nil?
-      puts "Fastly credentials are not set. Exiting."
-      exit 1
+    %w[FASTLY_USER FASTLY_PASS].each do |envvar|
+      if ENV[envvar].nil?
+        raise "#{envvar} is not set in the environment"
+      end
     end
+
+    username = ENV["FASTLY_USER"]
+    password = ENV["FASTLY_PASS"]
+
+    config = get_config(argv)
 
     @fastly = Fastly.new(
       user: username,
