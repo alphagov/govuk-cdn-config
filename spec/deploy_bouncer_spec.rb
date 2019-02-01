@@ -1,5 +1,3 @@
-require './lib/deploy_bouncer'
-
 describe DeployBouncer do
   describe '#deploy_the_vcl' do
     it 'deploys the VCL for bouncer' do

@@ -1,6 +1,3 @@
-require 'erb'
-require "rspec"
-
 def cwd
   File.dirname(__FILE__)
 end

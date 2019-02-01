@@ -1,7 +1,3 @@
-require 'spec_helper'
-require_relative './../lib/render_template'
-
-# This
 RSpec.describe "VCL generation" do
   # Fill in the required test data. Normally this would come from
   # https://github.com/alphagov/cdn-configs/blob/master/fastly/fastly.yaml

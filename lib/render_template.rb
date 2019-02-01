@@ -1,5 +1,3 @@
-require 'yaml'
-
 class RenderTemplate
   def self.render_template(configuration, environment, config, version)
     # Both config and ab_tests are used inside the vcl.erb template

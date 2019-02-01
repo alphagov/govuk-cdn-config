@@ -1,5 +1,3 @@
-require './lib/deploy_cdn'
-
 describe DeployCDN do
   describe '#deploy_the_vcl' do
     it 'deploys the VCL' do

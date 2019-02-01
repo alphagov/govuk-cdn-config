@@ -1,9 +1,3 @@
-require 'colorize'
-require 'diffy'
-require 'erb'
-require 'fastly'
-require 'open-uri'
-
 class DeployBouncer
   def deploy!
     if ENV['APP_DOMAIN']

@@ -1,6 +1,3 @@
-require 'spec_helper'
-require_relative './../lib/render_template'
-
 RSpec.describe RenderTemplate do
   describe ".render_template" do
     it "renders the ERB template" do

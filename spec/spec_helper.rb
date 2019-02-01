@@ -1,8 +1,12 @@
 require 'simplecov'
 SimpleCov.start
 
+$:.unshift File.dirname(__FILE__)
+
 require 'webmock/rspec'
 require 'climate_control'
+
+require 'requires'
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
