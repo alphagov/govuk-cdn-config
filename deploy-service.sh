@@ -12,4 +12,4 @@ cp cdn-configs/fastly/fastly.yaml .
 export SERVICE_NAME=${vhost}
 
 bundle install --path "${HOME}/bundles/${JOB_NAME}" --deployment
-bundle exec deploy:service
+bundle exec rake deploy:service
