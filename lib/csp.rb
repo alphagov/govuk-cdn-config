@@ -50,10 +50,15 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
     policies << "style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'"
 
-    # Scripts can only load data using Ajax from Google Analytics and the publishing domains
-    #
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/connect-src
-    policies << "connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk"
+    policies << [
+      # Scripts can only load data using Ajax from Google Analytics and the publishing domains
+      "connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk",
+
+      # Allow connecting to web chat from HMRC contact pages like
+      # https://www.staging.publishing.service.gov.uk/government/organisations/hm-revenue-customs/contact/child-benefit
+      "www.tax.service.gov.uk",
+    ].join(" ")
 
     # Disallow all <object>, <embed>, and <applet> elements
     #
