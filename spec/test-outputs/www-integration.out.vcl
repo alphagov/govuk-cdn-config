@@ -431,7 +431,7 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
 
-  add resp.http.Content-Security-Policy-Report-Only = "default-src https 'self' *.publishing.service.gov.uk; img-src 'self' data: www.google-analytics.com *.publishing.service.gov.uk; script-src 'self' www.google-analytics.com ssl.google-analytics.com *.publishing.service.gov.uk 'sha256-G29/qSW/JHHANtFhlrZVDZW1HOkCDRc78ggbqwwIJ2g=' 'sha256-+6WnXIl4mbFTCARd8N3COQmT3bJJmo32N8q8ZSQAIcU=' 'unsafe-inline'; style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'; font-src :data *.publishing.service.gov.uk; connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk www.tax.service.gov.uk www.signin.service.gov.uk; object-src 'none'; report-uri https://sentry.io/api/1377947/security/?sentry_key=f7898bf4858d436aa3568ae042371b94;";
+  add resp.http.Content-Security-Policy-Report-Only = "default-src https 'self' *.publishing.service.gov.uk; img-src 'self' data: www.google-analytics.com *.publishing.service.gov.uk; script-src 'self' www.google-analytics.com ssl.google-analytics.com *.publishing.service.gov.uk 'sha256-G29/qSW/JHHANtFhlrZVDZW1HOkCDRc78ggbqwwIJ2g=' 'sha256-+6WnXIl4mbFTCARd8N3COQmT3bJJmo32N8q8ZSQAIcU=' 'unsafe-inline'; style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'; font-src data: *.publishing.service.gov.uk; connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk www.tax.service.gov.uk www.signin.service.gov.uk; object-src 'none'; report-uri https://sentry.io/api/1377947/security/?sentry_key=f7898bf4858d436aa3568ae042371b94;";
 
 #FASTLY deliver
 }
