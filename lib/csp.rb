@@ -29,7 +29,7 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
     policies << [
       # Allow scripts from Google Analytics and publishing domains
-      "script-src 'self' www.google-analytics.com *.publishing.service.gov.uk",
+      "script-src 'self' www.google-analytics.com ssl.google-analytics.com *.publishing.service.gov.uk",
 
       # Allow the script that adds `js-enabled` to the body from govuk_template
       # https://github.com/alphagov/govuk_template/blob/79340eb91ad8c4279d16da302765d0946d89b1ca/source/views/layouts/govuk_template.html.erb#L40
