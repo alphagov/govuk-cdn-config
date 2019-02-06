@@ -18,11 +18,14 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/default-src
     policies << "default-src https 'self' *.publishing.service.gov.uk"
 
-    # Allow images from the current domain, Google Analytics (the tracking
-    # pixel), and publishing domains
+    # Allow images from the current domain, Google Analytics (the tracking pixel),
+    # and publishing domains. Also allow `data:` images for Base64-encoded images
+    # in CSS like:
+    #
+    # https://github.com/alphagov/service-manual-frontend/blob/1db99ed48de0dfc794b9686a98e6c62f8435ae80/app/assets/stylesheets/modules/_search.scss#L106
     #
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/img-src
-    policies << "img-src 'self' www.google-analytics.com *.publishing.service.gov.uk"
+    policies << "img-src 'self' data: www.google-analytics.com *.publishing.service.gov.uk"
 
     # script-src determines the scripts that the browser can load
     #
