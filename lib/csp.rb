@@ -53,6 +53,14 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
     policies << "style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'"
 
+    # Allow fonts to be loaded from data-uri's (this is the old way of doing things)
+    # or from the publishing asset domains.
+    #
+    # https://www.staging.publishing.service.gov.uk/apply-for-a-licence/test-licence/westminster/apply-1
+    #
+    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/font-src
+    policies << "font-src :data *.publishing.service.gov.uk"
+
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/connect-src
     policies << [
       # Scripts can only load data using Ajax from Google Analytics and the publishing domains
