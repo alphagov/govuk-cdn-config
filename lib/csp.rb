@@ -59,7 +59,7 @@ class CSP
     # https://www.staging.publishing.service.gov.uk/apply-for-a-licence/test-licence/westminster/apply-1
     #
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/font-src
-    policies << "font-src :data *.publishing.service.gov.uk"
+    policies << "font-src data: *.publishing.service.gov.uk"
 
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/connect-src
     policies << [
