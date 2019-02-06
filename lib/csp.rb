@@ -58,6 +58,10 @@ class CSP
       # Allow connecting to web chat from HMRC contact pages like
       # https://www.staging.publishing.service.gov.uk/government/organisations/hm-revenue-customs/contact/child-benefit
       "www.tax.service.gov.uk",
+
+      # Allow connecting to Verify to check whether the user is logged in
+      # https://www.staging.publishing.service.gov.uk/log-in-file-self-assessment-tax-return/sign-in/prove-identity
+      "www.signin.service.gov.uk",
     ].join(" ")
 
     # Disallow all <object>, <embed>, and <applet> elements
