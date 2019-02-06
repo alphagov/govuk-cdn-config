@@ -316,15 +316,6 @@ if (table.lookup(active_ab_tests, "RelatedLinksAATest") == "true") {
 # End dynamic section
 
 
-  if (req.http.Cookie ~ "JS-Detection") {
-    set req.http.GOVUK-JS-Detection = req.http.Cookie:JS-Detection;
-  } else {
-  # If the identifier cookie isn't present, set the header to a unique value,
-  # derived as per the suggestion in https://community.fastly.com/t/unique-request-identifier/468/2
-    set req.http.GOVUK-JS-Detection = digest.hash_sha1(now randomstr(64) req.http.host req.url req.http.Fastly-Client-IP server.identity);
-
-  }
-
   return(lookup);
 }
 
@@ -441,12 +432,6 @@ sub vcl_deliver {
   }
 
   add resp.http.Content-Security-Policy-Report-Only = "default-src https 'self' *.publishing.service.gov.uk; img-src 'self' www.google-analytics.com *.publishing.service.gov.uk; script-src 'self' www.google-analytics.com *.publishing.service.gov.uk 'sha256-G29/qSW/JHHANtFhlrZVDZW1HOkCDRc78ggbqwwIJ2g=' 'sha256-+6WnXIl4mbFTCARd8N3COQmT3bJJmo32N8q8ZSQAIcU=' 'unsafe-inline'; style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'; connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk; object-src 'none'; report-uri https://sentry.io/api/1377947/security/?sentry_key=f7898bf4858d436aa3568ae042371b94;";
-
-  # Set the Javascript detection cookie
-  if (req.http.User-Agent !~ "^GOV\.UK Crawler Worker" && req.http.Cookie !~ "JS-Detection") {
-    add resp.http.Set-Cookie = "JS-Detection=" req.http.GOVUK-JS-Detection "; expires=" now + 5w "; path=/";
-  }
-
 
 #FASTLY deliver
 }
