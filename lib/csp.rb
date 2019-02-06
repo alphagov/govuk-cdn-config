@@ -18,18 +18,21 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/default-src
     policies << "default-src https 'self' *.publishing.service.gov.uk"
 
-    # Allow images from the current domain, Google Analytics (the tracking
-    # pixel), and publishing domains
+    # Allow images from the current domain, Google Analytics (the tracking pixel),
+    # and publishing domains. Also allow `data:` images for Base64-encoded images
+    # in CSS like:
+    #
+    # https://github.com/alphagov/service-manual-frontend/blob/1db99ed48de0dfc794b9686a98e6c62f8435ae80/app/assets/stylesheets/modules/_search.scss#L106
     #
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/img-src
-    policies << "img-src 'self' www.google-analytics.com *.publishing.service.gov.uk"
+    policies << "img-src 'self' data: www.google-analytics.com *.publishing.service.gov.uk"
 
     # script-src determines the scripts that the browser can load
     #
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
     policies << [
       # Allow scripts from Google Analytics and publishing domains
-      "script-src 'self' www.google-analytics.com *.publishing.service.gov.uk",
+      "script-src 'self' www.google-analytics.com ssl.google-analytics.com *.publishing.service.gov.uk",
 
       # Allow the script that adds `js-enabled` to the body from govuk_template
       # https://github.com/alphagov/govuk_template/blob/79340eb91ad8c4279d16da302765d0946d89b1ca/source/views/layouts/govuk_template.html.erb#L40
@@ -50,10 +53,27 @@ class CSP
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
     policies << "style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'"
 
-    # Scripts can only load data using Ajax from Google Analytics and the publishing domains
+    # Allow fonts to be loaded from data-uri's (this is the old way of doing things)
+    # or from the publishing asset domains.
     #
+    # https://www.staging.publishing.service.gov.uk/apply-for-a-licence/test-licence/westminster/apply-1
+    #
+    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/font-src
+    policies << "font-src :data *.publishing.service.gov.uk"
+
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/connect-src
-    policies << "connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk"
+    policies << [
+      # Scripts can only load data using Ajax from Google Analytics and the publishing domains
+      "connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk",
+
+      # Allow connecting to web chat from HMRC contact pages like
+      # https://www.staging.publishing.service.gov.uk/government/organisations/hm-revenue-customs/contact/child-benefit
+      "www.tax.service.gov.uk",
+
+      # Allow connecting to Verify to check whether the user is logged in
+      # https://www.staging.publishing.service.gov.uk/log-in-file-self-assessment-tax-return/sign-in/prove-identity
+      "www.signin.service.gov.uk",
+    ].join(" ")
 
     # Disallow all <object>, <embed>, and <applet> elements
     #
