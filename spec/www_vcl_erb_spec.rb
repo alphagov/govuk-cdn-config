@@ -20,9 +20,6 @@ RSpec.describe "VCL template" do
   let!(:environment) { "test" }
   let!(:ab_tests) { [{ "ATest" => %w(meh boom) }, { "Example" => %w(A B) }] }
 
-	let(:expected) do
-    @expected_vcl ||= File.new(File.join(cwd, "fixtures/www.vcl.erb.out")).read
-  end
   subject do
     template_path = File.join(cwd, "../vcl_templates/www.vcl.erb")
     @rendered_vcl ||= ERB.new(File.new(template_path).read, nil, "-", "_test_erbout").result(binding)
@@ -35,10 +32,6 @@ RSpec.describe "VCL template" do
   it "renders the expiry statements" do
     statement = %Q(set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ATest"))));)
     expect(subject).to include(statement)
-  end
-
-  it "renders the formatted vcl" do
-    expect(subject).to eq(expected)
   end
 
   it "doesn't set a cookie for the 'Example' test" do

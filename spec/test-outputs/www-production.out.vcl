@@ -442,6 +442,8 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
 
+  add resp.http.Content-Security-Policy-Report-Only = "default-src https 'self' *.publishing.service.gov.uk; img-src 'self' www.google-analytics.com *.publishing.service.gov.uk; script-src 'self' www.google-analytics.com *.publishing.service.gov.uk 'sha256-G29/qSW/JHHANtFhlrZVDZW1HOkCDRc78ggbqwwIJ2g=' 'sha256-+6WnXIl4mbFTCARd8N3COQmT3bJJmo32N8q8ZSQAIcU=' 'unsafe-inline'; style-src 'self' *.publishing.service.gov.uk 'unsafe-inline'; connect-src 'self' www.google-analytics.com *.publishing.service.gov.uk; object-src 'none'; report-uri https://sentry.io/api/1377947/security/?sentry_key=f7898bf4858d436aa3568ae042371b94;";
+
   # Set the Javascript detection cookie
   if (req.http.User-Agent !~ "^GOV\.UK Crawler Worker" && req.http.Cookie !~ "JS-Detection") {
     add resp.http.Set-Cookie = "JS-Detection=" req.http.GOVUK-JS-Detection "; expires=" now + 5w "; path=/";
