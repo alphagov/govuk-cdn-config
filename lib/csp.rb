@@ -42,6 +42,11 @@ class CSP
       # https://github.com/alphagov/govuk_template/blob/79340eb91ad8c4279d16da302765d0946d89b1ca/source/views/layouts/govuk_template.html.erb#L112-L113
       "'sha256-+6WnXIl4mbFTCARd8N3COQmT3bJJmo32N8q8ZSQAIcU='",
 
+      # Allow JSONP call to Verify to check whether the user is logged in
+      # https://www.staging.publishing.service.gov.uk/log-in-file-self-assessment-tax-return/sign-in/prove-identity
+      # https://github.com/alphagov/government-frontend/blob/71aca4df9b74366618a5a93acdb5cd2715f94f49/app/assets/javascripts/modules/track-radio-group.js
+      "www.signin.service.gov.uk",
+
       # In browsers that don't support the sha256 whitelisting we allow unsafe
       # inline scripts
       "'unsafe-inline'"
@@ -71,6 +76,7 @@ class CSP
       "www.tax.service.gov.uk",
 
       # Allow connecting to Verify to check whether the user is logged in
+      # https://github.com/alphagov/government-frontend/blob/71aca4df9b74366618a5a93acdb5cd2715f94f49/app/assets/javascripts/modules/track-radio-group.js
       # https://www.staging.publishing.service.gov.uk/log-in-file-self-assessment-tax-return/sign-in/prove-identity
       "www.signin.service.gov.uk",
     ].join(" ")
