@@ -433,8 +433,6 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
   }
 
-  
-
 #FASTLY deliver
 }
 

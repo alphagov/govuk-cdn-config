@@ -1,5 +1,4 @@
 require 'yaml'
-require_relative 'csp'
 
 class RenderTemplate
   def self.render_template(configuration, environment, config, version)
