@@ -4,5 +4,5 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-RelatedLinksAATest: true
+RelatedLinksABTest1: true
 ViewDrivingLicence: false
