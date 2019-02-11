@@ -151,8 +151,7 @@ sub vcl_recv {
   }
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
-  # This is to avoid a Denial of Service "attack" from certain government machines.
-  if (req.url ~ "(?i)^/autodiscover/autodiscover.xml") {
+  if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 404 "Not Found";
   }
 
