@@ -217,11 +217,8 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-    return(pass);
-  }
-
-    # Begin dynamic section
+  if (req.request != "POST") {
+        # Begin dynamic section
 if (table.lookup(active_ab_tests, "Example") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-Example = "A";
@@ -352,6 +349,7 @@ if (table.lookup(active_ab_tests, "RelatedLinksABTest1") == "true") {
 }
 # End dynamic section
 
+  }
 
   return(lookup);
 }
@@ -385,6 +383,12 @@ sub vcl_fetch {
   }
 
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
+    return (pass);
+  }
+
+  # Pass through good responses to POST requests (i.e. cache responses to POST
+  # requests that are the result of client error).
+  if (req.request == "POST" && !(beresp.status >= 400 && beresp.status <= 499)) {
     return (pass);
   }
 

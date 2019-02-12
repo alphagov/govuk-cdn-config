@@ -257,12 +257,10 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-    return(pass);
+  if (req.request != "POST") {
+    <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
+    <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
   }
-
-  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
-  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
   return(lookup);
 }
@@ -296,6 +294,12 @@ sub vcl_fetch {
   }
 
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
+    return (pass);
+  }
+
+  # Pass through good responses to POST requests (i.e. cache responses to POST
+  # requests that are the result of client error).
+  if (req.request == "POST" && !(beresp.status >= 400 && beresp.status <= 499)) {
     return (pass);
   }
 
