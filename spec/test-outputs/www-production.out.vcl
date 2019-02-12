@@ -150,6 +150,12 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
+  # Reject any methods other than the ones we support.
+  # No need to include FASTLYPURGE here as that's handled above.
+  if (req.request != "HEAD" && req.request != "GET" && req.request != "POST") {
+    error 804 "Invalid Method";
+  {
+
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";
