@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 bundle install --path "${HOME}/bundles/${JOB_NAME}" --deployment
-bundle exec ./configure_bouncer
+bundle exec ./deploy_bouncer
