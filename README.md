@@ -20,7 +20,7 @@ We use edge dictionaries to define the configuration for A/B and multivariate te
 
 ## IP address blocking
 
-We use an edge dictionary to block IP addresses, which lives in [alphagov/cdn-configs](https://github.com/alphagov/cdn-configs).
+We use an edge dictionary to block IP addresses, which lives in [alphagov/govuk-cdn-config-secrets](https://github.com/alphagov/govuk-cdn-config-secrets).
 
 - `ip_address_blacklist.yaml`: This controls whether an IP address is blocked or not.
 
