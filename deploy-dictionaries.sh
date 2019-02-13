@@ -2,11 +2,11 @@
 set -eu
 
 # Copy secret dictionaries over into /configs
-rm -rf cdn-configs
-git clone git@github.com:alphagov/cdn-configs.git
+rm -rf govuk-cdn-config-secrets
+git clone git@github.com:alphagov/govuk-cdn-config-secrets.git
 
-cp cdn-configs/fastly/dictionaries/config/* configs/dictionaries
-cp cdn-configs/fastly/fastly.yaml .
+cp govuk-cdn-config-secrets/fastly/dictionaries/config/* configs/dictionaries
+cp govuk-cdn-config-secrets/fastly/fastly.yaml .
 
 bundle install --path "${HOME}/bundles/${JOB_NAME}"
 bundle exec ./configure_dictionaries ${vhost} ${ENVIRONMENT}
