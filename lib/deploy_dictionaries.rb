@@ -1,6 +1,3 @@
-require 'fastly'
-require 'yaml'
-
 class DeployDictionaries
   CONFIGS = YAML.load_file("fastly.yaml")
 

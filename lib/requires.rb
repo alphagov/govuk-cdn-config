@@ -1,0 +1,11 @@
+require 'colorize'
+require 'diffy'
+require 'erb'
+require 'fastly'
+require 'open-uri'
+require 'yaml'
+
+require_relative './deploy_bouncer'
+require_relative './deploy_dictionaries'
+require_relative './deploy_service'
+require_relative './render_template'

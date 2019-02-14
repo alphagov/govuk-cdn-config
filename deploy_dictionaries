@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 
-require_relative './lib/deploy_dictionaries'
+require_relative './lib/requires'
 
 DeployDictionaries.new.deploy!(ARGV)

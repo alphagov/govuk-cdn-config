@@ -1,5 +1,3 @@
-require './lib/deploy_dictionaries'
-
 describe DeployDictionaries do
   describe '#deploy' do
     it 'deploys the dictionaries' do

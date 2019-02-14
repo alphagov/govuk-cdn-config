@@ -1,7 +1,3 @@
-require 'yaml'
-require 'fastly'
-require 'diffy'
-
 class DeployService
   CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
 
