@@ -5,7 +5,7 @@ class DeployDictionaries
   CONFIGS = YAML.load_file("fastly.yaml")
 
   def deploy!(argv)
-    vhost, environment, config = get_config(argv)
+    config = get_config(argv)
     username = ENV['FASTLY_USER']
     password = ENV['FASTLY_PASS']
 
@@ -86,11 +86,9 @@ class DeployDictionaries
     vhost = args[0]
     environment = args[1]
     config_hash = CONFIGS[vhost][environment] rescue nil
-
-
     raise "Unknown vhost/environment combination" unless config_hash
 
-    [vhost, environment, config_hash]
+    config_hash
   end
 
   def get_dev_version(service)
