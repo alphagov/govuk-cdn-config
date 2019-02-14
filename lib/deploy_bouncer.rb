@@ -90,13 +90,6 @@ class DeployBouncer
     end
   end
 
-  # The Fastly API has in the past changed the response for `version.active` from
-  # string ("1"/"0") to a boolean (true/false). To prevent changing the code when
-  # the response changes again, convert any true-like inputs to proper booleans.
-  def coerce_boolean(bool_like_thing)
-    ['1', true, 'true'].include?(bool_like_thing)
-  end
-
   def debug_output(output)
     if ENV["FASTLY_DEBUG"] == "TRUE"
       puts output.blue
@@ -106,7 +99,7 @@ class DeployBouncer
   def get_dev_version(service)
     # Sometimes the latest version isn't the development version.
     version = service.version
-    version = version.clone if coerce_boolean(version.active)
+    version = version.clone if version.active?
 
     version
   end
@@ -201,7 +194,7 @@ class DeployBouncer
   end
 
   def diff_vcl(service, version_new)
-    version_current = service.versions.find { |version| coerce_boolean(version.active) }
+    version_current = service.versions.find(&:active?)
     diff = Diffy::Diff.new(
       version_current.generated_vcl.content,
       version_new.generated_vcl.content,
