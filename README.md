@@ -38,7 +38,7 @@ which can be used to provide dynamic configuration to VCL. This script takes upd
 
 Script: [deploy-bouncer.sh](/blob/master/deploy-bouncer.sh)
 
-Invoked via the [CDN: deploy Bouncer configs](https://deploy.publishing.service.gov.uk/job/Bouncer_CDN) Jenkins job.
+Invoked via the [CDN: deploy Bouncer configs](https://deploy.blue.production.govuk.digital/job/Bouncer_CDN/) Jenkins job.
 
 This configures the `bouncer` Fastly service with transitioned domains from Transition ([read about Transition here](https://docs.publishing.service.gov.uk/manual/transition-architecture.html)). The Jenkins job is not usually run manually - it's triggered by the [one of the transition Jenkins jobs](https://deploy.blue.production.govuk.digital/job/Transition_load_site_config). Read [more about the Fastly service](https://docs.publishing.service.gov.uk/manual/cdn.html#bouncer39s-fastly-service) in the developer docs.
 
