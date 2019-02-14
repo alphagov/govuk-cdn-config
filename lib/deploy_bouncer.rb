@@ -6,18 +6,6 @@ class DeployBouncer
       abort("APP_DOMAIN environment variable is not set")
     end
 
-    if ENV["FASTLY_USER"]
-      user = ENV["FASTLY_USER"]
-    else
-      abort("FASTLY_USER environment variable is not set")
-    end
-
-    if ENV["FASTLY_PASS"]
-      password = ENV["FASTLY_PASS"]
-    else
-      abort("FASTLY_PASS environment variable is not set")
-    end
-
     if ENV["FASTLY_SERVICE_ID"]
       service_id = ENV["FASTLY_SERVICE_ID"]
     else
@@ -44,7 +32,7 @@ class DeployBouncer
 
     hosts_api_results = get_hosts(hostnames)
 
-    existing_domains = get_existing_domains(user, password, service.id, version.number)
+    existing_domains = get_existing_domains(service.id, version.number)
     configured_domains = get_configured_domains(hosts_api_results)
 
     number_of_domains = configured_domains.length
@@ -81,7 +69,7 @@ class DeployBouncer
       p extra_existing
     else
       if !extra_existing.empty?
-        delete_domains(user, password, service.id, version.number, extra_existing)
+        delete_domains(service.id, version.number, extra_existing)
       end
 
       if !extra_configured.empty?
@@ -148,9 +136,9 @@ class DeployBouncer
     configured_domains.sort
   end
 
-  def get_existing_domains(user, password, service_id, version)
+  def get_existing_domains(service_id, version)
     domains = Array.new
-    domain_lister = Fastly::Client.new(user: user, password: password)
+    domain_lister = GovukFastly.weird_legacy_client
     domain_lister.get(Fastly::Domain.list_path(service_id: service_id, version: version)).each do |domain|
       domains.push domain['name']
       debug_output("Existing domain: #{domain['name']}")
@@ -158,8 +146,8 @@ class DeployBouncer
     domains.sort
   end
 
-  def delete_domains(user, password, service_id, version, domains)
-    deleter = Fastly::Client.new(user: user, password: password)
+  def delete_domains(service_id, version, domains)
+    deleter = GovukFastly.weird_legacy_client
     domains.each do |domain|
       puts "Deleting #{domain} from the config".yellow
       path = "/service/#{service_id}/version/#{version}/domain/#{domain}"
