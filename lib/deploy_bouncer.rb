@@ -138,7 +138,7 @@ class DeployBouncer
 
   def get_existing_domains(service_id, version)
     domains = Array.new
-    domain_lister = GovukFastly.weird_legacy_client
+    domain_lister = @fastly.client
     domain_lister.get(Fastly::Domain.list_path(service_id: service_id, version: version)).each do |domain|
       domains.push domain['name']
       debug_output("Existing domain: #{domain['name']}")
@@ -147,7 +147,7 @@ class DeployBouncer
   end
 
   def delete_domains(service_id, version, domains)
-    deleter = GovukFastly.weird_legacy_client
+    deleter = @fastly.client
     domains.each do |domain|
       puts "Deleting #{domain} from the config".yellow
       path = "/service/#{service_id}/version/#{version}/domain/#{domain}"
@@ -156,11 +156,10 @@ class DeployBouncer
   end
 
   def add_domains(service_id, version, domains)
-    adder = GovukFastly.client
     domains.each do |domain|
       begin
         puts "Adding #{domain} to the configuration".green
-        adder.create_domain(service_id: service_id, version: version, name: domain, comment: '')
+        @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: '')
       rescue StandardError
         puts "Cannot add #{domain}, is it owned by another customer?".red
       end
