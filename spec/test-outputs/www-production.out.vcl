@@ -152,7 +152,7 @@ sub vcl_recv {
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
-    error 404 "Not Found";
+    error 804 "Not Found";
   }
 
   # Serve from stale for 24 hours if origin is sick
@@ -480,6 +480,32 @@ sub vcl_error {
     set obj.http.Location = "https://" req.http.host req.url;
     set obj.http.Fastly-Backend-Name = "force_ssl";
     synthetic {""};
+    return (deliver);
+  }
+
+  if (obj.status == 804) {
+    set obj.status = 404;
+    set obj.response = "Not Found";
+    set obj.http.Fastly-Backend-Name = "force_not_found";
+
+    synthetic {"
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Welcome to GOV.UK</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; }
+            header { background: black; }
+            h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
+            p { color: black; margin: 30px auto; max-width: 990px; }
+          </style>
+        </head>
+        <body>
+          <header><h1>GOV.UK</h1></header>
+          <p>We cannot find the page you're looking for. Please try searching on <a href="https://www.gov.uk/">GOV.UK</a>.</p>
+        </body>
+      </html>"};
+
     return (deliver);
   }
 
