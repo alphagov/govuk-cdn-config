@@ -64,7 +64,7 @@ describe DeployService do
       deployer = DeployService.new
 
       ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        deployer.deploy!(['test', 'production'])
+        deployer.deploy!(%w[test production])
 
         @requests.each do |request|
           expect(request).to have_been_requested.at_least_once

@@ -17,7 +17,7 @@ describe DeployDictionaries do
         to_return(body: File.read("spec/fixtures/fastly-put-clone.json"))
 
       @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/dictionary").
-        to_return { |request|
+        to_return { |_request|
           if @deleted
             { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: "123321abc" }]) }
           else
@@ -37,13 +37,13 @@ describe DeployDictionaries do
 
       @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/dictionary/qwerty/item").
         with(
-          body: {"dictionary_id"=>"qwerty", "item_key"=>"A", "item_value"=>"50", "service_id"=>"123321abc"},
+          body: { "dictionary_id" => "qwerty", "item_key" => "A", "item_value" => "50", "service_id" => "123321abc" },
         ).
         to_return(body: "{}")
 
       @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/dictionary/qwerty/item").
         with(
-          body: {"dictionary_id"=>"qwerty", "item_key"=>"B", "item_value"=>"50", "service_id"=>"123321abc"},
+          body: { "dictionary_id" => "qwerty", "item_key" => "B", "item_value" => "50", "service_id" => "123321abc" },
         ).
         to_return(body: "{}")
 
@@ -51,7 +51,7 @@ describe DeployDictionaries do
           to_return(body: "{}")
 
       ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        DeployDictionaries.new.deploy!(['test', 'production'])
+        DeployDictionaries.new.deploy!(%w[test production])
 
         @requests.each do |request|
           expect(request).to have_been_requested.at_least_once

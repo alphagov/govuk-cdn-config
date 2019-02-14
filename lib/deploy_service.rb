@@ -8,7 +8,7 @@ class DeployService
   def deploy!(argv)
     configuration, environment, config = get_config(argv)
 
-    ['FASTLY_USER', 'FASTLY_PASS'].each do |envvar|
+    %w[FASTLY_USER FASTLY_PASS].each do |envvar|
       if ENV[envvar].nil?
         raise "#{envvar} is not set in the environment"
       end
@@ -17,7 +17,7 @@ class DeployService
     username = ENV['FASTLY_USER']
     password = ENV['FASTLY_PASS']
 
-    @f = Fastly.new({ :user => username, :password => password })
+    @f = Fastly.new(user: username, password: password)
     config['git_version'] = get_git_version
 
     service = @f.get_service(config['service_id'])
@@ -48,7 +48,7 @@ private
 
     raise "ERROR: Unknown configuration/environment combination. Check this combination exists in fastly.yaml." unless config_hash
 
-    return configuration, environment, config_hash
+    [configuration, environment, config_hash]
   end
 
   def get_git_version
@@ -72,7 +72,7 @@ private
     to_delete = %w{backend healthcheck cache_settings request_settings response_object header gzip}
     to_delete.each do |type|
       type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
-      @f.client.get(type_path).map{ |i| i["name"] }.each do |name|
+      @f.client.get(type_path).map { |i| i["name"] }.each do |name|
         puts "Deleting #{type}: #{name}"
         resp = @f.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
         raise 'ERROR: Failed to delete configuration' unless resp
@@ -82,10 +82,10 @@ private
 
   def modify_settings(version, ttl)
     settings = version.settings
-    settings.settings.update({
+    settings.settings.update(
       "general.default_host" => "",
       "general.default_ttl"  => ttl,
-    })
+    )
     settings.save!
   end
 
@@ -94,7 +94,8 @@ private
 
     begin
       version.vcl(vcl_name) && version.delete_vcl(vcl_name)
-    rescue Fastly::Error
+    rescue Fastly::Error => e
+      puts "Error: #{e.inspect}"
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
@@ -102,7 +103,7 @@ private
   end
 
   def diff_vcl(configuration, version_new)
-    version_current = configuration.versions.find { |v| v.active? }
+    version_current = configuration.versions.find(&:active?)
 
     if version_current.nil?
       raise 'There are no active versions of this configuration'
@@ -111,7 +112,7 @@ private
     diff = Diffy::Diff.new(
       version_current.generated_vcl.content,
       version_new.generated_vcl.content,
-      :context => 3
+      context: 3
     )
 
     puts "Diff versions: #{version_current.number} -> #{version_new.number}"
