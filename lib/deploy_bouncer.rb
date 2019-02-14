@@ -25,8 +25,8 @@ class DeployBouncer
       hostnames = ENV['HOSTNAMES'].split(',')
     end
 
-    @f = GovukFastly.client
-    service = @f.get_service(service_id)
+    @fastly = GovukFastly.client
+    service = @fastly.get_service(service_id)
 
     version = get_dev_version(service)
 
@@ -186,7 +186,7 @@ class DeployBouncer
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @f.client.put(Fastly::VCL.put_path(vcl) + '/main')
+    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
   end
 
   def delete_ui_objects(service_id, version_number)
@@ -195,9 +195,9 @@ class DeployBouncer
     to_delete = %w{backend healthcheck condition request_settings cache_settings response_object header gzip}
     to_delete.each do |type|
       type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
-      @f.client.get(type_path).map { |i| i["name"] }.each do |name|
+      @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
         puts "Deleting #{type}: #{name}"
-        resp = @f.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
+        resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
         raise 'Delete failed' unless resp
       end
     end

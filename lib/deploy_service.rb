@@ -4,10 +4,10 @@ class DeployService
   def deploy!(argv)
     configuration, environment, config = get_config(argv)
 
-    @f = GovukFastly.client
+    @fastly = GovukFastly.client
     config['git_version'] = get_git_version
 
-    service = @f.get_service(config['service_id'])
+    service = @fastly.get_service(config['service_id'])
     version = get_dev_version(service)
     puts "Current version: #{version.number}"
     puts "Configuration: #{configuration}"
@@ -59,9 +59,9 @@ private
     to_delete = %w{backend healthcheck cache_settings request_settings response_object header gzip}
     to_delete.each do |type|
       type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
-      @f.client.get(type_path).map { |i| i["name"] }.each do |name|
+      @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
         puts "Deleting #{type}: #{name}"
-        resp = @f.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
+        resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
         raise 'ERROR: Failed to delete configuration' unless resp
       end
     end
@@ -86,7 +86,7 @@ private
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @f.client.put(Fastly::VCL.put_path(vcl) + '/main')
+    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
   end
 
   def diff_vcl(configuration, version_new)
@@ -108,7 +108,7 @@ private
 
   def validate_config(version)
     # version.validate doesn't return the right thing.
-    valid_hash = @f.client.get(Fastly::Version.put_path(version) + '/validate')
+    valid_hash = @fastly.client.get(Fastly::Version.put_path(version) + '/validate')
     unless valid_hash.fetch('status') == "ok"
       raise "ERROR: Invalid configuration:\n" + valid_hash.fetch('msg')
     end
