@@ -32,7 +32,7 @@ class DeployBouncer
 
     hosts_api_results = get_hosts(hostnames)
 
-    existing_domains = get_existing_domains(service.id, version.number)
+    existing_domains = get_existing_domains(version)
     configured_domains = get_configured_domains(hosts_api_results)
 
     number_of_domains = configured_domains.length
@@ -136,12 +136,12 @@ class DeployBouncer
     configured_domains.sort
   end
 
-  def get_existing_domains(service_id, version)
-    domains = Array.new
-    @fastly.client.get(Fastly::Domain.list_path(service_id: service_id, version: version)).each do |domain|
-      domains.push domain['name']
-      debug_output("Existing domain: #{domain['name']}")
+  def get_existing_domains(version)
+    domains = version.domains.map do |domain|
+      debug_output("Existing domain: #{domain.name}")
+      domain.name
     end
+
     domains.sort
   end
 
