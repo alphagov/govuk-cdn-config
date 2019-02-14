@@ -138,8 +138,7 @@ class DeployBouncer
 
   def get_existing_domains(service_id, version)
     domains = Array.new
-    domain_lister = @fastly.client
-    domain_lister.get(Fastly::Domain.list_path(service_id: service_id, version: version)).each do |domain|
+    @fastly.client.get(Fastly::Domain.list_path(service_id: service_id, version: version)).each do |domain|
       domains.push domain['name']
       debug_output("Existing domain: #{domain['name']}")
     end
@@ -147,11 +146,10 @@ class DeployBouncer
   end
 
   def delete_domains(service_id, version, domains)
-    deleter = @fastly.client
     domains.each do |domain|
       puts "Deleting #{domain} from the config".yellow
       path = "/service/#{service_id}/version/#{version}/domain/#{domain}"
-      deleter.delete(path)
+      @fastly.client.delete(path)
     end
   end
 
