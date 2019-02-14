@@ -24,15 +24,17 @@ class DeployDictionaries
     version = get_dev_version(service)
     puts "Using version #{version.number} of #{service.name}"
 
+    dictionaries = version.dictionaries
+
     expected_dictionaries = Dir.glob("configs/dictionaries/*.yaml").map { |filename| File.basename(filename, '.yaml') }
-    existing_dictionaries = version.dictionaries.map { |dictionary| dictionary.name }
+    existing_dictionaries = dictionaries.map { |dictionary| dictionary.name }
 
     # Clean up dictionaries which are no longer used
     dictionaries_to_remove = existing_dictionaries - expected_dictionaries
 
     dictionaries_to_remove.each do |name|
       puts "Deleting existing dictionary '#{name}' from Fastly because it is no longer configured"
-      dictionary = version.dictionaries.detect { |d| d.name == name }
+      dictionary = dictionaries.detect { |d| d.name == name }
       @fastly.delete_dictionary(dictionary)
     end
 

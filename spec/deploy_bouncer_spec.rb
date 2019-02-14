@@ -1,8 +1,8 @@
-require './lib/deploy_service'
+require './lib/deploy_bouncer'
 
-describe DeployService do
+describe DeployBouncer do
   describe '#deploy' do
-    it 'deploys the VCL' do
+    it 'deploys the VCL for bouncer' do
       @requests = []
 
       # This call is made by the Fastly library when you call `Fastly.new`
@@ -16,8 +16,27 @@ describe DeployService do
       @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/2/clone").
         to_return(body: File.read("spec/fixtures/fastly-put-clone.json"))
 
+      # Given Transition has 2 hosts
+      @requests << stub_request(:get, "https://transition.publishing.service.gov.uk/hosts.json").
+        to_return(body: JSON.dump(results: [{ hostname: "existing.example.com" }, { hostname: "newly-added.example.com" }]))
+
+      # And Fastly has 2 hosts, but one is different from transition
+      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/domain").
+        to_return(body: JSON.dump([{ name: "existing.example.com" }, { name: "old.example.com" }]))
+
+      # One domain will be deleted
+      @requests << stub_request(:delete, "https://api.fastly.com/service/123321abc/version/3/domain/old.example.com").
+        to_return(body: "{}")
+
+      # And the new one will be created
+      @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/domain").
+        with(
+          body: { "comment" => "", "name" => "newly-added.example.com", "service_id" => "123321abc", "version" => "3" }
+        ).
+        to_return(body: "{}")
+
       # Stub calls to delete the "UI objects"
-      %w[backend healthcheck cache_settings request_settings response_object header gzip].each do |thing|
+      %w[backend healthcheck cache_settings condition request_settings response_object header gzip].each do |thing|
         @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/#{thing}").
           to_return(body: "{}")
       end
@@ -45,26 +64,12 @@ describe DeployService do
       @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/generated_vcl").
         to_return(body: "{}")
 
-      # Get the settings
-      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/settings").
-        to_return(body: File.read("spec/fixtures/fastly-get-settings.json"))
-
-      # And update them
-      @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/settings").
-        to_return(body: "{}")
-
-      # Check that the new config is good
-      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/validate").
-        to_return(body: JSON.dump(status: "ok"))
-
       # Activate the version we've just created
       @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")
 
-      deployer = DeployService.new
-
-      ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
-        deployer.deploy!(['test', 'production'])
+      ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: "123321abc", FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
+        DeployBouncer.new.deploy!
 
         @requests.each do |request|
           expect(request).to have_been_requested.at_least_once
