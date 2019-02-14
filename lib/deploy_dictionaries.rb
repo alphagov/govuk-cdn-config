@@ -3,18 +3,8 @@ class DeployDictionaries
 
   def deploy!(argv)
     config = get_config(argv)
-    username = ENV['FASTLY_USER']
-    password = ENV['FASTLY_PASS']
 
-    if username.nil? || password.nil?
-      puts "Fastly credentials are not set. Exiting."
-      exit 1
-    end
-
-    @fastly = Fastly.new(
-      user: username,
-      password: password,
-    )
+    @fastly = GovukFastly.client
 
     service = @fastly.get_service(config['service_id'])
 

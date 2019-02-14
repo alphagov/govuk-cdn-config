@@ -37,7 +37,7 @@ class DeployBouncer
       hostnames = ENV['HOSTNAMES'].split(',')
     end
 
-    @f = Fastly.new(user: user, password: password)
+    @f = GovukFastly.client
     service = @f.get_service(service_id)
 
     version = get_dev_version(service)
@@ -83,8 +83,9 @@ class DeployBouncer
       if !extra_existing.empty?
         delete_domains(user, password, service.id, version.number, extra_existing)
       end
+
       if !extra_configured.empty?
-        add_domains(user, password, service.id, version.number, extra_configured)
+        add_domains(service.id, version.number, extra_configured)
       end
 
       vcl = render_vcl(service.id, app_domain)
@@ -166,8 +167,8 @@ class DeployBouncer
     end
   end
 
-  def add_domains(user, password, service_id, version, domains)
-    adder = Fastly.new(user: user, password: password)
+  def add_domains(service_id, version, domains)
+    adder = GovukFastly.client
     domains.each do |domain|
       begin
         puts "Adding #{domain} to the configuration".green

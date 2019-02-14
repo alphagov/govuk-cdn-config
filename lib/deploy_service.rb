@@ -4,16 +4,7 @@ class DeployService
   def deploy!(argv)
     configuration, environment, config = get_config(argv)
 
-    %w[FASTLY_USER FASTLY_PASS].each do |envvar|
-      if ENV[envvar].nil?
-        raise "#{envvar} is not set in the environment"
-      end
-    end
-
-    username = ENV['FASTLY_USER']
-    password = ENV['FASTLY_PASS']
-
-    @f = Fastly.new(user: username, password: password)
+    @f = GovukFastly.client
     config['git_version'] = get_git_version
 
     service = @f.get_service(config['service_id'])
