@@ -29,6 +29,69 @@ backend F_origin {
         .interval = 10s;
       }
 }
+backend F_aws_origin {
+    .connect_timeout = 5s;
+    .dynamic = true;
+    .port = "443";
+    .host = "foo";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "123";
+
+    .ssl = true;
+    .ssl_check_cert = always;
+    .min_tls_version = "1.2";
+    .ssl_cert_hostname = "foo";
+    .ssl_sni_hostname = "foo";
+
+    .probe = {
+        .request =
+            "HEAD /__canary__ HTTP/1.1"
+            "Host: assets.production.govuk.digital"
+            "User-Agent: Fastly healthcheck (git version: )"
+
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+      }
+}
+
+backend F_whitehall_origin {
+    .connect_timeout = 5s;
+    .dynamic = true;
+    .port = "443";
+    .host = "foo";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "123";
+
+    .ssl = true;
+    .ssl_check_cert = always;
+    .min_tls_version = "1.2";
+    .ssl_cert_hostname = "foo";
+    .ssl_sni_hostname = "foo";
+
+    .probe = {
+        .request =
+            "HEAD /__canary__ HTTP/1.1"
+            "Host: whitehall-frontend.production.govuk.digital"
+            "User-Agent: Fastly healthcheck (git version: )"
+
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+      }
+}
 # Mirror backend for provider 0
 backend F_mirror1 {
     .connect_timeout = 1s;
@@ -147,12 +210,19 @@ sub vcl_recv {
   set req.grace = 24h;
 
   # Default backend.
-  set req.backend = F_origin;
+  set req.backend = F_aws_origin;
   set req.http.Fastly-Backend-Name = "origin";
 
   # Force host header for staging and integration.
   set req.http.host = "assets.publishing.service.gov.uk";
 
+
+  if (req.url ~ "^/asset-manager\?" || req.url ~ "^/government/uploads\?" || req.url ~ "^/media\?") {
+    set req.backend = F_origin;
+  }
+  if (req.url ~ "^/government/assets\?" || req.url ~ "^/government/placeholder\?" || req.url ~ "^/government/uploads/system/uploads/attachment_data/file/[0-9]+/.*/preview\?") {
+    set req.backend = F_whitehall_origin;
+  }
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
