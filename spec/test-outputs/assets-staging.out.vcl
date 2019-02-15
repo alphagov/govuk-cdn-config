@@ -219,12 +219,12 @@ sub vcl_recv {
   set req.http.host = "assets.publishing.service.gov.uk";
 
 
-  if (req.url ~ "^/asset-manager\?" || req.url ~ "^/government/uploads\?" || req.url ~ "^/media\?")
+  if (req.url ~ "^/asset-manager\?" || req.url ~ "^/government/uploads\?" || req.url ~ "^/media\?") {
     set req.backend = F_origin;
-  end if
-  if (req.url ~ "^/government/assets\?" || req.url ~ "^/government/placeholder\?" || req.url ~ "^/government/uploads/system/uploads/attachment_data/file/[0-9]+/.*/preview\?")
+  }
+  if (req.url ~ "^/government/assets\?" || req.url ~ "^/government/placeholder\?" || req.url ~ "^/government/uploads/system/uploads/attachment_data/file/[0-9]+/.*/preview\?") {
     set req.backend = F_whitehall_origin;
-  end if
+  }
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
