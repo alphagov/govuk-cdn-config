@@ -223,7 +223,6 @@ sub vcl_recv {
     set req.backend = F_whitehall_origin;
   }
 
-
   # Serve stale if it exists.
   if (req.restarts > 0) {
     set req.backend = sick_force_grace;
