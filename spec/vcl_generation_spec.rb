@@ -7,6 +7,8 @@ RSpec.describe "VCL generation" do
   # https://github.com/alphagov/govuk-cdn-config-secrets/blob/master/fastly/fastly.yaml
   config = {
     "origin_hostname" => "foo",
+    "aws_origin_hostname" => "foo",
+    "whitehall_origin_hostname" => "foo",
     "service_id" => "123",
     "provider1_mirror_hostname" => "foo",
     "s3_mirror_hostname" => "bar",
