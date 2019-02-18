@@ -1,5 +1,3 @@
-require './lib/deploy_service'
-
 describe DeployService do
   describe '#deploy' do
     it 'deploys the VCL' do

@@ -11,7 +11,7 @@ GEM
     diff-lcs (1.3)
     diffy (3.0.1)
     docile (1.3.1)
-    fastly (1.15.0)
+    fastly (2.2.0)
     ffi (1.10.0)
     govuk-lint (3.11.0)
       rubocop (~> 0.64)
@@ -81,7 +81,7 @@ DEPENDENCIES
   climate_control
   colorize (= 0.5.8)
   diffy (= 3.0.1)
-  fastly (~> 1.4)
+  fastly (~> 2.2)
   govuk-lint (~> 3.8)
   rake
   rspec

@@ -2,7 +2,6 @@
 
 require 'erb'
 
-require_relative './lib/render_template'
-require_relative './lib/deploy_service'
+require_relative './lib/requires'
 
 DeployService.new.deploy!(ARGV)
