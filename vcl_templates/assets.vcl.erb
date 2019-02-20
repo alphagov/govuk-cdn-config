@@ -1,8 +1,8 @@
-backend F_origin {
+backend F_carrenzaorigin {
     .connect_timeout = 5s;
     .dynamic = true;
-    .port = "<%= config.fetch('origin_port', '443') %>";
-    .host = "<%= config.fetch('origin_hostname') %>";
+    .port = "<%= config.fetch('carrenza_origin_port', '443') %>";
+    .host = "<%= config.fetch('carrenza_origin_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -14,13 +14,13 @@ backend F_origin {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('carrenza_origin_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('carrenza_origin_hostname')) %>";
 
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= environment == 'staging' || environment == 'integration' ? 'assets.publishing.service.gov.uk' : config.fetch('origin_hostname') %>"
+            "Host: <%= config.fetch('carrenza_origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -34,7 +34,7 @@ backend F_origin {
         .interval = 10s;
       }
 }
-backend F_aws_origin {
+backend F_awsorigin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "<%= config.fetch('aws_origin_port', '443') %>";
@@ -56,7 +56,7 @@ backend F_aws_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= environment == 'staging' || environment == 'integration' ? 'assets.production.govuk.digital' : config.fetch('aws_origin_hostname') %>"
+            "Host: <%= config.fetch('aws_origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
@@ -199,21 +199,19 @@ sub vcl_recv {
   set req.grace = 24h;
 
   # Default backend.
-  set req.backend = F_aws_origin;
-  set req.http.Fastly-Backend-Name = "origin";
-<% if environment == 'staging' || environment == 'integration' %>
-  # Force host header for staging and integration.
-  set req.http.host = "assets.publishing.service.gov.uk";
-<% end %>
+  set req.backend = F_awsorigin;
+  set req.http.Fastly-Backend-Name = "awsorigin";
+  set req.http.host = "<%= config.fetch('aws_origin_hostname') %>";
 
-  if (req.url ~ "^/asset-manager\?" ||
-      req.url ~ "^/government/uploads\?" ||
-      req.url ~ "^/media\?" ||
-      req.url ~ "^/government/assets\?" ||
-      req.url ~ "^/government/placeholder\?" ||
-      req.url ~ "^/government/uploads/system/uploads/attachment_data/file/[0-9]+/.*/preview\?"
+  if (req.url ~ "^/asset-manager" ||
+      req.url ~ "^/government/uploads" ||
+      req.url ~ "^/media" ||
+      req.url ~ "^/government/assets" ||
+      req.url ~ "^/government/placeholder"
       ) {
-    set req.backend = F_origin;
+      set req.backend = F_carrenzaorigin;
+      set req.http.Fastly-Backend-Name = "carrenzaorigin";
+      set req.http.host = "<%= config.fetch('carrenza_origin_hostname') %>";
   }
 
   # Serve stale if it exists.

@@ -1,4 +1,4 @@
-backend F_origin {
+backend F_carrenzaorigin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
@@ -17,7 +17,7 @@ backend F_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: assets.publishing.service.gov.uk"
+            "Host: foo"
             "User-Agent: Fastly healthcheck (git version: )"
 
             "Connection: close";
@@ -29,7 +29,7 @@ backend F_origin {
         .interval = 10s;
       }
 }
-backend F_aws_origin {
+backend F_awsorigin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
@@ -48,7 +48,7 @@ backend F_aws_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: assets.production.govuk.digital"
+            "Host: foo"
             "User-Agent: Fastly healthcheck (git version: )"
 
             "Connection: close";
@@ -179,21 +179,19 @@ sub vcl_recv {
   set req.grace = 24h;
 
   # Default backend.
-  set req.backend = F_aws_origin;
-  set req.http.Fastly-Backend-Name = "origin";
+  set req.backend = F_awsorigin;
+  set req.http.Fastly-Backend-Name = "awsorigin";
+  set req.http.host = "foo";
 
-  # Force host header for staging and integration.
-  set req.http.host = "assets.publishing.service.gov.uk";
-
-
-  if (req.url ~ "^/asset-manager\?" ||
-      req.url ~ "^/government/uploads\?" ||
-      req.url ~ "^/media\?" ||
-      req.url ~ "^/government/assets\?" ||
-      req.url ~ "^/government/placeholder\?" ||
-      req.url ~ "^/government/uploads/system/uploads/attachment_data/file/[0-9]+/.*/preview\?"
+  if (req.url ~ "^/asset-manager" ||
+      req.url ~ "^/government/uploads" ||
+      req.url ~ "^/media" ||
+      req.url ~ "^/government/assets" ||
+      req.url ~ "^/government/placeholder"
       ) {
-    set req.backend = F_origin;
+      set req.backend = F_carrenzaorigin;
+      set req.http.Fastly-Backend-Name = "carrenzaorigin";
+      set req.http.host = "foo";
   }
 
   # Serve stale if it exists.
