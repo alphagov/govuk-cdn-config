@@ -346,6 +346,38 @@ if (table.lookup(active_ab_tests, "RelatedLinksABTest1") == "true") {
     }
   }
 }
+if (table.lookup(active_ab_tests, "RelatedLinksABTest2") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-RelatedLinksABTest2 = "A";
+  } else if (req.url ~ "[\?\&]ABTest-RelatedLinksABTest2=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-RelatedLinksABTest2 = "A";
+  } else if (req.url ~ "[\?\&]ABTest-RelatedLinksABTest2=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-RelatedLinksABTest2 = "B";
+  } else if (req.http.Cookie ~ "ABTest-RelatedLinksABTest2") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-RelatedLinksABTest2 = req.http.Cookie:ABTest-RelatedLinksABTest2;
+  } else {
+    declare local var.denominator_RelatedLinksABTest2 INTEGER;
+    declare local var.denominator_RelatedLinksABTest2_A INTEGER;
+    declare local var.nominator_RelatedLinksABTest2_A INTEGER;
+    set var.nominator_RelatedLinksABTest2_A = std.atoi(table.lookup(relatedlinksabtest2_percentages, "A"));
+    set var.denominator_RelatedLinksABTest2 += var.nominator_RelatedLinksABTest2_A;
+    declare local var.denominator_RelatedLinksABTest2_B INTEGER;
+    declare local var.nominator_RelatedLinksABTest2_B INTEGER;
+    set var.nominator_RelatedLinksABTest2_B = std.atoi(table.lookup(relatedlinksabtest2_percentages, "B"));
+    set var.denominator_RelatedLinksABTest2 += var.nominator_RelatedLinksABTest2_B;
+    set var.denominator_RelatedLinksABTest2_A = var.denominator_RelatedLinksABTest2;
+    if (randombool(var.nominator_RelatedLinksABTest2_A, var.denominator_RelatedLinksABTest2_A)) {
+      set req.http.GOVUK-ABTest-RelatedLinksABTest2 = "A";
+    } else {
+      set req.http.GOVUK-ABTest-RelatedLinksABTest2 = "B";
+    }
+  }
+}
 # End dynamic section
 
 
@@ -459,6 +491,12 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-RelatedLinksABTest1" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest1" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest1"))));
       add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest1=" req.http.GOVUK-ABTest-RelatedLinksABTest1 "; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "RelatedLinksABTest2") == "true") {
+    if (req.http.Cookie !~ "ABTest-RelatedLinksABTest2" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest2" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest2"))));
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest2=" req.http.GOVUK-ABTest-RelatedLinksABTest2 "; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
