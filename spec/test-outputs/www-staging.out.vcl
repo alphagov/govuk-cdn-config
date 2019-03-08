@@ -602,7 +602,7 @@ sub vcl_deliver {
     && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
     && req.http.Cookie !~ "ABTest-Example") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
-    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
+    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
   # Begin dynamic section
@@ -610,43 +610,43 @@ sub vcl_deliver {
   if (table.lookup(active_ab_tests, "ViewDrivingLicence") == "true") {
     if (req.http.Cookie !~ "ABTest-ViewDrivingLicence" || req.url ~ "[\?\&]ABTest-ViewDrivingLicence" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ViewDrivingLicence"))));
-      add resp.http.Set-Cookie = "ABTest-ViewDrivingLicence=" req.http.GOVUK-ABTest-ViewDrivingLicence "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-ViewDrivingLicence=" req.http.GOVUK-ABTest-ViewDrivingLicence "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "RelatedLinksAATest") == "true") {
     if (req.http.Cookie !~ "ABTest-RelatedLinksAATest" || req.url ~ "[\?\&]ABTest-RelatedLinksAATest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksAATest"))));
-      add resp.http.Set-Cookie = "ABTest-RelatedLinksAATest=" req.http.GOVUK-ABTest-RelatedLinksAATest "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksAATest=" req.http.GOVUK-ABTest-RelatedLinksAATest "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "RelatedLinksABTest1") == "true") {
     if (req.http.Cookie !~ "ABTest-RelatedLinksABTest1" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest1" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest1"))));
-      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest1=" req.http.GOVUK-ABTest-RelatedLinksABTest1 "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest1=" req.http.GOVUK-ABTest-RelatedLinksABTest1 "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "RelatedLinksABTest2") == "true") {
     if (req.http.Cookie !~ "ABTest-RelatedLinksABTest2" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest2" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest2"))));
-      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest2=" req.http.GOVUK-ABTest-RelatedLinksABTest2 "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest2=" req.http.GOVUK-ABTest-RelatedLinksABTest2 "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "RelatedLinksABTest3") == "true") {
     if (req.http.Cookie !~ "ABTest-RelatedLinksABTest3" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest3" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest3"))));
-      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest3=" req.http.GOVUK-ABTest-RelatedLinksABTest3 "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest3=" req.http.GOVUK-ABTest-RelatedLinksABTest3 "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "RelatedLinksABTest4") == "true") {
     if (req.http.Cookie !~ "ABTest-RelatedLinksABTest4" || req.url ~ "[\?\&]ABTest-RelatedLinksABTest4" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "RelatedLinksABTest4"))));
-      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest4=" req.http.GOVUK-ABTest-RelatedLinksABTest4 "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-RelatedLinksABTest4=" req.http.GOVUK-ABTest-RelatedLinksABTest4 "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "FinderAnswerABTest") == "true") {
     if (req.http.Cookie !~ "ABTest-FinderAnswerABTest" || req.url ~ "[\?\&]ABTest-FinderAnswerABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderAnswerABTest"))));
-      add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
