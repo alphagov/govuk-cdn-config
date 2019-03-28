@@ -353,7 +353,7 @@ sub vcl_deliver {
     && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
     && req.http.Cookie !~ "ABTest-Example") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
-    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; expires=" now + 1d;
+    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
   # Begin dynamic section
@@ -365,7 +365,7 @@ sub vcl_deliver {
   if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
     if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
-      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; expires=" var.expiry "; path=/";
+      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
     }
   }
 <% end # unless -%>
