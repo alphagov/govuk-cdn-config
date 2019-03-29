@@ -158,10 +158,7 @@ acl purge_ip_whitelist {
 sub vcl_recv {
 
   # Allow FASTLYPURGE from IPs defined in the ACL only, else return a HTTP 403
-  if (req.request == "FASTLYPURGE") {
-    if (client.ip ~ purge_ip_whitelist) {
-      return (lookup);
-    }
+  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_whitelist) {
     error 403 "Forbidden";
   }
 
