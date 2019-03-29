@@ -140,6 +140,9 @@ acl purge_ip_whitelist {
   "31.210.241.100";   # Carrenza mirrors
 
   "31.210.245.86";    # Carrenza Production
+  "18.202.136.43";    # AWS Production
+  "34.246.209.74";    # AWS Production
+  "34.253.57.8";      # AWS Production
 
   "23.235.32.0"/20;   # Fastly cache node
   "43.249.72.0"/22;   # Fastly cache node
