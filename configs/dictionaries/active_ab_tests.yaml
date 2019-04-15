@@ -4,10 +4,5 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-RelatedLinksAATest: false
-RelatedLinksABTest1: false
-RelatedLinksABTest2: false
-RelatedLinksABTest3: false
-RelatedLinksABTest4: false
 ViewDrivingLicence: false
 FinderAnswerABTest: false
