@@ -25,9 +25,9 @@ backend F_apt {
 sub vcl_recv {
 #FASTLY recv
 
-    # Prevent third parties from flushing CDN caches with FASTLYPURGE
+    # Require authentication for FASTLYPURGE requests
     if (req.request == "FASTLYPURGE") {
-      error 403 "Forbiddden";
+      set req.http.Fastly-Purge-Requires-Auth = "1";
     }
 
     # Unspoofable original client address
