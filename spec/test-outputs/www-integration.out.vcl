@@ -123,6 +123,10 @@ acl purge_ip_whitelist {
 }
 
 
+acl allowed_ip_addresses {
+  
+}
+
 
 sub vcl_recv {
 

@@ -147,7 +147,7 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
-<% if environment == 'staging' %>
+<% if %w(staging integration).include?(environment) %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
@@ -175,9 +175,11 @@ sub vcl_recv {
   }
 
   <% if config['basic_authentication'] %>
-  # Check whether the basic auth credentials are correct in integration
-  if (req.http.Authorization != "Basic <%= config['basic_authentication'] %>") {
-    error 401 "Unauthorized";
+  if (! (client.ip ~ allowed_ip_addresses)) {
+    # Check whether the basic auth credentials are correct in integration
+    if (req.http.Authorization != "Basic <%= config['basic_authentication'] %>") {
+      error 401 "Unauthorized";
+    }
   }
   <% end %>
 
