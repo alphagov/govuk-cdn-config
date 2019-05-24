@@ -15,6 +15,7 @@ RSpec.describe "VCL generation" do
     "gcs_mirror_prefix" => "gcs-mirror",
     "gcs_mirror_access_id" => "gcs-mirror-access-id",
     "gcs_mirror_secret_key" => "gcs-mirror-secret-key",
+    "gcs_mirror_bucket_name" => "gcs-bucket",
     "default_ttl" => "5000",
     "apt_hostname" => "foo",
     "origin_domain_suffix" => "boo",
