@@ -162,11 +162,6 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
-  # Check whether the remote IP address is in the list of blocked IPs
-  if (table.lookup(ip_address_blacklist, client.ip)) {
-    error 403 "Forbidden";
-  }
-
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
@@ -181,25 +176,28 @@ sub vcl_recv {
   set req.grace = 24h;
 
   #################### Start of default mirror backend ########################
-  set req.backend = F_mirrorS3;
-  set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
-  set req.http.Fastly-Backend-Name = "mirrorS3";
+  if (req.restarts < 1) {
+    set req.http.original-url = req.url;
 
-  # Requests to home page, rewrite to index.html
-  if (req.url ~ "^/?([\?#].*)?$") {
-    set req.url = regsub(req.url, "^/?([\?#].*)?$", "/index.html\1");
+    set req.backend = F_mirrorS3;
+    set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
+    set req.http.Fastly-Backend-Name = "mirrorS3";
+
+    # Requests to home page, rewrite to index.html
+    if (req.url ~ "^/?([\?#].*)?$") {
+      set req.url = regsub(req.url, "^/?([\?#].*)?$", "/index.html\1");
+    }
+
+    # Replace multiple /
+    set req.url = regsuball(req.url, "([^:])//+", "\1/");
+
+    # Requests without document extension, rewrite adding .html
+    if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
+      set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
+    }
+    # Add bucket directory prefix to all the requests
+    set req.url = "/<%= config.fetch('s3_mirror_prefix') %>" req.url;
   }
-
-  # Replace multiple /
-  set req.url = regsuball(req.url, "([^:])//+", "\1/");
-
-  # Requests without document extension, rewrite adding .html
-  if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
-    set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
-  }
-  # Add bucket directory prefix to all the requests
-  set req.url = "/<%= config.fetch('s3_mirror_prefix') %>" req.url;
-
   #################### End of default mirror backend ##########################
 
   # Serve stale if it exists.
@@ -210,6 +208,8 @@ sub vcl_recv {
 
   # Common config when failover to mirror buckets
   if (req.restarts > 1) {
+    set req.url = req.http.original-url;
+
     # Don't serve from stale for mirrors
     set req.grace = 0s;
     set req.http.Fastly-Failover = "1";
@@ -229,7 +229,7 @@ sub vcl_recv {
   }
 
   # Failover to s3 mirror replica
-  if (req.restarts > 1) {
+  if (req.restarts == 2) {
     set req.backend = F_mirrorS3Replica;
     set req.http.host = "<%= config.fetch('s3_mirror_replica_hostname') %>";
     set req.http.Fastly-Backend-Name = "mirrorS3Replica";
@@ -248,7 +248,7 @@ sub vcl_recv {
     set req.url = "/<%= config.fetch('gcs_mirror_prefix') %>" req.url;
 
     set req.http.Date = now;
-    set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:"  digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_prefix') %>" req.url.path);
+    set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
 
   # Unspoofable original client address.
@@ -265,9 +265,6 @@ sub vcl_recv {
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
   }
-
-  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
-  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
   return(lookup);
 }
