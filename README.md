@@ -10,7 +10,7 @@ This repo contains 3 scripts to configure our [Fastly CDN](https://fastly.com) a
 
 ### Deploy Service
 
-Script: [deploy-service.sh](/blob/master/deploy-service.sh)
+Script: [deploy_service](/deploy_service)
 
 Invoked via the [CDN: deploy service](https://deploy.publishing.service.gov.uk/job/Deploy_CDN) Jenkins job.
 
