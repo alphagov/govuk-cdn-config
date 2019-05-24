@@ -227,7 +227,7 @@ sub vcl_recv {
     set req.url = "/gcs-mirror" req.url;
 
     set req.http.Date = now;
-    set req.http.Authorization = "AWS "gcs-mirror-access-id":"  digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-mirror" req.url.path);
+    set req.http.Authorization = "AWS gcs-mirror-access-id:"  digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-mirror" req.url.path);
   }
 
   # Unspoofable original client address.
