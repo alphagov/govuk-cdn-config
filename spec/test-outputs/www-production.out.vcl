@@ -537,9 +537,10 @@ sub vcl_error {
   
 
   # Assume we've hit vcl_error() because the backend is unavailable
-  # for the first two retries. By restarting, vcl_recv() will try
-  # serving from stale before failing over to the mirrors.
-  if (req.restarts < 3) {
+  # for the first 3 retries: origin, mirrorS3, mirrorS3Replica.
+  # By restarting, vcl_recv() will try serving from stale before
+  # failing over to the mirrors.
+  if (req.restarts < 4) {
     return (restart);
   }
 
