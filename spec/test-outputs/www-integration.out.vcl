@@ -28,68 +28,8 @@ backend F_origin {
         .interval = 10s;
     }
 }
-# Mirror backend for provider 0
-backend F_mirror1 {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "443";
-    .host = "foo";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "123";
 
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "foo";
-    .ssl_sni_hostname = "foo";
 
-    .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: foo"
-            "User-Agent: Fastly healthcheck (git version: )"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
-}
-# Mirror backend for S3
-backend F_mirrorS3 {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "443";
-    .host = "bar";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "bar";
-    .ssl_sni_hostname = "bar";
-
-    .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: bar"
-            "User-Agent: Fastly healthcheck (git version: )"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
-}
 
 backend sick_force_grace {
   .host = "127.0.0.1";
@@ -158,8 +98,11 @@ sub vcl_recv {
   set req.grace = 24h;
 
   # Default backend.
-  set req.backend = F_origin;
-  set req.http.Fastly-Backend-Name = "origin";
+  if (req.restarts < 1) {
+    set req.http.original-url = req.url;
+    set req.backend = F_origin;
+    set req.http.Fastly-Backend-Name = "origin";
+  }
 
   # Serve stale if it exists.
   if (req.restarts > 0) {
@@ -167,38 +110,7 @@ sub vcl_recv {
     set req.http.Fastly-Backend-Name = "stale";
   }
 
-  # Failover to mirror.
-  if (req.restarts > 1) {
-    # Don't serve from stale for mirrors
-    set req.grace = 0s;
-    set req.http.Fastly-Failover = "1";
-
-    set req.backend = F_mirror1;
-    set req.http.host = "foo";
-    set req.http.Fastly-Backend-Name = "mirror1";
-  }
-
-  # FIXME: Prefer a fallback director if we move to Varnish 3
-  if (req.restarts > 2) {
-    set req.backend = F_mirrorS3;
-    set req.http.host = "bar";
-    set req.http.Fastly-Backend-Name = "mirrorS3";
-
-    # Requests to home page, rewrite to index.html
-    if (req.url ~ "^/?([\?#].*)?$") {
-      set req.url = regsub(req.url, "^/?([\?#].*)?$", "/index.html\1");
-    }
-
-    # Replace multiple /
-    set req.url = regsuball(req.url, "([^:])//+", "\1/");
-
-    # Requests without document extension, rewrite adding .html
-    if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
-      set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
-    }
-    # Add bucket directory prefix to all the requests
-    set req.url = "/foo_" req.url;
-  }
+  
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
