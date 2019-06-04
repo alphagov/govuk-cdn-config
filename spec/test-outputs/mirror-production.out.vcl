@@ -289,7 +289,7 @@ sub vcl_fetch {
   # a 301 status code. All errors from the mirrors are set to 503 as they
   # cannot know whether or not a page actually exists (e.g. /search is a valid
   # URL but the mirror cannot return it).
-  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "mirror") {
+  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "^mirror") {
     set beresp.status = 503;
   }
 
@@ -297,7 +297,7 @@ sub vcl_fetch {
     set req.http.Fastly-Cachetype = "ERROR";
     set beresp.ttl = 1s;
     set beresp.grace = 5s;
-    if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
+    if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
       error 503 "Error page";
     }
     return (deliver);
@@ -309,8 +309,8 @@ sub vcl_fetch {
     # apply the default ttl
     set beresp.ttl = 5000s;
 
-    # S3 does not set cache headers by default. Override TTL and add cache-control with 15 minutes
-    if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
+    # Mirror buckets do not set cache headers by default. Override TTL and add cache-control with 15 minutes
+    if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
       set beresp.ttl = 900s;
       set beresp.http.Cache-Control = "max-age=900";
     }
