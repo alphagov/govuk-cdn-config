@@ -236,7 +236,7 @@ sub vcl_fetch {
 
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 4 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     set beresp.saintmode = 5s;
     return (restart);
   }
