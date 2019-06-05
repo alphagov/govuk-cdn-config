@@ -127,17 +127,6 @@ backend F_mirrorGCS {
 }
 
 
-backend sick_force_grace {
-  .host = "127.0.0.1";
-  .port = "1";
-  .probe = {
-    .request = "invalid";
-    .interval = 365d;
-    .initial = 0;
-  }
-}
-
-
 acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
@@ -210,15 +199,9 @@ sub vcl_recv {
     set req.http.Fastly-Backend-Name = "origin";
   }
 
-  # Serve stale if it exists.
-  if (req.restarts > 0) {
-    set req.backend = sick_force_grace;
-    set req.http.Fastly-Backend-Name = "stale";
-  }
-
   
   # Common config when failover to mirror buckets
-  if (req.restarts > 1) {
+  if (req.restarts > 0) {
     set req.url = req.http.original-url;
 
     # Don't serve from stale for mirrors
@@ -240,7 +223,7 @@ sub vcl_recv {
   }
 
   # Failover to primary s3 mirror.
-  if (req.restarts == 2) {
+  if (req.restarts == 1) {
       set req.backend = F_mirrorS3;
       set req.http.host = "bar";
       set req.http.Fastly-Backend-Name = "mirrorS3";
@@ -250,7 +233,7 @@ sub vcl_recv {
   }
 
   # Failover to replica s3 mirror.
-  if (req.restarts == 3) {
+  if (req.restarts == 2) {
     set req.backend = F_mirrorS3Replica;
     set req.http.host = "s3-mirror-replica.aws.com";
     set req.http.Fastly-Backend-Name = "mirrorS3Replica";
@@ -260,7 +243,7 @@ sub vcl_recv {
   }
 
   # Failover to GCS mirror.
-  if (req.restarts > 3) {
+  if (req.restarts > 2) {
     set req.backend = F_mirrorGCS;
     set req.http.host = "gcs-mirror.google.com";
     set req.http.Fastly-Backend-Name = "mirrorGCS";
@@ -397,8 +380,14 @@ sub vcl_fetch {
 
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 4 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     set beresp.saintmode = 5s;
+
+    if req.restarts == 0 && stale.exists {
+     set beresp.http.Fastly-Backend-Name = "stale"
+     return(deliver_stale);
+    }
+
     return (restart);
   }
 
@@ -549,7 +538,7 @@ sub vcl_error {
   # for the first 3 retries: origin, mirrorS3, mirrorS3Replica.
   # By restarting, vcl_recv() will try serving from stale before
   # failing over to the mirrors.
-  if (req.restarts < 4) {
+  if (req.restarts < 3) {
     return (restart);
   }
 

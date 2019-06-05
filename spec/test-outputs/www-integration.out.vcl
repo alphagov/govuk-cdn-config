@@ -31,17 +31,6 @@ backend F_origin {
 
 
 
-backend sick_force_grace {
-  .host = "127.0.0.1";
-  .port = "1";
-  .probe = {
-    .request = "invalid";
-    .interval = 365d;
-    .initial = 0;
-  }
-}
-
-
 acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
@@ -102,12 +91,6 @@ sub vcl_recv {
     set req.http.original-url = req.url;
     set req.backend = F_origin;
     set req.http.Fastly-Backend-Name = "origin";
-  }
-
-  # Serve stale if it exists.
-  if (req.restarts > 0) {
-    set req.backend = sick_force_grace;
-    set req.http.Fastly-Backend-Name = "stale";
   }
 
   
@@ -236,8 +219,14 @@ sub vcl_fetch {
 
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 4 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
+  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     set beresp.saintmode = 5s;
+
+    if req.restarts == 0 && stale.exists {
+     set beresp.http.Fastly-Backend-Name = "stale"
+     return(deliver_stale);
+    }
+
     return (restart);
   }
 
@@ -388,7 +377,7 @@ sub vcl_error {
   # for the first 3 retries: origin, mirrorS3, mirrorS3Replica.
   # By restarting, vcl_recv() will try serving from stale before
   # failing over to the mirrors.
-  if (req.restarts < 4) {
+  if (req.restarts < 3) {
     return (restart);
   }
 
