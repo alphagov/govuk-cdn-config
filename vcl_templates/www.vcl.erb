@@ -324,7 +324,7 @@ sub vcl_fetch {
     set beresp.saintmode = 5s;
 
     if ((req.restarts == 0) && stale.exists ) {
-     set req.http.Fastly-Backend-Name = "stale"
+     set req.http.Fastly-Backend-Name = "stale";
      set beresp.http.Fastly-Backend-Name = "stale";
      return(deliver_stale);
     }
