@@ -222,8 +222,8 @@ sub vcl_fetch {
   if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
     set beresp.saintmode = 5s;
 
-    if req.restarts == 0 && stale.exists {
-     set beresp.http.Fastly-Backend-Name = "stale"
+    if ((req.restarts == 0) && stale.exists ) {
+     set beresp.http.Fastly-Backend-Name = "stale";
      return(deliver_stale);
     }
 
