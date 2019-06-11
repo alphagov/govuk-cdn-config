@@ -126,29 +126,6 @@ backend F_mirrorGCS {
     }
 }
 
-director mirrors_director fallback {
-  {
-    .backend = F_mirrorS3;
-  }{
-    .backend = F_mirrorS3Replica;
-  }{
-    .backend = F_mirrorGCS;
-  }
-}
-
-
-# This backend is permanently sick on purpose so that the vcl_error
-# can use this backend to force serving stale objects if the origin
-# is sick, see: https://book.varnish-software.com/3.0/Saving_a_request.html
-backend sick_force_grace {
-  .host = "127.0.0.1";
-  .port = "1";
-  .probe = {
-    .request = "invalid";
-    .interval = 365d;
-    .initial = 0;
-  }
-}
 
 acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
@@ -215,22 +192,15 @@ sub vcl_recv {
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
-  # Default backend.
-  if (req.restarts == 0) {
-    set req.http.original-url = req.url;
-    set req.backend = F_origin;
-    set req.http.Fastly-Backend-Name = "origin";
-  }
-
-  # Serve stale if it exists.
-  if (req.restarts > 0) {
-    set req.backend = sick_force_grace;
-    set req.http.Fastly-Backend-Name = "stale";
-  }
+  # Default backend, these details will be overwritten if other backends are
+  # chosen
+  set req.http.original-url = req.url;
+  set req.backend = F_origin;
+  set req.http.Fastly-Backend-Name = "origin";
 
   
-  # Failover to mirror buckets
-  if (req.restarts > 1) {
+  # Common config when failover to mirror buckets
+  if (req.restarts > 0) {
     set req.url = req.http.original-url;
 
     # Don't serve from stale for mirrors
@@ -249,32 +219,39 @@ sub vcl_recv {
     if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
       set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
     }
+  }
 
-    # get healthy mirror from fallback director
-    set req.backend = mirrors_director;
-
-    if (req.backend == F_mirrorS3){
+  # Failover to primary s3 mirror.
+  if (req.restarts == 1) {
+      set req.backend = F_mirrorS3;
       set req.http.host = "bar";
       set req.http.Fastly-Backend-Name = "mirrorS3";
 
       # Add bucket directory prefix to all the requests
       set req.url = "/foo_" req.url;
-    } else if (req.backend == F_mirrorS3Replica){
-      set req.http.host = "s3-mirror-replica.aws.com";
-      set req.http.Fastly-Backend-Name = "mirrorS3Replica";
+  }
 
-      # Add bucket directory prefix to all the requests
-      set req.url = "/s3-mirror-replica" req.url;
-    } else {
-      set req.http.host = "gcs-mirror.google.com";
-      set req.http.Fastly-Backend-Name = "mirrorGCS";
+  # Failover to replica s3 mirror.
+  if (req.restarts == 2) {
+    set req.backend = F_mirrorS3Replica;
+    set req.http.host = "s3-mirror-replica.aws.com";
+    set req.http.Fastly-Backend-Name = "mirrorS3Replica";
 
-      # Add bucket directory prefix to all the requests
-      set req.url = "/gcs-mirror" req.url;
+    # Add bucket directory prefix to all the requests
+    set req.url = "/s3-mirror-replica" req.url;
+  }
 
-      set req.http.Date = now;
-      set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
-    }
+  # Failover to GCS mirror.
+  if (req.restarts > 2) {
+    set req.backend = F_mirrorGCS;
+    set req.http.host = "gcs-mirror.google.com";
+    set req.http.Fastly-Backend-Name = "mirrorGCS";
+
+    # Add bucket directory prefix to all the requests
+    set req.url = "/gcs-mirror" req.url;
+
+    set req.http.Date = now;
+    set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
   }
   
 
@@ -549,6 +526,17 @@ sub vcl_error {
   }
 
   
+
+  # Serve stale from error subroutine as recommended in:
+  # https://docs.fastly.com/guides/performance-tuning/serving-stale-content
+  # The use of `req.restarts == 0` condition is to enforce the restriction
+  # of serving stale only when the backend is the origin.
+  if (req.restarts == 0) && (obj.status >= 500 && obj.status < 600) {
+    /* deliver stale object if it is available */
+    if (stale.exists) {
+      return(deliver_stale);
+    }
+  }
 
   # Assume we've hit vcl_error() because the backend is unavailable
   # for the first two retries. By restarting, vcl_recv() will try
