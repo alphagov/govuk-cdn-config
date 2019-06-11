@@ -479,7 +479,7 @@ sub vcl_error {
   # https://docs.fastly.com/guides/performance-tuning/serving-stale-content
   # The use of `req.restarts == 0` condition is to enforce the restriction
   # of serving stale only when the backend is the origin.
-  if (req.restarts == 0) && (obj.status >= 500 && obj.status < 600) {
+  if ((req.restarts == 0) && (obj.status >= 500 && obj.status < 600)) {
     /* deliver stale object if it is available */
     if (stale.exists) {
       return(deliver_stale);
