@@ -91,11 +91,6 @@ sub vcl_recv {
   set req.backend = F_origin;
   set req.http.Fastly-Backend-Name = "origin";
 
-  # Save original request url because req.url changes after restarts.
-  if (req.restarts < 1) {
-    set req.http.original-url = req.url;
-  }
-
   
 
   # Unspoofable original client address.

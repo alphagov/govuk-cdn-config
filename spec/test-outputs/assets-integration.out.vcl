@@ -61,78 +61,6 @@ backend F_awsorigin {
       }
 }
 
-# Mirror backend for provider 0
-backend F_mirror1 {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "443";
-    .host = "foo";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "foo";
-    .ssl_sni_hostname = "foo";
-
-    .probe = {
-        .request =
-            "HEAD /__canary__ HTTP/1.1"
-            "Host: foo"
-            "User-Agent: Fastly healthcheck (git version: )"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
-}
-# Mirror backend for S3
-backend F_mirrorS3 {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "443";
-    .host = "bar";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "bar";
-    .ssl_sni_hostname = "bar";
-
-    .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: bar"
-            "User-Agent: Fastly healthcheck (git version: )"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
-}
-
-backend sick_force_grace {
-  .host = "127.0.0.1";
-  .port = "1";
-  .probe = {
-    .request = "invalid";
-    .interval = 365d;
-    .initial = 0;
-  }
-}
 
 
 acl purge_ip_whitelist {
@@ -191,35 +119,7 @@ sub vcl_recv {
       set req.http.host = "foo";
   }
 
-  # Serve stale if it exists.
-  if (req.restarts > 0) {
-    set req.backend = sick_force_grace;
-    set req.http.Fastly-Backend-Name = "stale";
-  }
-
-  # Failover to mirror.
-  if (req.restarts > 1) {
-    # Don't serve from stale for mirrors
-    set req.grace = 0s;
-    set req.http.Fastly-Failover = "1";
-
-    set req.backend = F_mirror1;
-    set req.http.Fastly-Backend-Name = "mirror1";
-    set req.http.host = "foo";
-  }
-
-  # FIXME: Prefer a fallback director if we move to Varnish 3
-  if (req.restarts > 2) {
-    set req.backend = F_mirrorS3;
-    set req.http.host = "bar";
-    set req.http.Fastly-Backend-Name = "mirrorS3";
-
-    # Replace multiple /
-    set req.url = regsuball(req.url, "([^:])//+", "\1/");
-
-    # Rewrite adding bucket directory prefix
-    set req.url = "/foo_" req.url;
-  }
+  
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
@@ -320,6 +220,17 @@ sub vcl_error {
     set obj.status = 200;
     synthetic {""};
     return(deliver);
+  }
+
+  # Serve stale from error subroutine as recommended in:
+  # https://docs.fastly.com/guides/performance-tuning/serving-stale-content
+  # The use of `req.restarts == 0` condition is to enforce the restriction
+  # of serving stale only when the backend is the origin.
+  if ((req.restarts == 0) && (obj.status >= 500 && obj.status < 600)) {
+    /* deliver stale object if it is available */
+    if (stale.exists) {
+      return(deliver_stale);
+    }
   }
 
   # Assume we've hit vcl_error() because the backend is unavailable
