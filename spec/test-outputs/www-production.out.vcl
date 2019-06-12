@@ -213,10 +213,6 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-    return(pass);
-  }
-
     # Begin dynamic section
 if (table.lookup(active_ab_tests, "Example") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
@@ -380,6 +376,21 @@ sub vcl_fetch {
     if (beresp.http.Fastly-Backend-Name ~ "mirrorS3") {
       set beresp.ttl = 900s;
       set beresp.http.Cache-Control = "max-age=900";
+    }
+  }
+
+  # Cache non-GET/HEAD/FASTLYPURGE requests if they return a 404 or 405
+  if (!(req.request == "GET" || req.request == "HEAD" || req.request == "FASTLYPURGE")) {
+    if (http_status_matches(beresp.status, "404,405")) {
+      # Cache these 404/405 responses
+      set beresp.cacheable = true;
+      set beresp.ttl = 10s;
+    } else {
+      # Don't cache these responses.
+      # Among other things, this creates a hit-for-pass cache object for this request
+      # Explanation of what calling pass in vcl_fetch does here:
+      # https://docs.fastly.com/guides/vcl-tutorials/understanding-the-different-pass-action-behaviors#using-a-cache-setting
+      return(pass);
     }
   }
 
