@@ -1,3 +1,44 @@
+backend F_origin {
+    .connect_timeout = 5s;
+    .dynamic = true;
+    .port = "<%= config.fetch('origin_port', 443) %>";
+    .host = "<%= config.fetch('origin_hostname') %>";
+    .first_byte_timeout = 15s;
+    .max_connections = 200;
+    .between_bytes_timeout = 10s;
+    .share_key = "<%= config.fetch('service_id') %>";
+
+    .ssl = true;
+    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
+    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
+    <%- if config['ssl_ciphers'] -%>
+    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
+    <%- end -%>
+    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
+    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
+
+    .probe = {
+        .request =
+            "HEAD / HTTP/1.1"
+            "Host: <%= config.fetch('origin_hostname') %>"
+            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
+<% if config['rate_limit_token'] -%>
+            "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
+<% end -%>
+<% if config['basic_authentication'] -%>
+            "Authorization: Basic <%= config['basic_authentication'] %>"
+<% end -%>
+            "Connection: close";
+        .threshold = 1;
+        .window = 2;
+        .timeout = 5s;
+        .initial = 1;
+        .expected_response = 200;
+        .interval = 10s;
+    }
+}
+
+<% if %w(staging production).include?(environment) %>
 # Mirror backend for S3
 backend F_mirrorS3 {
     .connect_timeout = 1s;
@@ -102,17 +143,7 @@ backend F_mirrorGCS {
         .interval = 10s;
     }
 }
-
-backend sick_force_grace {
-  .host = "127.0.0.1";
-  .port = "1";
-  .probe = {
-    .request = "invalid";
-    .interval = 365d;
-    .initial = 0;
-  }
-}
-
+<% end %>
 
 acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
@@ -144,11 +175,13 @@ acl purge_ip_whitelist {
   "203.57.145.0"/24;  # Fastly cache node
 }
 
+<% if %w(staging integration).include?(environment) %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
   <% end %>
 }
+<% end %>
 
 sub vcl_recv {
 
@@ -157,10 +190,26 @@ sub vcl_recv {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
+  <% if environment == 'staging' %>
   # Only allow connections from allowed IP addresses in staging
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }
+  <% end %>
+
+  # Check whether the remote IP address is in the list of blocked IPs
+  if (table.lookup(ip_address_blacklist, client.ip)) {
+    error 403 "Forbidden";
+  }
+
+  <% if config['basic_authentication'] %>
+  if (! (client.ip ~ allowed_ip_addresses)) {
+    # Check whether the basic auth credentials are correct in integration
+    if (req.http.Authorization != "Basic <%= config['basic_authentication'] %>") {
+      error 401 "Unauthorized";
+    }
+  }
+  <% end %>
 
   # Force SSL.
   if (!req.http.Fastly-SSL) {
@@ -175,39 +224,20 @@ sub vcl_recv {
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
-  #################### Start of default mirror backend ########################
+  # Default backend, these details will be overwritten if other backends are
+  # chosen
+  set req.backend = F_origin;
+  set req.http.Fastly-Backend-Name = "origin";
+
+  <% if %w(staging production).include?(environment) %>
+
+  # Save original request url because req.url changes after restarts.
   if (req.restarts < 1) {
     set req.http.original-url = req.url;
-
-    set req.backend = F_mirrorS3;
-    set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
-    set req.http.Fastly-Backend-Name = "mirrorS3";
-
-    # Requests to home page, rewrite to index.html
-    if (req.url ~ "^/?([\?#].*)?$") {
-      set req.url = regsub(req.url, "^/?([\?#].*)?$", "/index.html\1");
-    }
-
-    # Replace multiple /
-    set req.url = regsuball(req.url, "([^:])//+", "\1/");
-
-    # Requests without document extension, rewrite adding .html
-    if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
-      set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
-    }
-    # Add bucket directory prefix to all the requests
-    set req.url = "/<%= config.fetch('s3_mirror_prefix') %>" req.url;
-  }
-  #################### End of default mirror backend ##########################
-
-  # Serve stale if it exists.
-  if (req.restarts > 0) {
-    set req.backend = sick_force_grace;
-    set req.http.Fastly-Backend-Name = "stale";
   }
 
   # Common config when failover to mirror buckets
-  if (req.restarts > 1) {
+  if (req.restarts > 0) {
     set req.url = req.http.original-url;
 
     # Don't serve from stale for mirrors
@@ -228,7 +258,17 @@ sub vcl_recv {
     }
   }
 
-  # Failover to s3 mirror replica
+  # Failover to primary s3 mirror.
+  if (req.restarts == 1) {
+      set req.backend = F_mirrorS3;
+      set req.http.host = "<%= config.fetch('s3_mirror_hostname') %>";
+      set req.http.Fastly-Backend-Name = "mirrorS3";
+
+      # Add bucket directory prefix to all the requests
+      set req.url = "/<%= config.fetch('s3_mirror_prefix') %>" req.url;
+  }
+
+  # Failover to replica s3 mirror.
   if (req.restarts == 2) {
     set req.backend = F_mirrorS3Replica;
     set req.http.host = "<%= config.fetch('s3_mirror_replica_hostname') %>";
@@ -238,7 +278,7 @@ sub vcl_recv {
     set req.url = "/<%= config.fetch('s3_mirror_replica_prefix') %>" req.url;
   }
 
-  # Failover to GCS mirror
+  # Failover to GCS mirror.
   if (req.restarts > 2) {
     set req.backend = F_mirrorGCS;
     set req.http.host = "<%= config.fetch('gcs_mirror_hostname') %>";
@@ -250,6 +290,7 @@ sub vcl_recv {
     set req.http.Date = now;
     set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
+  <% end %>
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
@@ -260,11 +301,20 @@ sub vcl_recv {
     set req.http.TLSversion = tls.client.protocol;
   }
 
-  #FASTLY recv
+<% if config['basic_authentication'] -%>
+  if (req.backend == F_origin) {
+    set req.http.Authorization = "Basic <%= config['basic_authentication'] %>";
+  }
+<% end -%>
+
+#FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
   }
+
+  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
+  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
   return(lookup);
 }
@@ -347,6 +397,35 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+  # Set the A/B cookies
+  # Only set the A/B example cookie if the request is to the A/B test page. This
+  # ensures that most visitors to the site aren't assigned an irrelevant test
+  # cookie.
+  if (req.url ~ "^/help/ab-testing"
+    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
+    && req.http.Cookie !~ "ABTest-Example") {
+    # Set a fairly short cookie expiry because this is just an A/B test demo.
+    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
+  }
+
+  # Begin dynamic section
+<% if ab_tests -%>
+  declare local var.expiry TIME;
+<% ab_tests.each do |test_config| -%>
+<% test_config.each do |test, _| -%>
+<% unless test == "Example" -%>
+  if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+    if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
+      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+<% end # unless -%>
+<% end # test_config.each -%>
+<% end # ab_tests.each -%>
+<% end # if -%>
+  # End dynamic section
+
   # Set the TLS version session cookie with the raw protocol version from
   # Fastly only if it isn't already set. We also check for a null TLS value,
   # which can occur when trying to access over HTTP (http>https upgrading).
@@ -400,6 +479,17 @@ sub vcl_error {
     return (deliver);
   }
   <% end %>
+
+  # Serve stale from error subroutine as recommended in:
+  # https://docs.fastly.com/guides/performance-tuning/serving-stale-content
+  # The use of `req.restarts == 0` condition is to enforce the restriction
+  # of serving stale only when the backend is the origin.
+  if ((req.restarts == 0) && (obj.status >= 500 && obj.status < 600)) {
+    /* deliver stale object if it is available */
+    if (stale.exists) {
+      return(deliver_stale);
+    }
+  }
 
   # Assume we've hit vcl_error() because the backend is unavailable
   # for the first two retries. By restarting, vcl_recv() will try
