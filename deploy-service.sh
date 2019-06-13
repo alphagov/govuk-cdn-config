@@ -2,7 +2,7 @@
 set -eu
 
 rm -rf govuk-cdn-config-secrets
-git clone git@github.com:alphagov/govuk-cdn-config-secrets.git -b add_www_staging_values
+git clone git@github.com:alphagov/govuk-cdn-config-secrets.git
 
 cp govuk-cdn-config-secrets/fastly/fastly.yaml .
 
