@@ -216,6 +216,18 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
+  # START: Test code for TLS 1.3 with 0-RTT session resumption
+  # 0rtt (early data accepted) ensure GET|HEAD
+  if (req.http.Early-Data && req.request != "GET" && req.request != "HEAD") {
+    error 725 "TLS Too Early";
+  }
+
+  # 0rtt (early data accepted) ensure GET|HEAD without query params
+  if (req.http.Early-Data && req.url.qs != "") {
+    error 725 "TLS Too Early";
+  }
+  # END: Test code for TLS 1.3 with 0-RTT session resumption
+
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";
@@ -445,6 +457,15 @@ sub vcl_error {
     synthetic {""};
     return (deliver);
   }
+
+  # START: Test code for TLS 1.3 with 0-RTT session resumption
+  if (obj.status == 725) {
+    set obj.status = 425;
+    set obj.response = "Too Early";
+    synthetic {""};
+    return (deliver);
+  }
+  # END: Test code for TLS 1.3 with 0-RTT session resumption
 
   if (obj.status == 804) {
     set obj.status = 404;
