@@ -188,6 +188,10 @@ sub vcl_recv {
   set req.backend = F_origin;
   set req.http.Fastly-Backend-Name = "origin";
 
+  # Set header to show recommended related links for Whitehall content. This is to be used
+  # as a rollback mechanism should we ever need to stop showing these links.
+  set req.http.Govuk-Use-Recommended-Related-Links = "true";
+
   
 
   # Save original request url because req.url changes after restarts.
