@@ -3,9 +3,6 @@ describe DeployService do
     it 'deploys the VCL' do
       @requests = []
 
-      # This call is made by the Fastly library when you call `Fastly.new`
-      @requests << stub_request(:post, "https://api.fastly.com/login").to_return(body: "{}")
-
       # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
       @requests << stub_request(:get, "https://api.fastly.com/service/123321abc").
         to_return(body: File.read("spec/fixtures/fastly-get-service-response.json"))
@@ -61,7 +58,7 @@ describe DeployService do
 
       deployer = DeployService.new
 
-      ClimateControl.modify FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
+      ClimateControl.modify FASTLY_API_KEY: 'fastly@example.com' do
         deployer.deploy!(%w[test production])
 
         @requests.each do |request|

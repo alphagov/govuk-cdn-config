@@ -3,9 +3,6 @@ describe DeployBouncer do
     it 'deploys the VCL for bouncer' do
       @requests = []
 
-      # This call is made by the Fastly library when you call `Fastly.new`
-      @requests << stub_request(:post, "https://api.fastly.com/login").to_return(body: "{}")
-
       # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
       @requests << stub_request(:get, "https://api.fastly.com/service/123321abc").
         to_return(body: File.read("spec/fixtures/fastly-get-service-response.json"))
@@ -66,7 +63,7 @@ describe DeployBouncer do
       @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")
 
-      ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: "123321abc", FASTLY_USER: 'fastly@example.com', FASTLY_PASS: '123' do
+      ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: "123321abc", FASTLY_API_KEY: 'fastly@example.com' do
         DeployBouncer.new.deploy!
 
         @requests.each do |request|
