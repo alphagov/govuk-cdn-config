@@ -334,6 +334,30 @@ sub vcl_fetch {
     set beresp.http.Fastly-Restarts = req.restarts;
   }
 
+  # The only valid status from our mirrors is a 200. They cannot return e.g.
+  # a 301 status code. All errors from the mirrors are set to 503 as they
+  # cannot know whether or not a page actually exists (e.g. /search is a valid
+  # URL but the mirror cannot return it). It should be noted that the 503 is
+  # set only when the last mirror has been attempted.
+  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "^mirror") {
+    if (req.restarts < 3 ){
+      set beresp.saintmode = 5s;
+      return (restart);
+    } else {
+      set beresp.status = 503;
+    }
+  }
+
+  if (beresp.status >= 500 && beresp.status <= 599) {
+    set req.http.Fastly-Cachetype = "ERROR";
+    set beresp.ttl = 1s;
+    set beresp.grace = 5s;
+    if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
+      error 503 "Error page";
+    }
+    return (deliver);
+  }
+
   if (beresp.http.Cache-Control ~ "private") {
     set req.http.Fastly-Cachetype = "PRIVATE";
     return (pass);
@@ -345,24 +369,6 @@ sub vcl_fetch {
 
   if (beresp.http.Cache-Control ~ "no-(store|cache)") {
     return (pass);
-  }
-
-  # The only valid status from our mirrors is a 200. They cannot return e.g.
-  # a 301 status code. All errors from the mirrors are set to 503 as they
-  # cannot know whether or not a page actually exists (e.g. /search is a valid
-  # URL but the mirror cannot return it).
-  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "^mirror") {
-    set beresp.status = 503;
-  }
-
-  if (beresp.status >= 500 && beresp.status <= 599) {
-    set req.http.Fastly-Cachetype = "ERROR";
-    set beresp.ttl = 1s;
-    set beresp.grace = 5s;
-    if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
-      error 503 "Error page";
-    }
-    return (deliver);
   }
 
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
