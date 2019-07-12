@@ -267,10 +267,6 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-    return(pass);
-  }
-
     # Begin dynamic section
 if (table.lookup(active_ab_tests, "Example") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
@@ -443,6 +439,18 @@ sub vcl_fetch {
     }
   }
 
+  # Cache non-GET/HEAD/FASTLYPURGE requests if they return a 404 or 405
+  if (!(req.request == "GET" || req.request == "HEAD" || req.request == "FASTLYPURGE")) {
+    if (http_status_matches(beresp.status, "404,405")) {
+      # Cache these 404/405 responses
+      set beresp.ttl = 5000s;
+      set beresp.cacheable = true;
+    } else {
+      # Don't cache these responses.
+      set beresp.cacheable = false;
+    }
+  }
+
   # Override default.vcl behaviour of return(pass).
   if (beresp.http.Set-Cookie) {
     return (deliver);
@@ -582,5 +590,21 @@ sub vcl_pass {
 }
 
 sub vcl_hash {
+  # include request method
+  set req.hash += req.request;
+
+  # support caching non-GET/HEAD requests
+  if (!(req.request == "GET" || req.request == "HEAD" || req.request == "FASTLYPURGE") && req.postbody) {
+    set req.hash += req.postbody;
+  }
+
+  # if handling GET/HEAD requests, fall back to normal
+  {
+    set req.hash += req.url;
+    set req.hash += req.http.host;
+    set req.hash += "#####GENERATION#####";
+    return (hash);
+  }
+
 #FASTLY hash
 }
