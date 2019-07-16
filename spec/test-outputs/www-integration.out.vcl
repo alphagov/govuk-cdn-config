@@ -35,6 +35,10 @@ acl purge_ip_whitelist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
 
+  "34.248.229.46";    # AWS Integration NAT gateway
+  "34.248.44.175";    # AWS Integration NAT gateway
+  "52.51.97.232";     # AWS Integration NAT gateway
+
   "23.235.32.0"/20;   # Fastly cache node
   "43.249.72.0"/22;   # Fastly cache node
   "103.244.50.0"/24;  # Fastly cache node
