@@ -150,6 +150,10 @@ acl purge_ip_whitelist {
   "199.232.0.0"/16;   # Fastly cache node
   "202.21.128.0"/24;  # Fastly cache node
   "203.57.145.0"/24;  # Fastly cache node
+  "167.82.0.0"/17;    # Fastly cache node
+  "167.82.128.0"/20;  # Fastly cache node
+  "167.82.160.0"/20;  # Fastly cache node
+  "167.82.224.0"/20;  # Fastly cache node
 }
 
 
@@ -433,7 +437,7 @@ sub vcl_fetch {
   # The only valid status from our mirrors is a 200. They cannot return e.g.
   # a 301 status code. All errors from the mirrors are set to 503 as they
   # cannot know whether or not a page actually exists (e.g. /search is a valid
-  # URL but the mirror cannot return it). It should be noted that the 503 is 
+  # URL but the mirror cannot return it). It should be noted that the 503 is
   # set only when the last mirror has been attempted.
   if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "^mirror") {
     if (req.restarts < 3 ){

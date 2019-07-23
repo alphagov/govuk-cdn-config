@@ -182,6 +182,10 @@ acl purge_ip_whitelist {
   "199.232.0.0"/16;   # Fastly cache node
   "202.21.128.0"/24;  # Fastly cache node
   "203.57.145.0"/24;  # Fastly cache node
+  "167.82.0.0"/17;    # Fastly cache node
+  "167.82.128.0"/20;  # Fastly cache node
+  "167.82.160.0"/20;  # Fastly cache node
+  "167.82.224.0"/20;  # Fastly cache node
 }
 
 sub vcl_recv {
