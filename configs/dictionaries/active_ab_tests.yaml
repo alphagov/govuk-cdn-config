@@ -6,4 +6,4 @@
 Example: true
 ViewDrivingLicence: false
 FinderAnswerABTest: true
-SearchClusterABTest: false
+SearchClusterABTest: true
