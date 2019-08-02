@@ -8,4 +8,4 @@
 Example: 86400
 ViewDrivingLicence: 259200
 FinderAnswerABTest: 3628800 # 6 Weeks
-SearchClusterABTest: 86400 # 1 day
+SearchClusterQueryABTest: 86400 # 1 day
