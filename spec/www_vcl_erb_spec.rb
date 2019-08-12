@@ -19,7 +19,7 @@ RSpec.describe "VCL template" do
 
   subject do
     template_path = File.join(cwd, "../vcl_templates/www.vcl.erb")
-    @rendered_vcl ||= ERB.new(File.new(template_path).read, nil, "-", "_test_erbout").result(binding)
+    @rendered_vcl ||= ERB.new(File.new(template_path).read, trim_mode: "-", eoutvar: "_test_erbout").result(binding)
   end
 
   it "renders the AB tests partial" do
@@ -50,7 +50,7 @@ describe "AB Tests partial" do
 
   subject do
     partial_path = File.join(cwd, "../vcl_templates/_multivariate_tests.vcl.erb")
-    @rendered ||= ERB.new(File.new(partial_path).read, nil, "-").result(binding)
+    @rendered ||= ERB.new(File.new(partial_path).read, trim_mode: "-").result(binding)
   end
 
   it "renders ab test output for each test in the configuration" do
