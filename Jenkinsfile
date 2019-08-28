@@ -4,6 +4,7 @@ library("govuk")
 
 node {
   govuk.buildProject(
-    rubyLintDiff: false
+    rubyLintDiff: false,
+    skipDeployToIntegration: true,
   )
 }
