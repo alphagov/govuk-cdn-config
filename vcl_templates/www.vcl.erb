@@ -241,6 +241,13 @@ sub vcl_recv {
   # as a rollback mechanism should we ever need to stop showing these links.
   set req.http.Govuk-Use-Recommended-Related-Links = "true";
 
+  # Remove all unexpected querystring params from checker paths
+  if (req.url.path ~ "^/(brexit|get-ready-brexit-check)$") {
+    set req.url = querystring.regfilter_except(req.url, "^(cb)$");
+  } elseif (req.url.path ~ "^/get-ready-brexit-check/(questions|results)$") {
+    set req.url = querystring.regfilter_except(urldecode(req.url), "^(c\[\]|page|cb)$");
+  }
+
   <% if %w(staging production).include?(environment) %>
 
   # Save original request url because req.url changes after restarts.
