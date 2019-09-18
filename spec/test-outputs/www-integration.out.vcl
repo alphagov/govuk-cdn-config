@@ -214,6 +214,38 @@ if (table.lookup(active_ab_tests, "FinderAnswerABTest") == "true") {
     }
   }
 }
+if (table.lookup(active_ab_tests, "SearchClusterQueryABTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-SearchClusterQueryABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-SearchClusterQueryABTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-SearchClusterQueryABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-SearchClusterQueryABTest=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-SearchClusterQueryABTest = "B";
+  } else if (req.http.Cookie ~ "ABTest-SearchClusterQueryABTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-SearchClusterQueryABTest = req.http.Cookie:ABTest-SearchClusterQueryABTest;
+  } else {
+    declare local var.denominator_SearchClusterQueryABTest INTEGER;
+    declare local var.denominator_SearchClusterQueryABTest_A INTEGER;
+    declare local var.nominator_SearchClusterQueryABTest_A INTEGER;
+    set var.nominator_SearchClusterQueryABTest_A = std.atoi(table.lookup(searchclusterqueryabtest_percentages, "A"));
+    set var.denominator_SearchClusterQueryABTest += var.nominator_SearchClusterQueryABTest_A;
+    declare local var.denominator_SearchClusterQueryABTest_B INTEGER;
+    declare local var.nominator_SearchClusterQueryABTest_B INTEGER;
+    set var.nominator_SearchClusterQueryABTest_B = std.atoi(table.lookup(searchclusterqueryabtest_percentages, "B"));
+    set var.denominator_SearchClusterQueryABTest += var.nominator_SearchClusterQueryABTest_B;
+    set var.denominator_SearchClusterQueryABTest_A = var.denominator_SearchClusterQueryABTest;
+    if (randombool(var.nominator_SearchClusterQueryABTest_A, var.denominator_SearchClusterQueryABTest_A)) {
+      set req.http.GOVUK-ABTest-SearchClusterQueryABTest = "A";
+    } else {
+      set req.http.GOVUK-ABTest-SearchClusterQueryABTest = "B";
+    }
+  }
+}
 # End dynamic section
 
 
@@ -339,6 +371,12 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-FinderAnswerABTest" || req.url ~ "[\?\&]ABTest-FinderAnswerABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderAnswerABTest"))));
       add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "SearchClusterQueryABTest") == "true") {
+    if (req.http.Cookie !~ "ABTest-SearchClusterQueryABTest" || req.url ~ "[\?\&]ABTest-SearchClusterQueryABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "SearchClusterQueryABTest"))));
+      add resp.http.Set-Cookie = "ABTest-SearchClusterQueryABTest=" req.http.GOVUK-ABTest-SearchClusterQueryABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
