@@ -10,3 +10,6 @@
 - FinderAnswerABTest:
   - A
   - B
+- SearchClusterQueryABTest:
+  - A
+  - B
