@@ -13,3 +13,6 @@
 - SearchClusterQueryABTest:
   - A
   - B
+- LandingPageTest:
+  - A
+  - B
