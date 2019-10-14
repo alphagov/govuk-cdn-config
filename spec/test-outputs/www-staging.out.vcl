@@ -377,6 +377,50 @@ if (table.lookup(active_ab_tests, "FinderAnswerABTest") == "true") {
     }
   }
 }
+if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-FinderPopularityABTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-FinderPopularityABTest=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "B";
+  } else if (req.url ~ "[\?\&]ABTest-FinderPopularityABTest=C(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "C";
+  } else if (req.http.Cookie ~ "ABTest-FinderPopularityABTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = req.http.Cookie:ABTest-FinderPopularityABTest;
+  } else {
+    declare local var.denominator_FinderPopularityABTest INTEGER;
+    declare local var.denominator_FinderPopularityABTest_A INTEGER;
+    declare local var.nominator_FinderPopularityABTest_A INTEGER;
+    set var.nominator_FinderPopularityABTest_A = std.atoi(table.lookup(finderpopularityabtest_percentages, "A"));
+    set var.denominator_FinderPopularityABTest += var.nominator_FinderPopularityABTest_A;
+    declare local var.denominator_FinderPopularityABTest_B INTEGER;
+    declare local var.nominator_FinderPopularityABTest_B INTEGER;
+    set var.nominator_FinderPopularityABTest_B = std.atoi(table.lookup(finderpopularityabtest_percentages, "B"));
+    set var.denominator_FinderPopularityABTest += var.nominator_FinderPopularityABTest_B;
+    declare local var.denominator_FinderPopularityABTest_C INTEGER;
+    declare local var.nominator_FinderPopularityABTest_C INTEGER;
+    set var.nominator_FinderPopularityABTest_C = std.atoi(table.lookup(finderpopularityabtest_percentages, "C"));
+    set var.denominator_FinderPopularityABTest += var.nominator_FinderPopularityABTest_C;
+    set var.denominator_FinderPopularityABTest_A = var.denominator_FinderPopularityABTest;
+    set var.denominator_FinderPopularityABTest_B = var.denominator_FinderPopularityABTest_A;
+    set var.denominator_FinderPopularityABTest_B -= var.nominator_FinderPopularityABTest_A;
+    if (randombool(var.nominator_FinderPopularityABTest_A, var.denominator_FinderPopularityABTest_A)) {
+      set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+    } else if (randombool(var.nominator_FinderPopularityABTest_B, var.denominator_FinderPopularityABTest_B)) {
+      set req.http.GOVUK-ABTest-FinderPopularityABTest = "B";
+    } else {
+      set req.http.GOVUK-ABTest-FinderPopularityABTest = "C";
+    }
+  }
+}
 # End dynamic section
 
 
@@ -502,6 +546,12 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-FinderAnswerABTest" || req.url ~ "[\?\&]ABTest-FinderAnswerABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderAnswerABTest"))));
       add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
+    if (req.http.Cookie !~ "ABTest-FinderPopularityABTest" || req.url ~ "[\?\&]ABTest-FinderPopularityABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderPopularityABTest"))));
+      add resp.http.Set-Cookie = "ABTest-FinderPopularityABTest=" req.http.GOVUK-ABTest-FinderPopularityABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
