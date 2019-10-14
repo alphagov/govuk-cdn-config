@@ -368,38 +368,6 @@ if (table.lookup(active_ab_tests, "FinderAnswerABTest") == "true") {
     }
   }
 }
-if (table.lookup(active_ab_tests, "BrexitLandingPageTest") == "true") {
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-BrexitLandingPageTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-BrexitLandingPageTest=A(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-BrexitLandingPageTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-BrexitLandingPageTest=B(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-BrexitLandingPageTest = "B";
-  } else if (req.http.Cookie ~ "ABTest-BrexitLandingPageTest") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-BrexitLandingPageTest = req.http.Cookie:ABTest-BrexitLandingPageTest;
-  } else {
-    declare local var.denominator_BrexitLandingPageTest INTEGER;
-    declare local var.denominator_BrexitLandingPageTest_A INTEGER;
-    declare local var.nominator_BrexitLandingPageTest_A INTEGER;
-    set var.nominator_BrexitLandingPageTest_A = std.atoi(table.lookup(brexitlandingpagetest_percentages, "A"));
-    set var.denominator_BrexitLandingPageTest += var.nominator_BrexitLandingPageTest_A;
-    declare local var.denominator_BrexitLandingPageTest_B INTEGER;
-    declare local var.nominator_BrexitLandingPageTest_B INTEGER;
-    set var.nominator_BrexitLandingPageTest_B = std.atoi(table.lookup(brexitlandingpagetest_percentages, "B"));
-    set var.denominator_BrexitLandingPageTest += var.nominator_BrexitLandingPageTest_B;
-    set var.denominator_BrexitLandingPageTest_A = var.denominator_BrexitLandingPageTest;
-    if (randombool(var.nominator_BrexitLandingPageTest_A, var.denominator_BrexitLandingPageTest_A)) {
-      set req.http.GOVUK-ABTest-BrexitLandingPageTest = "A";
-    } else {
-      set req.http.GOVUK-ABTest-BrexitLandingPageTest = "B";
-    }
-  }
-}
 # End dynamic section
 
 
@@ -525,12 +493,6 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-FinderAnswerABTest" || req.url ~ "[\?\&]ABTest-FinderAnswerABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderAnswerABTest"))));
       add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; secure; expires=" var.expiry "; path=/";
-    }
-  }
-  if (table.lookup(active_ab_tests, "BrexitLandingPageTest") == "true") {
-    if (req.http.Cookie !~ "ABTest-BrexitLandingPageTest" || req.url ~ "[\?\&]ABTest-BrexitLandingPageTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BrexitLandingPageTest"))));
-      add resp.http.Set-Cookie = "ABTest-BrexitLandingPageTest=" req.http.GOVUK-ABTest-BrexitLandingPageTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
