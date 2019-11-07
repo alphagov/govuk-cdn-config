@@ -13,3 +13,6 @@
 - ShinglesABTest:
   - A
   - B
+- FinderPopularityABTest:
+  - A
+  - C
