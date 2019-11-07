@@ -405,6 +405,38 @@ if (table.lookup(active_ab_tests, "ShinglesABTest") == "true") {
     }
   }
 }
+if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-FinderPopularityABTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-FinderPopularityABTest=C(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = "C";
+  } else if (req.http.Cookie ~ "ABTest-FinderPopularityABTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-FinderPopularityABTest = req.http.Cookie:ABTest-FinderPopularityABTest;
+  } else {
+    declare local var.denominator_FinderPopularityABTest INTEGER;
+    declare local var.denominator_FinderPopularityABTest_A INTEGER;
+    declare local var.nominator_FinderPopularityABTest_A INTEGER;
+    set var.nominator_FinderPopularityABTest_A = std.atoi(table.lookup(finderpopularityabtest_percentages, "A"));
+    set var.denominator_FinderPopularityABTest += var.nominator_FinderPopularityABTest_A;
+    declare local var.denominator_FinderPopularityABTest_C INTEGER;
+    declare local var.nominator_FinderPopularityABTest_C INTEGER;
+    set var.nominator_FinderPopularityABTest_C = std.atoi(table.lookup(finderpopularityabtest_percentages, "C"));
+    set var.denominator_FinderPopularityABTest += var.nominator_FinderPopularityABTest_C;
+    set var.denominator_FinderPopularityABTest_A = var.denominator_FinderPopularityABTest;
+    if (randombool(var.nominator_FinderPopularityABTest_A, var.denominator_FinderPopularityABTest_A)) {
+      set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
+    } else {
+      set req.http.GOVUK-ABTest-FinderPopularityABTest = "C";
+    }
+  }
+}
 # End dynamic section
 
 
@@ -524,6 +556,12 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-ShinglesABTest" || req.url ~ "[\?\&]ABTest-ShinglesABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ShinglesABTest"))));
       add resp.http.Set-Cookie = "ABTest-ShinglesABTest=" req.http.GOVUK-ABTest-ShinglesABTest "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
+    if (req.http.Cookie !~ "ABTest-FinderPopularityABTest" || req.url ~ "[\?\&]ABTest-FinderPopularityABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderPopularityABTest"))));
+      add resp.http.Set-Cookie = "ABTest-FinderPopularityABTest=" req.http.GOVUK-ABTest-FinderPopularityABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
