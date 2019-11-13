@@ -377,38 +377,6 @@ if (table.lookup(active_ab_tests, "FinderAnswerABTest") == "true") {
     }
   }
 }
-if (table.lookup(active_ab_tests, "ShinglesABTest") == "true") {
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-ShinglesABTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ShinglesABTest=A(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ShinglesABTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ShinglesABTest=B(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ShinglesABTest = "B";
-  } else if (req.http.Cookie ~ "ABTest-ShinglesABTest") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-ShinglesABTest = req.http.Cookie:ABTest-ShinglesABTest;
-  } else {
-    declare local var.denominator_ShinglesABTest INTEGER;
-    declare local var.denominator_ShinglesABTest_A INTEGER;
-    declare local var.nominator_ShinglesABTest_A INTEGER;
-    set var.nominator_ShinglesABTest_A = std.atoi(table.lookup(shinglesabtest_percentages, "A"));
-    set var.denominator_ShinglesABTest += var.nominator_ShinglesABTest_A;
-    declare local var.denominator_ShinglesABTest_B INTEGER;
-    declare local var.nominator_ShinglesABTest_B INTEGER;
-    set var.nominator_ShinglesABTest_B = std.atoi(table.lookup(shinglesabtest_percentages, "B"));
-    set var.denominator_ShinglesABTest += var.nominator_ShinglesABTest_B;
-    set var.denominator_ShinglesABTest_A = var.denominator_ShinglesABTest;
-    if (randombool(var.nominator_ShinglesABTest_A, var.denominator_ShinglesABTest_A)) {
-      set req.http.GOVUK-ABTest-ShinglesABTest = "A";
-    } else {
-      set req.http.GOVUK-ABTest-ShinglesABTest = "B";
-    }
-  }
-}
 if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-FinderPopularityABTest = "A";
@@ -566,12 +534,6 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-FinderAnswerABTest" || req.url ~ "[\?\&]ABTest-FinderAnswerABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderAnswerABTest"))));
       add resp.http.Set-Cookie = "ABTest-FinderAnswerABTest=" req.http.GOVUK-ABTest-FinderAnswerABTest "; secure; expires=" var.expiry "; path=/";
-    }
-  }
-  if (table.lookup(active_ab_tests, "ShinglesABTest") == "true") {
-    if (req.http.Cookie !~ "ABTest-ShinglesABTest" || req.url ~ "[\?\&]ABTest-ShinglesABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ShinglesABTest"))));
-      add resp.http.Set-Cookie = "ABTest-ShinglesABTest=" req.http.GOVUK-ABTest-ShinglesABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
