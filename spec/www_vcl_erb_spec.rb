@@ -44,7 +44,7 @@ describe "AB Tests partial" do
   let!(:ab_tests) do
     [
       { "MyTest" => %w(foo bar) },
-      { "YourTest" => %w(variant1 variant2 variant3 variant4) }
+      { "YourTest" => %w(variant1 variant2 variant3 variant4) },
     ]
   end
 
