@@ -1,7 +1,7 @@
 class DeployBouncer
   def deploy!
-    if ENV['APP_DOMAIN']
-      app_domain = ENV['APP_DOMAIN']
+    if ENV["APP_DOMAIN"]
+      app_domain = ENV["APP_DOMAIN"]
     else
       abort("APP_DOMAIN environment variable is not set")
     end
@@ -21,8 +21,8 @@ class DeployBouncer
 
     # A comma-separated list of hostnames will override the JSON output from Transition
     hostnames = []
-    if ENV['HOSTNAMES']
-      hostnames = ENV['HOSTNAMES'].split(',')
+    if ENV["HOSTNAMES"]
+      hostnames = ENV["HOSTNAMES"].split(",")
     end
 
     @fastly = GovukFastly.client
@@ -37,8 +37,8 @@ class DeployBouncer
 
     number_of_domains = configured_domains.length
     status_string = "there are #{number_of_domains} domains configured in the Transition app."
-    limit_string = 'The limit for the Production Bouncer service (3deosa3b6uKT8IimBYcAv) is 3500.'
-    more_info_string = 'See https://fastly.zendesk.com/hc/en-us/requests/7356 for more information.'
+    limit_string = "The limit for the Production Bouncer service (3deosa3b6uKT8IimBYcAv) is 3500."
+    more_info_string = "See https://fastly.zendesk.com/hc/en-us/requests/7356 for more information."
 
     if number_of_domains >= 3500
       puts "Error: #{status_string}".red
@@ -81,7 +81,7 @@ class DeployBouncer
       upload_vcl(version, vcl)
       diff = diff_vcl(service, version)
 
-      if (diff.to_s == '') && extra_configured.empty? && extra_existing.empty?
+      if (diff.to_s == "") && extra_configured.empty? && extra_existing.empty?
         debug_output("No changes detected; not activating dev version")
       else
         puts "Activating version #{version.number}".blue
@@ -106,11 +106,11 @@ class DeployBouncer
 
   def get_hosts(hostnames)
     if hostnames.empty?
-      io = open('https://transition.publishing.service.gov.uk/hosts.json')
+      io = open("https://transition.publishing.service.gov.uk/hosts.json")
       json = JSON.parse(io.read)
-      hosts = json['results']
+      hosts = json["results"]
     else
-      hosts = hostnames.map { |domain| { 'hostname' => domain } }
+      hosts = hostnames.map { |domain| { "hostname" => domain } }
     end
 
     hosts
@@ -120,10 +120,10 @@ class DeployBouncer
     configured_domains = Array.new
     hosts_api_results.each do |host|
       debug_output("Configured domain: #{host['hostname']}")
-      configured_domains << host['hostname']
+      configured_domains << host["hostname"]
     end
     if configured_domains.compact.empty?
-      raise 'No hosts found in Transition hosts API'
+      raise "No hosts found in Transition hosts API"
     end
 
     configured_domains.sort
@@ -150,7 +150,7 @@ class DeployBouncer
     domains.each do |domain|
       begin
         puts "Adding #{domain} to the configuration".green
-        @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: '')
+        @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: "")
       rescue StandardError
         puts "Cannot add #{domain}, is it owned by another customer?".red
       end
@@ -160,14 +160,14 @@ class DeployBouncer
   def render_vcl(service_id, app_domain)
     @app_domain = app_domain
 
-    vcl_file = File.join(File.dirname(__FILE__), '..', 'vcl_templates', "bouncer.vcl.erb")
+    vcl_file = File.join(File.dirname(__FILE__), "..", "vcl_templates", "bouncer.vcl.erb")
     vcl_contents = ERB.new(File.read(vcl_file)).result(binding)
 
     vcl_contents
   end
 
   def upload_vcl(version, contents)
-    vcl_name = 'main'
+    vcl_name = "main"
 
     begin
       version.vcl(vcl_name) && version.delete_vcl(vcl_name)
@@ -176,7 +176,7 @@ class DeployBouncer
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
+    @fastly.client.put(Fastly::VCL.put_path(vcl) + "/main")
   end
 
   def delete_ui_objects(service_id, version_number)
@@ -188,7 +188,7 @@ class DeployBouncer
       @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
         puts "Deleting #{type}: #{name}"
         resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
-        raise 'Delete failed' unless resp
+        raise "Delete failed" unless resp
       end
     end
   end

@@ -1,6 +1,6 @@
 describe DeployService do
-  describe '#deploy' do
-    it 'deploys the VCL' do
+  describe "#deploy" do
+    it "deploys the VCL" do
       @requests = []
 
       # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
@@ -58,7 +58,7 @@ describe DeployService do
 
       deployer = DeployService.new
 
-      ClimateControl.modify FASTLY_API_KEY: 'fastly@example.com' do
+      ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         deployer.deploy!(%w[test production])
 
         @requests.each do |request|

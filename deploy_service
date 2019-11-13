@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'erb'
+require "erb"
 
-require_relative './lib/requires'
+require_relative "./lib/requires"
 
 DeployService.new.deploy!(ARGV)
