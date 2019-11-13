@@ -26,7 +26,7 @@ describe DeployBouncer do
       # And the new one will be created
       @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/domain").
         with(
-          body: { "comment" => "", "name" => "newly-added.example.com", "service_id" => "123321abc", "version" => "3" }
+          body: { "comment" => "", "name" => "newly-added.example.com", "service_id" => "123321abc", "version" => "3" },
         ).
         to_return(body: "{}")
 

@@ -38,7 +38,7 @@ RSpec.describe "VCL generation" do
         end
 
         expect(generated_vcl).to eql(File.read(expected_vcl_filename)),
-          "The generated VCL doesn't matched the test output VCL. If you're sure the generated VCL is correct, regenerate the test files with `REGENERATE_EXPECTATIONS=1 bundle exec rspec`."
+                                 "The generated VCL doesn't matched the test output VCL. If you're sure the generated VCL is correct, regenerate the test files with `REGENERATE_EXPECTATIONS=1 bundle exec rspec`."
       end
     end
   end

@@ -198,7 +198,7 @@ class DeployBouncer
     diff = Diffy::Diff.new(
       version_current.generated_vcl.content,
       version_new.generated_vcl.content,
-      context: 3
+      context: 3,
     )
 
     puts "Diff versions: #{version_current.number} -> #{version_new.number}"
