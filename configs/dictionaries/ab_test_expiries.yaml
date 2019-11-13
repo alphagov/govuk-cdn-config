@@ -5,8 +5,7 @@
 # ---
 # ExampleTest: 86400
 ---
-Example: 86400 # 1 day
+Example: 86400
 ViewDrivingLicence: 259200
 FinderAnswerABTest: 3628800 # 6 Weeks
-ShinglesABTest: 86400
 FinderPopularityABTest: 86400 # 1 day
