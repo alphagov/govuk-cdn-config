@@ -1,6 +1,6 @@
 describe DeployBouncer do
-  describe '#deploy' do
-    it 'deploys the VCL for bouncer' do
+  describe "#deploy" do
+    it "deploys the VCL for bouncer" do
       @requests = []
 
       # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
@@ -26,7 +26,7 @@ describe DeployBouncer do
       # And the new one will be created
       @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/domain").
         with(
-          body: { "comment" => "", "name" => "newly-added.example.com", "service_id" => "123321abc", "version" => "3" }
+          body: { "comment" => "", "name" => "newly-added.example.com", "service_id" => "123321abc", "version" => "3" },
         ).
         to_return(body: "{}")
 
@@ -63,7 +63,7 @@ describe DeployBouncer do
       @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
         to_return(body: "{}")
 
-      ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: "123321abc", FASTLY_API_KEY: 'fastly@example.com' do
+      ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: "123321abc", FASTLY_API_KEY: "fastly@example.com" do
         DeployBouncer.new.deploy!
 
         @requests.each do |request|

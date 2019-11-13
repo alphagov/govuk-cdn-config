@@ -1,9 +1,9 @@
-require 'simplecov'
+require "simplecov"
 SimpleCov.start
 
-require 'webmock/rspec'
-require 'climate_control'
-require_relative '../lib/requires'
+require "webmock/rspec"
+require "climate_control"
+require_relative "../lib/requires"
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate

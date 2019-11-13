@@ -1,6 +1,6 @@
 describe DeployDictionaries do
-  describe '#deploy' do
-    it 'deploys the dictionaries' do
+  describe "#deploy" do
+    it "deploys the dictionaries" do
       @requests = []
 
       # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
@@ -45,7 +45,7 @@ describe DeployDictionaries do
       @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate").
           to_return(body: "{}")
 
-      ClimateControl.modify FASTLY_API_KEY: 'fastly@example.com' do
+      ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         DeployDictionaries.new.deploy!(%w[test production])
 
         @requests.each do |request|

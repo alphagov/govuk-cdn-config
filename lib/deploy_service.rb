@@ -5,9 +5,9 @@ class DeployService
     configuration, environment, config = get_config(argv)
 
     @fastly = GovukFastly.client
-    config['git_version'] = get_git_version
+    config["git_version"] = get_git_version
 
-    service = @fastly.get_service(config['service_id'])
+    service = @fastly.get_service(config["service_id"])
     version = get_dev_version(service)
     puts "Current version: #{version.number}"
     puts "Configuration: #{configuration}"
@@ -18,7 +18,7 @@ class DeployService
     upload_vcl(version, vcl)
     diff_vcl(service, version)
 
-    modify_settings(version, config['default_ttl'])
+    modify_settings(version, config["default_ttl"])
 
     validate_config(version)
     version.activate!
@@ -62,7 +62,7 @@ private
       @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
         puts "Deleting #{type}: #{name}"
         resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
-        raise 'ERROR: Failed to delete configuration' unless resp
+        raise "ERROR: Failed to delete configuration" unless resp
       end
     end
   end
@@ -77,7 +77,7 @@ private
   end
 
   def upload_vcl(version, contents)
-    vcl_name = 'main'
+    vcl_name = "main"
 
     begin
       version.vcl(vcl_name) && version.delete_vcl(vcl_name)
@@ -86,20 +86,20 @@ private
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + '/main')
+    @fastly.client.put(Fastly::VCL.put_path(vcl) + "/main")
   end
 
   def diff_vcl(configuration, version_new)
     version_current = configuration.versions.find(&:active?)
 
     if version_current.nil?
-      raise 'There are no active versions of this configuration'
+      raise "There are no active versions of this configuration"
     end
 
     diff = Diffy::Diff.new(
       version_current.generated_vcl.content,
       version_new.generated_vcl.content,
-      context: 3
+      context: 3,
     )
 
     puts "Diff versions: #{version_current.number} -> #{version_new.number}"

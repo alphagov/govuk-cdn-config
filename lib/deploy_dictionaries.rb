@@ -6,14 +6,14 @@ class DeployDictionaries
 
     @fastly = GovukFastly.client
 
-    service = @fastly.get_service(config['service_id'])
+    service = @fastly.get_service(config["service_id"])
 
     version = get_dev_version(service)
     puts "Using version #{version.number} of #{service.name}"
 
     dictionaries = version.dictionaries
 
-    expected_dictionaries = Dir.glob("configs/dictionaries/*.yaml").map { |filename| File.basename(filename, '.yaml') }
+    expected_dictionaries = Dir.glob("configs/dictionaries/*.yaml").map { |filename| File.basename(filename, ".yaml") }
     existing_dictionaries = dictionaries.map(&:name)
 
     # Clean up dictionaries which are no longer used
