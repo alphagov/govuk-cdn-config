@@ -405,6 +405,38 @@ if (table.lookup(active_ab_tests, "FinderPopularityABTest") == "true") {
     }
   }
 }
+if (table.lookup(active_ab_tests, "SpellingSuggestionsABTest") == "true") {
+  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+    set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-SpellingSuggestionsABTest=A(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "A";
+  } else if (req.url ~ "[\?\&]ABTest-SpellingSuggestionsABTest=B(&|$)") {
+    # Some users, such as remote testers, will be given a URL with a query string
+    # to place them into a specific bucket.
+    set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "B";
+  } else if (req.http.Cookie ~ "ABTest-SpellingSuggestionsABTest") {
+    # Set the value of the header to whatever decision was previously made
+    set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = req.http.Cookie:ABTest-SpellingSuggestionsABTest;
+  } else {
+    declare local var.denominator_SpellingSuggestionsABTest INTEGER;
+    declare local var.denominator_SpellingSuggestionsABTest_A INTEGER;
+    declare local var.nominator_SpellingSuggestionsABTest_A INTEGER;
+    set var.nominator_SpellingSuggestionsABTest_A = std.atoi(table.lookup(spellingsuggestionsabtest_percentages, "A"));
+    set var.denominator_SpellingSuggestionsABTest += var.nominator_SpellingSuggestionsABTest_A;
+    declare local var.denominator_SpellingSuggestionsABTest_B INTEGER;
+    declare local var.nominator_SpellingSuggestionsABTest_B INTEGER;
+    set var.nominator_SpellingSuggestionsABTest_B = std.atoi(table.lookup(spellingsuggestionsabtest_percentages, "B"));
+    set var.denominator_SpellingSuggestionsABTest += var.nominator_SpellingSuggestionsABTest_B;
+    set var.denominator_SpellingSuggestionsABTest_A = var.denominator_SpellingSuggestionsABTest;
+    if (randombool(var.nominator_SpellingSuggestionsABTest_A, var.denominator_SpellingSuggestionsABTest_A)) {
+      set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "A";
+    } else {
+      set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "B";
+    }
+  }
+}
 # End dynamic section
 
 
@@ -524,6 +556,12 @@ sub vcl_deliver {
     if (req.http.Cookie !~ "ABTest-FinderPopularityABTest" || req.url ~ "[\?\&]ABTest-FinderPopularityABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "FinderPopularityABTest"))));
       add resp.http.Set-Cookie = "ABTest-FinderPopularityABTest=" req.http.GOVUK-ABTest-FinderPopularityABTest "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "SpellingSuggestionsABTest") == "true") {
+    if (req.http.Cookie !~ "ABTest-SpellingSuggestionsABTest" || req.url ~ "[\?\&]ABTest-SpellingSuggestionsABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "SpellingSuggestionsABTest"))));
+      add resp.http.Set-Cookie = "ABTest-SpellingSuggestionsABTest=" req.http.GOVUK-ABTest-SpellingSuggestionsABTest "; secure; expires=" var.expiry "; path=/";
     }
   }
   # End dynamic section
