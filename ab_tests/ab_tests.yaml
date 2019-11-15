@@ -13,3 +13,6 @@
 - FinderPopularityABTest:
   - A
   - C
+- SpellingSuggestionsABTest:
+  - A
+  - B
