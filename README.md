@@ -10,7 +10,7 @@ This repo contains 3 scripts to configure our [Fastly CDN](https://fastly.com) a
 
 ### Deploy Service
 
-Script: [deploy-service.sh](/blob/master/deploy-service.sh)
+Script: [deploy-service.sh](/deploy-service.sh)
 
 Invoked via the [CDN: deploy service](https://deploy.publishing.service.gov.uk/job/Deploy_CDN) Jenkins job.
 
@@ -27,16 +27,16 @@ This script allows you to configure a number of Fastly services:
 
 ### Deploy Dictionaries
 
-Script: [deploy-dictionaries.sh](/blob/master/deploy-dictionaries.sh)
+Script: [deploy-dictionaries.sh](/deploy-dictionaries.sh)
 
 Invoked via the [CDN: update dictionaries](https://deploy.publishing.service.gov.uk/job/Update_CDN_Dictionaries) Jenkins job.
 
 Fastly provide a technology called [Edge Dictionaries](https://docs.fastly.com/guides/edge-dictionaries/)
-which can be used to provide dynamic configuration to VCL. This script takes updates dictionaries defined in YAML files in [configs/dictionaries](blob/master/configs/dictionaries). We use it for [A/B testing](#ab-testing) and blocking IP addresses (the dictionary for this lives in [alphagov/govuk-cdn-config-secrets](https://github.com/alphagov/govuk-cdn-config-secrets/blob/master/fastly/dictionaries/config/ip_address_blacklist.yaml) - read [more about IP banning](https://docs.publishing.service.gov.uk/manual/cdn.html#banning-ip-addresses-at-the-cdn-edge) in the docs).
+which can be used to provide dynamic configuration to VCL. This script takes updates dictionaries defined in YAML files in [configs/dictionaries](/configs/dictionaries). We use it for [A/B testing](#ab-testing) and blocking IP addresses (the dictionary for this lives in [alphagov/govuk-cdn-config-secrets](https://github.com/alphagov/govuk-cdn-config-secrets/blob/master/fastly/dictionaries/config/ip_address_blacklist.yaml) - read [more about IP banning](https://docs.publishing.service.gov.uk/manual/cdn.html#banning-ip-addresses-at-the-cdn-edge) in the docs).
 
 ### Deploy Bouncer
 
-Script: [deploy-bouncer.sh](/blob/master/deploy-bouncer.sh)
+Script: [deploy-bouncer.sh](/deploy-bouncer.sh)
 
 Invoked via the [CDN: deploy Bouncer configs](https://deploy.blue.production.govuk.digital/job/Bouncer_CDN/) Jenkins job.
 
