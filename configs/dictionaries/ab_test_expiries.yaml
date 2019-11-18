@@ -9,3 +9,4 @@ Example: 86400
 ViewDrivingLicence: 259200
 FinderAnswerABTest: 3628800 # 6 Weeks
 SpellingSuggestionsABTest: 86400
+HideKeywordFacetTagsABTest: 86400

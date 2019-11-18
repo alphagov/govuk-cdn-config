@@ -13,3 +13,6 @@
 - SpellingSuggestionsABTest:
   - A
   - B
+- HideKeywordFacetTagsABTest:
+  - A
+  - B
