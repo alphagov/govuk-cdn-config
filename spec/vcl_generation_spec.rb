@@ -4,7 +4,6 @@ RSpec.describe "VCL generation" do
   config = {
     "origin_hostname" => "foo",
     "aws_origin_hostname" => "foo",
-    "carrenza_origin_hostname" => "foo",
     "service_id" => "123",
     "provider1_mirror_hostname" => "foo",
     "s3_mirror_hostname" => "bar",
