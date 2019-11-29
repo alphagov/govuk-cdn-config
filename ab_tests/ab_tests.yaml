@@ -10,9 +10,6 @@
 - FinderAnswerABTest:
   - A
   - B
-- FinderPopularityABTest:
-  - A
-  - C
 - SpellingSuggestionsABTest:
   - A
   - B
