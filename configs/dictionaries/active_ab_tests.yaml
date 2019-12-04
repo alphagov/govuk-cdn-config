@@ -7,3 +7,4 @@ Example: true
 ViewDrivingLicence: false
 FinderAnswerABTest: true
 SpellingSuggestionsABTest: true
+HideKeywordFacetTagsABTest: true
