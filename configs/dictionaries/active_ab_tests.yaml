@@ -4,6 +4,5 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-ViewDrivingLicence: false
 SpellingSuggestionsABTest: true
 HideKeywordFacetTagsABTest: true

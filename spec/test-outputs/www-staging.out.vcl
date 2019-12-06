@@ -313,38 +313,6 @@ if (table.lookup(active_ab_tests, "Example") == "true") {
     }
   }
 }
-if (table.lookup(active_ab_tests, "ViewDrivingLicence") == "true") {
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-ViewDrivingLicence = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ViewDrivingLicence=A(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ViewDrivingLicence = "A";
-  } else if (req.url ~ "[\?\&]ABTest-ViewDrivingLicence=B(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-ViewDrivingLicence = "B";
-  } else if (req.http.Cookie ~ "ABTest-ViewDrivingLicence") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-ViewDrivingLicence = req.http.Cookie:ABTest-ViewDrivingLicence;
-  } else {
-    declare local var.denominator_ViewDrivingLicence INTEGER;
-    declare local var.denominator_ViewDrivingLicence_A INTEGER;
-    declare local var.nominator_ViewDrivingLicence_A INTEGER;
-    set var.nominator_ViewDrivingLicence_A = std.atoi(table.lookup(viewdrivinglicence_percentages, "A"));
-    set var.denominator_ViewDrivingLicence += var.nominator_ViewDrivingLicence_A;
-    declare local var.denominator_ViewDrivingLicence_B INTEGER;
-    declare local var.nominator_ViewDrivingLicence_B INTEGER;
-    set var.nominator_ViewDrivingLicence_B = std.atoi(table.lookup(viewdrivinglicence_percentages, "B"));
-    set var.denominator_ViewDrivingLicence += var.nominator_ViewDrivingLicence_B;
-    set var.denominator_ViewDrivingLicence_A = var.denominator_ViewDrivingLicence;
-    if (randombool(var.nominator_ViewDrivingLicence_A, var.denominator_ViewDrivingLicence_A)) {
-      set req.http.GOVUK-ABTest-ViewDrivingLicence = "A";
-    } else {
-      set req.http.GOVUK-ABTest-ViewDrivingLicence = "B";
-    }
-  }
-}
 if (table.lookup(active_ab_tests, "SpellingSuggestionsABTest") == "true") {
   if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
     set req.http.GOVUK-ABTest-SpellingSuggestionsABTest = "A";
@@ -524,12 +492,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (table.lookup(active_ab_tests, "ViewDrivingLicence") == "true") {
-    if (req.http.Cookie !~ "ABTest-ViewDrivingLicence" || req.url ~ "[\?\&]ABTest-ViewDrivingLicence" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ViewDrivingLicence"))));
-      add resp.http.Set-Cookie = "ABTest-ViewDrivingLicence=" req.http.GOVUK-ABTest-ViewDrivingLicence "; secure; expires=" var.expiry "; path=/";
-    }
-  }
   if (table.lookup(active_ab_tests, "SpellingSuggestionsABTest") == "true") {
     if (req.http.Cookie !~ "ABTest-SpellingSuggestionsABTest" || req.url ~ "[\?\&]ABTest-SpellingSuggestionsABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "SpellingSuggestionsABTest"))));
