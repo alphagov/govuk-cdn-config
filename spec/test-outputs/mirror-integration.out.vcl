@@ -201,13 +201,6 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
-  # Set the TLS version session cookie with the raw protocol version from
-  # Fastly only if it isn't already set. We also check for a null TLS value,
-  # which can occur when trying to access over HTTP (http>https upgrading).
-  if (tls.client.protocol && req.http.Cookie !~ "TLSversion") {
-    add resp.http.Set-Cookie = "TLSversion=" tls.client.protocol "; secure";
-  }
-
 #FASTLY deliver
 }
 
