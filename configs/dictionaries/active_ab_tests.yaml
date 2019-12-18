@@ -4,4 +4,4 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-HideKeywordFacetTagsABTest: false
+HideKeywordFacetTagsABTest: true
