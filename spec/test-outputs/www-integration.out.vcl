@@ -150,38 +150,6 @@ if (table.lookup(active_ab_tests, "Example") == "true") {
     }
   }
 }
-if (table.lookup(active_ab_tests, "HideKeywordFacetTagsABTest") == "true") {
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-HideKeywordFacetTagsABTest=A(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = "A";
-  } else if (req.url ~ "[\?\&]ABTest-HideKeywordFacetTagsABTest=B(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = "B";
-  } else if (req.http.Cookie ~ "ABTest-HideKeywordFacetTagsABTest") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = req.http.Cookie:ABTest-HideKeywordFacetTagsABTest;
-  } else {
-    declare local var.denominator_HideKeywordFacetTagsABTest INTEGER;
-    declare local var.denominator_HideKeywordFacetTagsABTest_A INTEGER;
-    declare local var.nominator_HideKeywordFacetTagsABTest_A INTEGER;
-    set var.nominator_HideKeywordFacetTagsABTest_A = std.atoi(table.lookup(hidekeywordfacettagsabtest_percentages, "A"));
-    set var.denominator_HideKeywordFacetTagsABTest += var.nominator_HideKeywordFacetTagsABTest_A;
-    declare local var.denominator_HideKeywordFacetTagsABTest_B INTEGER;
-    declare local var.nominator_HideKeywordFacetTagsABTest_B INTEGER;
-    set var.nominator_HideKeywordFacetTagsABTest_B = std.atoi(table.lookup(hidekeywordfacettagsabtest_percentages, "B"));
-    set var.denominator_HideKeywordFacetTagsABTest += var.nominator_HideKeywordFacetTagsABTest_B;
-    set var.denominator_HideKeywordFacetTagsABTest_A = var.denominator_HideKeywordFacetTagsABTest;
-    if (randombool(var.nominator_HideKeywordFacetTagsABTest_A, var.denominator_HideKeywordFacetTagsABTest_A)) {
-      set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = "A";
-    } else {
-      set req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest = "B";
-    }
-  }
-}
 # End dynamic section
 
 
@@ -297,12 +265,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (table.lookup(active_ab_tests, "HideKeywordFacetTagsABTest") == "true") {
-    if (req.http.Cookie !~ "ABTest-HideKeywordFacetTagsABTest" || req.url ~ "[\?\&]ABTest-HideKeywordFacetTagsABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "HideKeywordFacetTagsABTest"))));
-      add resp.http.Set-Cookie = "ABTest-HideKeywordFacetTagsABTest=" req.http.GOVUK-ABTest-HideKeywordFacetTagsABTest "; secure; expires=" var.expiry "; path=/";
-    }
-  }
   # End dynamic section
 
 #FASTLY deliver
