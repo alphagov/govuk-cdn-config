@@ -101,7 +101,7 @@ sub vcl_recv {
 
   # Set header to use the search reranker. This is to be used
   # as a rollback mechanism should we ever need to stop using the reranker.
-  set req.http.Govuk-Use-Search-Reranker = "true";
+  set req.http.Govuk-Use-Search-Reranker = "false";
 
   # Set header to show recommended related links for Whitehall content. This is to be used
   # as a rollback mechanism should we ever need to stop showing these links.
