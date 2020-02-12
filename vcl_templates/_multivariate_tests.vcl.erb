@@ -4,54 +4,58 @@
 -%>
 # Begin dynamic section
 <% if ab_tests -%>
+if (req.http.Cookie ~ "cookies_policy") {
+  if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
 <% ab_tests.each do |test_config| -%>
 <%# test_config is a hash like { "MyTest" => ['foo', 'bar', 'baz'] } -%>
 <% test_config.each do |test, variants| -%>
-if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-  if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-    set req.http.GOVUK-ABTest-<%= test %> = "<%= variants.first %>";
+    if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+        set req.http.GOVUK-ABTest-<%= test %> = "<%= variants.first %>";
 <% variants.each do |variant| -%>
-  } else if (req.url ~ "[\?\&]ABTest-<%= test %>=<%= variant %>(&|$)") {
-    # Some users, such as remote testers, will be given a URL with a query string
-    # to place them into a specific bucket.
-    set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
+      } else if (req.url ~ "[\?\&]ABTest-<%= test %>=<%= variant %>(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
 <% end -%>
-  } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
-    # Set the value of the header to whatever decision was previously made
-    set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
-  } else {
-    declare local var.denominator_<%= test %> INTEGER;
+      } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
+      } else {
+        declare local var.denominator_<%= test %> INTEGER;
 <% variants.each do |variant| -%>
-    declare local var.denominator_<%= test %>_<%= variant %> INTEGER;
-    declare local var.nominator_<%= test %>_<%= variant %> INTEGER;
-    set var.nominator_<%= test %>_<%= variant %> = std.atoi(table.lookup(<%= test.downcase %>_percentages, "<%= variant %>"));
-    set var.denominator_<%= test %> += var.nominator_<%= test %>_<%= variant %>;
+        declare local var.denominator_<%= test %>_<%= variant %> INTEGER;
+        declare local var.nominator_<%= test %>_<%= variant %> INTEGER;
+        set var.nominator_<%= test %>_<%= variant %> = std.atoi(table.lookup(<%= test.downcase %>_percentages, "<%= variant %>"));
+        set var.denominator_<%= test %> += var.nominator_<%= test %>_<%= variant %>;
 <% end -%>
 <% variants.each_with_index do |variant, idx| -%>
 <% if variant == variants.first -%>
-    set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>;
+        set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>;
 <% elsif variant != variants.last -%>
 <% previous_variant = variants[idx - 1] -%>
-    set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>_<%= previous_variant %>;
-    set var.denominator_<%= test %>_<%= variant %> -= var.nominator_<%= test %>_<%= previous_variant %>;
+        set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>_<%= previous_variant %>;
+        set var.denominator_<%= test %>_<%= variant %> -= var.nominator_<%= test %>_<%= previous_variant %>;
 <% end # if -%>
 <% end # variants.each_with_index -%>
 <% variants.each do |variant| -%>
 <% if variant == variants.first -%>
-    if (randombool(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>)) {
-      set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
+        if (randombool(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>)) {
+          set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
 <% elsif variant != variants.first && variant != variants.last -%>
-    } else if (randombool(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>)) {
-      set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
+        } else if (randombool(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>)) {
+          set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
 <% else -%>
-    } else {
-      set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
-    }
+        } else {
+          set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
+        }
 <% end -%>
 <% end # variants.each-%>
-  }
-}
+      }
+    }
 <% end # test_config.each -%>
 <% end # ab_tests.each -%>
+  }
+}
 <% end # if ab_tests -%>
 # End dynamic section
