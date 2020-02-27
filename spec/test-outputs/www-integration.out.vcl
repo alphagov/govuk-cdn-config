@@ -75,9 +75,7 @@ sub vcl_recv {
   
 
   # Force SSL.
-  if (!req.http.Fastly-SSL) {
-     error 801 "Force SSL";
-  }
+  # TODO: Wrap this in a for_fastly? if statement
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url ~ "(?i)/autodiscover/autodiscover.xml$") {
@@ -91,6 +89,10 @@ sub vcl_recv {
   # chosen
   set req.backend = F_origin;
   set req.http.Fastly-Backend-Name = "origin";
+
+  # TODO: wrap in if statement for test mode %>
+  # uses the default test backend
+  set req.backend = s1;
 
   # Set header to show recommended related links for Whitehall content. This is to be used
   # as a rollback mechanism should we ever need to stop showing these links.

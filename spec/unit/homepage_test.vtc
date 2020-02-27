@@ -1,0 +1,31 @@
+### WWW unit tests!
+
+# ===========================================================================
+
+test "the body of a 200 response from origin is not modified"
+
+# representing an origin server, receives a request (req)
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -status 200 -body "Welcome to the GOV.UK homepage!"
+} -start
+
+varnish v1 -vcl+backend {
+  # VCL_PLACEHOLDER
+} -start
+
+# representing clients using GOV.UK, receives a response (resp)
+client c_homepage_loader {
+	# client requests the GOV.UK homepage
+	txreq -url "/" -req GET
+	rxresp
+	# client receives a response
+	expect resp.status == 200
+	expect resp.http.Fastly-Backend-Name == "origin"
+	expect resp.bodylen == 31
+}
+
+client c_homepage_loader -run
+
+# ===========================================================================

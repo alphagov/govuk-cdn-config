@@ -1,0 +1,28 @@
+### WWW unit tests!
+
+# our origin server
+server s1 { rxreq; txresp } -start
+
+# Boilerplate - this gets filled in with our VCL automatically
+varnish v1 -vcl+backend {
+  # VCL_PLACEHOLDER
+} -start
+
+# ===========================================================================
+
+test "serve a 404 Not Found response if request URL matches /autodiscover/autodiscover.xml"
+
+# representing clients using GOV.UK, receives a response (resp)
+client c_eager_outlook_mailserver {
+	# client requests this outlook URL
+	txreq -url "/autodiscover/autodiscover.xml"
+	rxresp
+	# client receives a 404 message
+	expect resp.bodylen == 635
+	expect resp.http.Fastly-Backend-Name == "force_not_found"
+	expect resp.status == 404
+}
+
+client c_eager_outlook_mailserver -run
+
+# ===========================================================================
