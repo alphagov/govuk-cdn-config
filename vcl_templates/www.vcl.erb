@@ -1,22 +1,10 @@
 backend F_origin {
     .connect_timeout = 5s;
-    .dynamic = true;
     .port = "<%= config.fetch('origin_port', 443) %>";
     .host = "<%= config.fetch('origin_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
-
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
@@ -42,23 +30,11 @@ backend F_origin {
 # Mirror backend for S3
 backend F_mirrorS3 {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "<%= config.fetch('s3_mirror_port', 443) %>";
     .host = "<%= config.fetch('s3_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('s3_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_hostname')) %>";
-
     .probe = {
         .request =
             "HEAD <%= config.fetch('s3_mirror_probe_request', '/') %> HTTP/1.1"
@@ -77,23 +53,11 @@ backend F_mirrorS3 {
 # Mirror backend for S3 replica
 backend F_mirrorS3Replica {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "<%= config.fetch('s3_mirror_replica_port', 443) %>";
     .host = "<%= config.fetch('s3_mirror_replica_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('s3_mirror_replica_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_replica_hostname')) %>";
-
     .probe = {
         .request =
             "HEAD <%= config.fetch('s3_mirror_replica_probe_request', '/') %> HTTP/1.1"
@@ -112,23 +76,11 @@ backend F_mirrorS3Replica {
 # Mirror backend for GCS
 backend F_mirrorGCS {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "<%= config.fetch('gcs_mirror_port', 443) %>";
     .host = "<%= config.fetch('gcs_mirror_hostname') %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('gcs_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('gcs_mirror_hostname')) %>";
-
     .probe = {
         .request =
             "HEAD <%= config.fetch('gcs_mirror_probe_request', '/') %> HTTP/1.1"
@@ -183,18 +135,24 @@ acl purge_ip_whitelist {
   "167.82.224.0"/20;  # Fastly cache node
 }
 
-<% if %w(staging integration).include?(environment) %>
+# TODO: Inject ip_address_blacklist at build time dependent on environment
+acl ip_address_blacklist {
+}
+
+<% if %w(staging).include?(environment) %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
   <% end %>
 }
+<% else %>
+# acl allowed_ip_addresses {}
 <% end %>
 
 sub vcl_recv {
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_whitelist) {
+  if (req.request == "FASTLYPURGE" && !(client.ip ~ purge_ip_whitelist)) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
@@ -206,7 +164,7 @@ sub vcl_recv {
   <% end %>
 
   # Check whether the remote IP address is in the list of blocked IPs
-  if (table.lookup(ip_address_blacklist, client.ip)) {
+  if (client.ip ~ ip_address_blacklist) {
     error 403 "Forbidden";
   }
 
@@ -225,7 +183,7 @@ sub vcl_recv {
   }
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
-  if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
+  if (req.url ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";
   }
 
@@ -265,7 +223,7 @@ sub vcl_recv {
     set req.url = regsuball(req.url, "([^:])//+", "\1/");
 
     # Requests without document extension, rewrite adding .html
-    if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
+    if (!(req.url ~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$")) {
       set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
     }
   }
@@ -300,7 +258,7 @@ sub vcl_recv {
     set req.url = "/<%= config.fetch('gcs_mirror_prefix') %>" req.url;
 
     set req.http.Date = now;
-    set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
+    set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url);
   }
   <% end %>
 
@@ -310,7 +268,7 @@ sub vcl_recv {
   # Set a TLSversion request header for requests going to the Licensify application
   # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
   if (req.url ~ "^/apply-for-a-licence/.*") {
-    set req.http.TLSversion = tls.client.protocol;
+    # set req.http.TLSversion = tls.client.protocol;
   }
 
 <% if config['basic_authentication'] -%>
@@ -420,28 +378,28 @@ sub vcl_deliver {
   # ensures that most visitors to the site aren't assigned an irrelevant test
   # cookie.
   if (req.url ~ "^/help/ab-testing"
-    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-Example") {
+    && !(req.http.User-Agent ~ "^GOV\.UK Crawler Worker")
+    && !(req.http.Cookie ~ "ABTest-Example")) {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
-    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
+    # add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
   # Begin dynamic section
 <% if ab_tests -%>
-  declare local var.expiry TIME;
+  # declare local var.expiry TIME;
 <% ab_tests.each do |test_config| -%>
 <% test_config.each do |test, _| -%>
 <% unless test == "Example" -%>
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-        if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
-          add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
+  # if (req.http.Cookie ~ "cookies_policy") {
+    # if (req.http.Cookie ~ "cookies_policy=%22usage%22:true") {
+      # if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+      #   if (!(req.http.Cookie ~ "ABTest-<%= test %>") || req.url ~ "[\?\&]ABTest-<%= test %>" && !(req.http.User-Agent ~ "^GOV\.UK Crawler Worker")) {
+      #     set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
+      #     add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
+      #   }
+      # }
+    # }
+  # }
 <% end # unless -%>
 <% end # test_config.each -%>
 <% end # ab_tests.each -%>
@@ -501,9 +459,11 @@ sub vcl_error {
   # of serving stale only when the backend is the origin.
   if ((req.restarts == 0) && (obj.status >= 500 && obj.status < 600)) {
     /* deliver stale object if it is available */
-    if (stale.exists) {
-      return(deliver_stale);
-    }
+    # Possibly replaceable with custom VCL logic
+    # https://varnish-cache.org/docs/trunk/users-guide/vcl-grace.html#misbehaving-servers
+    # if (stale.exists) {
+    #   return(deliver_stale);
+    # }
   }
 
   # Assume we've hit vcl_error() because the backend is unavailable

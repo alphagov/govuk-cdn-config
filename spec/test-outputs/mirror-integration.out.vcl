@@ -2,7 +2,7 @@ backend F_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
-    .host = "foo";
+    .host = "127.0.0.1";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -11,13 +11,13 @@ backend F_origin {
     .ssl = true;
     .ssl_check_cert = always;
     .min_tls_version = "1.2";
-    .ssl_cert_hostname = "foo";
-    .ssl_sni_hostname = "foo";
+    .ssl_cert_hostname = "127.0.0.1";
+    .ssl_sni_hostname = "127.0.0.1";
 
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: foo"
+            "Host: 127.0.0.1"
             "User-Agent: Fastly healthcheck (git version: )"
             "Connection: close";
         .threshold = 1;

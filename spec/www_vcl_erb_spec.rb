@@ -6,10 +6,10 @@ RSpec.describe "VCL template" do
   # `ab_tests`, `config` and `environment` are binding vars needed by the www.vcl.erb template
   let!(:config) do
     {
-      "origin_hostname" => "foo",
+      "origin_hostname" => "127.0.0.1",
       "service_id" => "123",
-      "provider1_mirror_hostname" => "foo",
-      "s3_mirror_hostname" => "bar",
+      "provider1_mirror_hostname" => "127.0.0.1",
+      "s3_mirror_hostname" => "127.0.0.1",
       "s3_mirror_prefix" => "foo_",
       "default_ttl" => "5000",
     }

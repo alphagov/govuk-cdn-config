@@ -3,7 +3,7 @@ backend F_apt {
     .connect_timeout = 1s;
     .dynamic = true;
     .port = "443";
-    .host = "foo";
+    .host = "127.0.0.1";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -12,7 +12,7 @@ backend F_apt {
     .probe = {
         .request =
           "HEAD / HTTP/1.1"
-          "Host: foo"
+          "Host: 127.0.0.1"
           "Connection: close";
         .window = 5;
         .threshold = 1;

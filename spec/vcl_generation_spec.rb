@@ -2,11 +2,11 @@ RSpec.describe "VCL generation" do
   # Fill in the required test data. Normally this would come from
   # https://github.com/alphagov/govuk-cdn-config-secrets/blob/master/fastly/fastly.yaml
   config = {
-    "origin_hostname" => "foo",
-    "aws_origin_hostname" => "foo",
+    "origin_hostname" => "127.0.0.1",
+    "aws_origin_hostname" => "127.0.0.1",
     "service_id" => "123",
-    "provider1_mirror_hostname" => "foo",
-    "s3_mirror_hostname" => "bar",
+    "provider1_mirror_hostname" => "127.0.0.1",
+    "s3_mirror_hostname" => "127.0.0.1",
     "s3_mirror_prefix" => "foo_",
     "s3_mirror_replica_hostname" => "s3-mirror-replica.aws.com",
     "s3_mirror_replica_prefix" => "s3-mirror-replica",
@@ -16,7 +16,7 @@ RSpec.describe "VCL generation" do
     "gcs_mirror_secret_key" => "gcs-mirror-secret-key",
     "gcs_mirror_bucket_name" => "gcs-bucket",
     "default_ttl" => "5000",
-    "apt_hostname" => "foo",
+    "apt_hostname" => "127.0.0.1",
     "origin_domain_suffix" => "boo",
     "domain_suffix" => "boo",
   }

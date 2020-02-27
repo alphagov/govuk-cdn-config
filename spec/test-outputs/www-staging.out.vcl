@@ -1,23 +1,14 @@
 backend F_origin {
     .connect_timeout = 5s;
-    .dynamic = true;
     .port = "443";
-    .host = "foo";
+    .host = "127.0.0.1";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "foo";
-    .ssl_sni_hostname = "foo";
-
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: foo"
+            "Host: 127.0.0.1"
             "User-Agent: Fastly healthcheck (git version: )"
             "Connection: close";
         .threshold = 1;
@@ -33,24 +24,15 @@ backend F_origin {
 # Mirror backend for S3
 backend F_mirrorS3 {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "443";
-    .host = "bar";
+    .host = "127.0.0.1";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "bar";
-    .ssl_sni_hostname = "bar";
-
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
-            "Host: bar"
+            "Host: 127.0.0.1"
             "User-Agent: Fastly healthcheck (git version: )"
             "Connection: close";
         .threshold = 1;
@@ -65,20 +47,11 @@ backend F_mirrorS3 {
 # Mirror backend for S3 replica
 backend F_mirrorS3Replica {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "443";
     .host = "s3-mirror-replica.aws.com";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "s3-mirror-replica.aws.com";
-    .ssl_sni_hostname = "s3-mirror-replica.aws.com";
-
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
@@ -97,20 +70,11 @@ backend F_mirrorS3Replica {
 # Mirror backend for GCS
 backend F_mirrorGCS {
     .connect_timeout = 1s;
-    .dynamic = true;
     .port = "443";
     .host = "gcs-mirror.google.com";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "gcs-mirror.google.com";
-    .ssl_sni_hostname = "gcs-mirror.google.com";
-
     .probe = {
         .request =
             "HEAD / HTTP/1.1"
@@ -156,6 +120,10 @@ acl purge_ip_whitelist {
   "167.82.224.0"/20;  # Fastly cache node
 }
 
+# TODO: Inject ip_address_blacklist at build time dependent on environment
+acl ip_address_blacklist {
+}
+
 
 acl allowed_ip_addresses {
   
@@ -165,7 +133,7 @@ acl allowed_ip_addresses {
 sub vcl_recv {
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_whitelist) {
+  if (req.request == "FASTLYPURGE" && !(client.ip ~ purge_ip_whitelist)) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
@@ -177,7 +145,7 @@ sub vcl_recv {
   
 
   # Check whether the remote IP address is in the list of blocked IPs
-  if (table.lookup(ip_address_blacklist, client.ip)) {
+  if (client.ip ~ ip_address_blacklist) {
     error 403 "Forbidden";
   }
 
@@ -189,7 +157,7 @@ sub vcl_recv {
   }
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
-  if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
+  if (req.url ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";
   }
 
@@ -229,7 +197,7 @@ sub vcl_recv {
     set req.url = regsuball(req.url, "([^:])//+", "\1/");
 
     # Requests without document extension, rewrite adding .html
-    if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
+    if (!(req.url ~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$")) {
       set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
     }
   }
@@ -237,7 +205,7 @@ sub vcl_recv {
   # Failover to primary s3 mirror.
   if (req.restarts == 1) {
       set req.backend = F_mirrorS3;
-      set req.http.host = "bar";
+      set req.http.host = "127.0.0.1";
       set req.http.Fastly-Backend-Name = "mirrorS3";
 
       # Add bucket directory prefix to all the requests
@@ -264,7 +232,7 @@ sub vcl_recv {
     set req.url = "/gcs-mirror" req.url;
 
     set req.http.Date = now;
-    set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
+    set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url);
   }
   
 
@@ -274,7 +242,7 @@ sub vcl_recv {
   # Set a TLSversion request header for requests going to the Licensify application
   # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
   if (req.url ~ "^/apply-for-a-licence/.*") {
-    set req.http.TLSversion = tls.client.protocol;
+    # set req.http.TLSversion = tls.client.protocol;
   }
 
 
@@ -286,8 +254,9 @@ sub vcl_recv {
 
     # Begin dynamic section
 if (req.http.Cookie ~ "cookies_policy") {
-  if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-    if (table.lookup(active_ab_tests, "Example") == "true") {
+  if (req.http.Cookie ~ "cookies_policy=%22usage%22:true") {
+
+    # if (table.lookup(active_ab_tests, "Example") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-Example = "A";
       } else if (req.url ~ "[\?\&]ABTest-Example=A(&|$)") {
@@ -300,26 +269,33 @@ if (req.http.Cookie ~ "cookies_policy") {
         set req.http.GOVUK-ABTest-Example = "B";
       } else if (req.http.Cookie ~ "ABTest-Example") {
         # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
-      } else {
-        declare local var.denominator_Example INTEGER;
-        declare local var.denominator_Example_A INTEGER;
-        declare local var.nominator_Example_A INTEGER;
-        set var.nominator_Example_A = std.atoi(table.lookup(example_percentages, "A"));
-        set var.denominator_Example += var.nominator_Example_A;
-        declare local var.denominator_Example_B INTEGER;
-        declare local var.nominator_Example_B INTEGER;
-        set var.nominator_Example_B = std.atoi(table.lookup(example_percentages, "B"));
-        set var.denominator_Example += var.nominator_Example_B;
-        set var.denominator_Example_A = var.denominator_Example;
-        if (randombool(var.nominator_Example_A, var.denominator_Example_A)) {
+        # and is still a known variant
+        if (req.http.Cookie ~ "ABTest-Example=A") {
           set req.http.GOVUK-ABTest-Example = "A";
-        } else {
+        }
+        if (req.http.Cookie ~ "ABTest-Example=B") {
           set req.http.GOVUK-ABTest-Example = "B";
         }
+      } else {
+        # declare local var.denominator_Example INTEGER;
+        # declare local var.denominator_Example_A INTEGER;
+        # declare local var.nominator_Example_A INTEGER;
+        # set var.nominator_Example_A = std.atoi(table.lookup(example_percentages, "A"));
+        # set var.denominator_Example += var.nominator_Example_A;
+        # declare local var.denominator_Example_B INTEGER;
+        # declare local var.nominator_Example_B INTEGER;
+        # set var.nominator_Example_B = std.atoi(table.lookup(example_percentages, "B"));
+        # set var.denominator_Example += var.nominator_Example_B;
+        # set var.denominator_Example_A = var.denominator_Example;
+        # if (randombool(var.nominator_Example_A, var.denominator_Example_A)) {
+        #   set req.http.GOVUK-ABTest-Example = "A";
+        # } else {
+        #   set req.http.GOVUK-ABTest-Example = "B";
+        # }
       }
-    }
-    if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
+    # }
+
+    # if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
       } else if (req.url ~ "[\?\&]ABTest-LearningToRankModelABTest=unchanged(&|$)") {
@@ -336,33 +312,42 @@ if (req.http.Cookie ~ "cookies_policy") {
         set req.http.GOVUK-ABTest-LearningToRankModelABTest = "elephant";
       } else if (req.http.Cookie ~ "ABTest-LearningToRankModelABTest") {
         # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = req.http.Cookie:ABTest-LearningToRankModelABTest;
-      } else {
-        declare local var.denominator_LearningToRankModelABTest INTEGER;
-        declare local var.denominator_LearningToRankModelABTest_unchanged INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_unchanged INTEGER;
-        set var.nominator_LearningToRankModelABTest_unchanged = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "unchanged"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_unchanged;
-        declare local var.denominator_LearningToRankModelABTest_hippo INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_hippo INTEGER;
-        set var.nominator_LearningToRankModelABTest_hippo = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "hippo"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_hippo;
-        declare local var.denominator_LearningToRankModelABTest_elephant INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_elephant INTEGER;
-        set var.nominator_LearningToRankModelABTest_elephant = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "elephant"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_elephant;
-        set var.denominator_LearningToRankModelABTest_unchanged = var.denominator_LearningToRankModelABTest;
-        set var.denominator_LearningToRankModelABTest_hippo = var.denominator_LearningToRankModelABTest_unchanged;
-        set var.denominator_LearningToRankModelABTest_hippo -= var.nominator_LearningToRankModelABTest_unchanged;
-        if (randombool(var.nominator_LearningToRankModelABTest_unchanged, var.denominator_LearningToRankModelABTest_unchanged)) {
+        # and is still a known variant
+        if (req.http.Cookie ~ "ABTest-LearningToRankModelABTest=unchanged") {
           set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
-        } else if (randombool(var.nominator_LearningToRankModelABTest_hippo, var.denominator_LearningToRankModelABTest_hippo)) {
+        }
+        if (req.http.Cookie ~ "ABTest-LearningToRankModelABTest=hippo") {
           set req.http.GOVUK-ABTest-LearningToRankModelABTest = "hippo";
-        } else {
+        }
+        if (req.http.Cookie ~ "ABTest-LearningToRankModelABTest=elephant") {
           set req.http.GOVUK-ABTest-LearningToRankModelABTest = "elephant";
         }
+      } else {
+        # declare local var.denominator_LearningToRankModelABTest INTEGER;
+        # declare local var.denominator_LearningToRankModelABTest_unchanged INTEGER;
+        # declare local var.nominator_LearningToRankModelABTest_unchanged INTEGER;
+        # set var.nominator_LearningToRankModelABTest_unchanged = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "unchanged"));
+        # set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_unchanged;
+        # declare local var.denominator_LearningToRankModelABTest_hippo INTEGER;
+        # declare local var.nominator_LearningToRankModelABTest_hippo INTEGER;
+        # set var.nominator_LearningToRankModelABTest_hippo = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "hippo"));
+        # set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_hippo;
+        # declare local var.denominator_LearningToRankModelABTest_elephant INTEGER;
+        # declare local var.nominator_LearningToRankModelABTest_elephant INTEGER;
+        # set var.nominator_LearningToRankModelABTest_elephant = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "elephant"));
+        # set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_elephant;
+        # set var.denominator_LearningToRankModelABTest_unchanged = var.denominator_LearningToRankModelABTest;
+        # set var.denominator_LearningToRankModelABTest_hippo = var.denominator_LearningToRankModelABTest_unchanged;
+        # set var.denominator_LearningToRankModelABTest_hippo -= var.nominator_LearningToRankModelABTest_unchanged;
+        # if (randombool(var.nominator_LearningToRankModelABTest_unchanged, var.denominator_LearningToRankModelABTest_unchanged)) {
+        #   set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
+        # } else if (randombool(var.nominator_LearningToRankModelABTest_hippo, var.denominator_LearningToRankModelABTest_hippo)) {
+        #   set req.http.GOVUK-ABTest-LearningToRankModelABTest = "hippo";
+        # } else {
+        #   set req.http.GOVUK-ABTest-LearningToRankModelABTest = "elephant";
+        # }
       }
-    }
+    # }
   }
 }
 # End dynamic section
@@ -460,24 +445,24 @@ sub vcl_deliver {
   # ensures that most visitors to the site aren't assigned an irrelevant test
   # cookie.
   if (req.url ~ "^/help/ab-testing"
-    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-Example") {
+    && !(req.http.User-Agent ~ "^GOV\.UK Crawler Worker")
+    && !(req.http.Cookie ~ "ABTest-Example")) {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
-    add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
+    # add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
   # Begin dynamic section
-  declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-LearningToRankModelABTest" || req.url ~ "[\?\&]ABTest-LearningToRankModelABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "LearningToRankModelABTest"))));
-          add resp.http.Set-Cookie = "ABTest-LearningToRankModelABTest=" req.http.GOVUK-ABTest-LearningToRankModelABTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
+  # declare local var.expiry TIME;
+  # if (req.http.Cookie ~ "cookies_policy") {
+    # if (req.http.Cookie ~ "cookies_policy=%22usage%22:true") {
+      # if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
+      #   if (!(req.http.Cookie ~ "ABTest-LearningToRankModelABTest") || req.url ~ "[\?\&]ABTest-LearningToRankModelABTest" && !(req.http.User-Agent ~ "^GOV\.UK Crawler Worker")) {
+      #     set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "LearningToRankModelABTest"))));
+      #     add resp.http.Set-Cookie = "ABTest-LearningToRankModelABTest=" req.http.GOVUK-ABTest-LearningToRankModelABTest "; secure; expires=" var.expiry "; path=/";
+      #   }
+      # }
+    # }
+  # }
   # End dynamic section
 
 #FASTLY deliver
@@ -527,9 +512,11 @@ sub vcl_error {
   # of serving stale only when the backend is the origin.
   if ((req.restarts == 0) && (obj.status >= 500 && obj.status < 600)) {
     /* deliver stale object if it is available */
-    if (stale.exists) {
-      return(deliver_stale);
-    }
+    # Possibly replaceable with custom VCL logic
+    # https://varnish-cache.org/docs/trunk/users-guide/vcl-grace.html#misbehaving-servers
+    # if (stale.exists) {
+    #   return(deliver_stale);
+    # }
   }
 
   # Assume we've hit vcl_error() because the backend is unavailable
