@@ -57,3 +57,25 @@ describe "AB Tests partial" do
     expect(subject).to eq(expected)
   end
 end
+
+describe "Expected AB test files" do
+  let(:expiries) { YAML.load_file(File.join(cwd, "../configs/dictionaries/ab_test_expiries.yaml")) }
+  let(:active_tests) { YAML.load_file(File.join(cwd, "../configs/dictionaries/active_ab_tests.yaml")) }
+
+  configured_tests = YAML.load_file(File.join(cwd, "../ab_tests/ab_tests.yaml")).map(&:keys).flatten
+
+  configured_tests.each do |test_name|
+    it "includes #{test_name}'s percentage file" do
+      percentage_file = File.join(cwd, "../configs/dictionaries/#{test_name.downcase}_percentages.yaml")
+      expect(File.exist?(percentage_file)).to be true
+    end
+
+    it "includes #{test_name}'s expiry time config" do
+      expect(expiries).to have_key(test_name)
+    end
+
+    it "includes #{test_name}'s active state config" do
+      expect(expiries).to have_key(test_name)
+    end
+  end
+end
