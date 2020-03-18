@@ -319,50 +319,6 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
-      } else if (req.url ~ "[\?\&]ABTest-LearningToRankModelABTest=unchanged(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
-      } else if (req.url ~ "[\?\&]ABTest-LearningToRankModelABTest=hippo(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = "hippo";
-      } else if (req.url ~ "[\?\&]ABTest-LearningToRankModelABTest=elephant(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = "elephant";
-      } else if (req.http.Cookie ~ "ABTest-LearningToRankModelABTest") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-LearningToRankModelABTest = req.http.Cookie:ABTest-LearningToRankModelABTest;
-      } else {
-        declare local var.denominator_LearningToRankModelABTest INTEGER;
-        declare local var.denominator_LearningToRankModelABTest_unchanged INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_unchanged INTEGER;
-        set var.nominator_LearningToRankModelABTest_unchanged = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "unchanged"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_unchanged;
-        declare local var.denominator_LearningToRankModelABTest_hippo INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_hippo INTEGER;
-        set var.nominator_LearningToRankModelABTest_hippo = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "hippo"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_hippo;
-        declare local var.denominator_LearningToRankModelABTest_elephant INTEGER;
-        declare local var.nominator_LearningToRankModelABTest_elephant INTEGER;
-        set var.nominator_LearningToRankModelABTest_elephant = std.atoi(table.lookup(learningtorankmodelabtest_percentages, "elephant"));
-        set var.denominator_LearningToRankModelABTest += var.nominator_LearningToRankModelABTest_elephant;
-        set var.denominator_LearningToRankModelABTest_unchanged = var.denominator_LearningToRankModelABTest;
-        set var.denominator_LearningToRankModelABTest_hippo = var.denominator_LearningToRankModelABTest_unchanged;
-        set var.denominator_LearningToRankModelABTest_hippo -= var.nominator_LearningToRankModelABTest_unchanged;
-        if (randombool(var.nominator_LearningToRankModelABTest_unchanged, var.denominator_LearningToRankModelABTest_unchanged)) {
-          set req.http.GOVUK-ABTest-LearningToRankModelABTest = "unchanged";
-        } else if (randombool(var.nominator_LearningToRankModelABTest_hippo, var.denominator_LearningToRankModelABTest_hippo)) {
-          set req.http.GOVUK-ABTest-LearningToRankModelABTest = "hippo";
-        } else {
-          set req.http.GOVUK-ABTest-LearningToRankModelABTest = "elephant";
-        }
-      }
-    }
     if (table.lookup(active_ab_tests, "ElectricCarABTest") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-ElectricCarABTest = "A";
@@ -572,16 +528,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "LearningToRankModelABTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-LearningToRankModelABTest" || req.url ~ "[\?\&]ABTest-LearningToRankModelABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "LearningToRankModelABTest"))));
-          add resp.http.Set-Cookie = "ABTest-LearningToRankModelABTest=" req.http.GOVUK-ABTest-LearningToRankModelABTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
   if (req.http.Cookie ~ "cookies_policy") {
     if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
       if (table.lookup(active_ab_tests, "ElectricCarABTest") == "true") {
