@@ -212,6 +212,11 @@ sub vcl_recv {
     set req.http.original-url = req.url;
   }
 
+  # Remove querystrings from coronavirus related pages
+  if (req.url.path ~ "(?i)^(/coronavirus|/government/publications/covid-19)") {
+    set req.url = std.tolower(re.group.0);
+  }
+
   # Common config when failover to mirror buckets
   if (req.restarts > 0) {
     set req.url = req.http.original-url;
