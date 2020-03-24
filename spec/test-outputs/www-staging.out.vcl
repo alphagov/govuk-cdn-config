@@ -194,7 +194,7 @@ sub vcl_recv {
   }
 
   # Serve a 503 Service Unavailable response if request URL matches "/search*"
-  if (req.url.path ~ "(?i)/search.*$") {
+  if (req.url.path ~ "(?i)^/search") {
     error 805 "Search unavailable";
   }
 
