@@ -184,11 +184,6 @@ sub vcl_recv {
     error 804 "Not Found";
   }
 
-  # Serve a 503 Service Unavailable response if request URL matches "/search*"
-  if (req.url.path ~ "(?i)^/search(/|$)") {
-    error 805 "Search unavailable";
-  }
-
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
@@ -574,31 +569,6 @@ sub vcl_error {
         <body>
           <header><h1>GOV.UK</h1></header>
           <p>We cannot find the page you're looking for. Please try searching on <a href="https://www.gov.uk/">GOV.UK</a>.</p>
-        </body>
-      </html>"};
-
-    return (deliver);
-  }
-
-  if (obj.status == 805) {
-    set obj.status = 503;
-    set obj.response = "Service Unavailable Error";
-
-    synthetic {"
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Welcome to GOV.UK</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; }
-            header { background: black; }
-            h1 { color: white; font-size: 29px; margin: 0 auto; padding: 10px; max-width: 990px; }
-            p { color: black; margin: 30px auto; max-width: 990px; }
-          </style>
-        </head>
-        <body>
-          <header><h1>GOV.UK</h1></header>
-          <p>Search is currently unavailable. You can <a href="/coronavirus">find coronavirus information</a> on GOV.UK, or <a href="/">browse from the homepage</a> to find the information you need.</p>
         </body>
       </html>"};
 
