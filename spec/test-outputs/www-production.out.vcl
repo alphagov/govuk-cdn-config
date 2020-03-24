@@ -209,7 +209,7 @@ sub vcl_recv {
   }
 
   # Remove querystrings from coronavirus related pages
-  if (req.url.path ~ "(?i)^(/coronavirus|/government/publications/covid-19)") {
+  if (req.url.path ~ "(?i)^(/coronavirus|/government/publications/covid-19|/government/publications/full-guidance-on-staying-at-home-and-away-from-others|/government/publications/further-businesses-and-premises-to-close)") {
     set req.url = std.tolower(req.url.path);
   }
 
