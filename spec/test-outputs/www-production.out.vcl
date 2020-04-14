@@ -419,38 +419,6 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "ShowPartsInResultsABTest") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = "unchanged";
-      } else if (req.url ~ "[\?\&]ABTest-ShowPartsInResultsABTest=unchanged(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = "unchanged";
-      } else if (req.url ~ "[\?\&]ABTest-ShowPartsInResultsABTest=showparts(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = "showparts";
-      } else if (req.http.Cookie ~ "ABTest-ShowPartsInResultsABTest") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = req.http.Cookie:ABTest-ShowPartsInResultsABTest;
-      } else {
-        declare local var.denominator_ShowPartsInResultsABTest INTEGER;
-        declare local var.denominator_ShowPartsInResultsABTest_unchanged INTEGER;
-        declare local var.nominator_ShowPartsInResultsABTest_unchanged INTEGER;
-        set var.nominator_ShowPartsInResultsABTest_unchanged = std.atoi(table.lookup(showpartsinresultsabtest_percentages, "unchanged"));
-        set var.denominator_ShowPartsInResultsABTest += var.nominator_ShowPartsInResultsABTest_unchanged;
-        declare local var.denominator_ShowPartsInResultsABTest_showparts INTEGER;
-        declare local var.nominator_ShowPartsInResultsABTest_showparts INTEGER;
-        set var.nominator_ShowPartsInResultsABTest_showparts = std.atoi(table.lookup(showpartsinresultsabtest_percentages, "showparts"));
-        set var.denominator_ShowPartsInResultsABTest += var.nominator_ShowPartsInResultsABTest_showparts;
-        set var.denominator_ShowPartsInResultsABTest_unchanged = var.denominator_ShowPartsInResultsABTest;
-        if (randombool(var.nominator_ShowPartsInResultsABTest_unchanged, var.denominator_ShowPartsInResultsABTest_unchanged)) {
-          set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = "unchanged";
-        } else {
-          set req.http.GOVUK-ABTest-ShowPartsInResultsABTest = "showparts";
-        }
-      }
-    }
   }
 }
 # End dynamic section
@@ -562,16 +530,6 @@ sub vcl_deliver {
         if (req.http.Cookie !~ "ABTest-ElectricCarABTest" || req.url ~ "[\?\&]ABTest-ElectricCarABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
           set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ElectricCarABTest"))));
           add resp.http.Set-Cookie = "ABTest-ElectricCarABTest=" req.http.GOVUK-ABTest-ElectricCarABTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "ShowPartsInResultsABTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-ShowPartsInResultsABTest" || req.url ~ "[\?\&]ABTest-ShowPartsInResultsABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ShowPartsInResultsABTest"))));
-          add resp.http.Set-Cookie = "ABTest-ShowPartsInResultsABTest=" req.http.GOVUK-ABTest-ShowPartsInResultsABTest "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
