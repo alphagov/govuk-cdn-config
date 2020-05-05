@@ -188,11 +188,6 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
-  # Serve and log an empty response for analytics purposes
-  if (req.url ~ "^/static/a\?") {
-     error 802 "OK";
-  }
-
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
@@ -345,14 +340,6 @@ sub vcl_error {
     set obj.http.Location = "https://" req.http.host req.url;
     synthetic {""};
     return (deliver);
-  }
-
-  if (obj.status == 802) {
-    set obj.http.Content-Type = "text/plain";
-    set obj.http.Access-Control-Allow-Origin = "*";
-    set obj.status = 200;
-    synthetic {""};
-    return(deliver);
   }
 
   # Serve stale from error subroutine as recommended in:
