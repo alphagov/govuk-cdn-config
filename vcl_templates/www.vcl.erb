@@ -336,70 +336,54 @@ sub vcl_fetch {
 
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
-  # We've got a 5xx response from the origin
-  # The request is a GET/HEAD request
-  # Skip if the No-Fallback header is set
-  #
-  # or
-  #
-  # We've got a 5xx response from a mirror
-  # The request is a GET/HEAD request
-  # The mirror is not the last mirror
-  if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
-    set beresp.saintmode = 5s;
-    return (restart);
-  }
+  if (beresp.http.Fastly-Backend-Name ~ "^origin") {
+    if (beresp.status >= 500 && beresp.status <= 599) {
+      if (req.request == "GET" || req.request == "HEAD") {
+        if (!beresp.http.No-Fallback) {
+          set beresp.saintmode = 5s;
+          return (restart);
+        }
+      }
 
-  # We've got a 200 response from the origin
-  #
-  # or
-  #
-  # We've got a 3xx/4xx/5xx response from the origin
-  # The request is a POST/DELETE request?!
-  if (req.restarts == 0) {
-    # Keep stale for origin
-    set beresp.grace = 24h;
-  }
+      else {
+        set beresp.grace = 24h;
+      }
 
-  # We've got any kind of response from a mirror
-  # The request is any kind of request
-  if(req.restarts > 0 ) {
-    set beresp.http.Fastly-Restarts = req.restarts;
-  }
-
-  # We've got a 4xx/5xx response from a mirror
-  # The request is any kind of request
-  if (beresp.status != 200 && beresp.http.Fastly-Backend-Name ~ "^mirror") {
-    # The mirror is not the last mirror
-    if (req.restarts < 3 ){
-      set beresp.saintmode = 5s;
-      return (restart);
-    # The mirror is the last mirror
     } else {
-      set beresp.status = 503;
+      set beresp.grace = 24h;
+      set req.http.Fastly-Cachetype = "ERROR";
+      set beresp.ttl = 1s;
+      set beresp.grace = 5s;
+      return (deliver);
     }
   }
 
-  # We've got a 5xx response from the last mirror
-  # The request is a GET/HEAD request
-  #
-  # or
-  #
-  # We've got a 5xx response from the origin
-  # The request is a POST/DELETE request?!
-  # The No-Fallback header is set to anything?!
-  if (beresp.status >= 500 && beresp.status <= 599) {
-    set req.http.Fastly-Cachetype = "ERROR";
-    set beresp.ttl = 1s;
-    set beresp.grace = 5s;
+  if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
+    set beresp.http.Fastly-Restarts = req.restarts;
 
-    # Serve the Fastly 503 page (mirrors exhausted)
-    if (beresp.http.Fastly-Backend-Name ~ "^mirror") {
-      error 503 "Error page";
+    if (beresp.status >= 500 && beresp.status <= 599) {
+      if (req.request == "GET" || req.request == "HEAD") {
+        if (req.restarts < 3) {
+          set beresp.saintmode = 5s;
+          return (restart);
+
+        } else {
+          set req.http.Fastly-Cachetype = "ERROR";
+          set beresp.ttl = 1s;
+          set beresp.grace = 5s;
+          error 503 "Error page";
+        }
+      }
     }
 
-    # Serve the POST/DELETE response as-is
-    return (deliver);
+    if (beresp.status != 200) {
+      if (req.restarts < 3) {
+        set beresp.saintmode = 5s;
+        return (restart);
+      } else {
+        set beresp.status = 503;
+      }
+    }
   }
 
   # If we do not want to cache
