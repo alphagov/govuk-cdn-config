@@ -413,7 +413,7 @@ sub vcl_error {
     return (deliver);
   }
 
-  if ((obj.status == 804) || (obj.status == 404 && req.restarts > 0)) {
+  if (obj.status == 804) {
     set obj.status = 404;
     set obj.response = "Not Found";
     set obj.http.Fastly-Backend-Name = "force_not_found";
