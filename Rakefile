@@ -5,4 +5,9 @@ require "rspec/core/rake_task"
 RuboCop::RakeTask.new
 RSpec::Core::RakeTask.new
 
-task default: %i[rubocop spec]
+desc "Lint Ruby"
+task :lint do
+  sh "bundle exec rubocop --format clang"
+end
+
+task default: %i[rubocop spec lint]
