@@ -14,7 +14,7 @@ GEM
     fastly (2.2.0)
     hashdiff (0.3.8)
     jaro_winkler (1.5.4)
-    json (2.1.0)
+    json (2.3.1)
     parallel (1.19.1)
     parser (2.7.0.4)
       ast (~> 2.4.0)
