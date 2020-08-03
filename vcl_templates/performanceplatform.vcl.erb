@@ -75,6 +75,11 @@ sub vcl_recv {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
+  # Check whether the remote IP address is in the list of blocked IPs
+  if (table.lookup(ip_address_denylist, client.ip)) {
+    error 403 "Forbidden";
+  }
+
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
