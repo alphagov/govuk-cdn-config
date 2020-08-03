@@ -40,7 +40,7 @@ backend sick_force_grace {
 }
 
 
-acl purge_ip_whitelist {
+acl purge_ip_allowlist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
   "23.235.32.0"/20;   # Fastly cache node
@@ -66,8 +66,13 @@ acl purge_ip_whitelist {
 sub vcl_recv {
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_whitelist) {
+  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
+  }
+
+  # Check whether the remote IP address is in the list of blocked IPs
+  if (table.lookup(ip_address_denylist, client.ip)) {
+    error 403 "Forbidden";
   }
 
   # Force SSL.
