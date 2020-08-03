@@ -31,7 +31,7 @@ backend F_origin {
 
 
 
-acl purge_ip_whitelist {
+acl purge_ip_allowlist {
   "37.26.93.252";     # Skyscape mirrors
   "31.210.241.100";   # Carrenza mirrors
 
@@ -62,7 +62,7 @@ acl allowed_ip_addresses {
 sub vcl_recv {
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_whitelist) {
+  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
