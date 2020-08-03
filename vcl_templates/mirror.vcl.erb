@@ -198,7 +198,7 @@ sub vcl_recv {
   }
 
   # Check whether the remote IP address is in the list of blocked IPs
-  if (table.lookup(ip_address_blacklist, client.ip)) {
+  if (table.lookup(ip_address_denylist, client.ip)) {
     error 403 "Forbidden";
   }
 
