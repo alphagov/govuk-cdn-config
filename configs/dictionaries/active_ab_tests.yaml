@@ -5,4 +5,4 @@
 ---
 Example: true
 ElectricCarABTest: true
-TransitionChecker1: true
+TransitionChecker1: false
