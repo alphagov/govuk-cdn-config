@@ -428,6 +428,38 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
+    if (table.lookup(active_ab_tests, "TransitionChecker4") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+        set req.http.GOVUK-ABTest-TransitionChecker4 = "A";
+      } else if (req.url ~ "[\?\&]ABTest-TransitionChecker4=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-TransitionChecker4 = "A";
+      } else if (req.url ~ "[\?\&]ABTest-TransitionChecker4=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-TransitionChecker4 = "B";
+      } else if (req.http.Cookie ~ "ABTest-TransitionChecker4") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-TransitionChecker4 = req.http.Cookie:ABTest-TransitionChecker4;
+      } else {
+        declare local var.denominator_TransitionChecker4 INTEGER;
+        declare local var.denominator_TransitionChecker4_A INTEGER;
+        declare local var.nominator_TransitionChecker4_A INTEGER;
+        set var.nominator_TransitionChecker4_A = std.atoi(table.lookup(transitionchecker4_percentages, "A"));
+        set var.denominator_TransitionChecker4 += var.nominator_TransitionChecker4_A;
+        declare local var.denominator_TransitionChecker4_B INTEGER;
+        declare local var.nominator_TransitionChecker4_B INTEGER;
+        set var.nominator_TransitionChecker4_B = std.atoi(table.lookup(transitionchecker4_percentages, "B"));
+        set var.denominator_TransitionChecker4 += var.nominator_TransitionChecker4_B;
+        set var.denominator_TransitionChecker4_A = var.denominator_TransitionChecker4;
+        if (randombool(var.nominator_TransitionChecker4_A, var.denominator_TransitionChecker4_A)) {
+          set req.http.GOVUK-ABTest-TransitionChecker4 = "A";
+        } else {
+          set req.http.GOVUK-ABTest-TransitionChecker4 = "B";
+        }
+      }
+    }
   }
 }
 # End dynamic section
@@ -539,6 +571,16 @@ sub vcl_deliver {
         if (req.http.Cookie !~ "ABTest-ElectricCarABTest" || req.url ~ "[\?\&]ABTest-ElectricCarABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
           set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ElectricCarABTest"))));
           add resp.http.Set-Cookie = "ABTest-ElectricCarABTest=" req.http.GOVUK-ABTest-ElectricCarABTest "; secure; expires=" var.expiry "; path=/";
+        }
+      }
+    }
+  }
+  if (req.http.Cookie ~ "cookies_policy") {
+    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+      if (table.lookup(active_ab_tests, "TransitionChecker4") == "true") {
+        if (req.http.Cookie !~ "ABTest-TransitionChecker4" || req.url ~ "[\?\&]ABTest-TransitionChecker4" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "TransitionChecker4"))));
+          add resp.http.Set-Cookie = "ABTest-TransitionChecker4=" req.http.GOVUK-ABTest-TransitionChecker4 "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
