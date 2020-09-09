@@ -8,6 +8,14 @@ backend F_origin0 {
     .max_connections = 200;
     .between_bytes_timeout = 10s;
     .share_key = "<%= service_id %>";
+
+    .probe = {
+        .request = "HEAD /healthcheck HTTP/1.1"  "Host: bouncer.<%= app_domain %>" "Connection: close";
+        .window = 2;
+        .threshold = 1;
+        .timeout = 2s;
+        .interval = 5m;
+      }
 }
 
 backend sick_force_grace {
