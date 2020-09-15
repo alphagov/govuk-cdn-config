@@ -203,11 +203,6 @@ sub vcl_recv {
     set req.http.original-url = req.url;
   }
 
-  # Remove querystrings from Eat Out To Help Out page
-  if (req.url.path ~ "(?i)^(/guidance/get-a-discount-with-the-eat-out-to-help-out-scheme)") {
-    set req.url = std.tolower(req.url.path);
-  }
-
   # Common config when failover to mirror buckets
   if (req.restarts > 0) {
     set req.url = req.http.original-url;
