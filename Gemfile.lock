@@ -71,12 +71,12 @@ PLATFORMS
 
 DEPENDENCIES
   climate_control
-  colorize (= 0.5.8)
-  diffy (= 3.0.1)
-  fastly (~> 2.2)
+  colorize
+  diffy
+  fastly
   rake
   rspec
-  rubocop-govuk (~> 3.3.0)
+  rubocop-govuk
   simplecov
   webmock
 
