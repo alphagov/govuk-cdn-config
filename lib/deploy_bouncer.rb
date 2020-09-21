@@ -106,7 +106,7 @@ class DeployBouncer
 
   def get_hosts(hostnames)
     if hostnames.empty?
-      io = open("https://transition.publishing.service.gov.uk/hosts.json")
+      io = URI.open("https://transition.publishing.service.gov.uk/hosts.json")
       json = JSON.parse(io.read)
       hosts = json["results"]
     else
