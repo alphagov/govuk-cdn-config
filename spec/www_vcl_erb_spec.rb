@@ -15,7 +15,7 @@ RSpec.describe "VCL template" do
     }
   end
   let!(:environment) { "test" }
-  let!(:ab_tests) { [{ "ATest" => %w(meh boom) }, { "Example" => %w(A B) }] }
+  let!(:ab_tests) { [{ "ATest" => %w[meh boom] }, { "Example" => %w[A B] }] }
 
   subject do
     template_path = File.join(cwd, "../vcl_templates/www.vcl.erb")
@@ -43,8 +43,8 @@ describe "AB Tests partial" do
 
   let!(:ab_tests) do
     [
-      { "MyTest" => %w(foo bar) },
-      { "YourTest" => %w(variant1 variant2 variant3 variant4) },
+      { "MyTest" => %w[foo bar] },
+      { "YourTest" => %w[variant1 variant2 variant3 variant4] },
     ]
   end
 

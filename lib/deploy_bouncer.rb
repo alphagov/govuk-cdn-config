@@ -68,11 +68,11 @@ class DeployBouncer
       puts "Here are the domains that would be removed:"
       p extra_existing
     else
-      if !extra_existing.empty?
+      unless extra_existing.empty?
         delete_domains(service.id, version.number, extra_existing)
       end
 
-      if !extra_configured.empty?
+      unless extra_configured.empty?
         add_domains(service.id, version.number, extra_configured)
       end
 
@@ -106,7 +106,7 @@ class DeployBouncer
 
   def get_hosts(hostnames)
     if hostnames.empty?
-      io = open("https://transition.publishing.service.gov.uk/hosts.json")
+      io = URI.open("https://transition.publishing.service.gov.uk/hosts.json")
       json = JSON.parse(io.read)
       hosts = json["results"]
     else
@@ -117,7 +117,7 @@ class DeployBouncer
   end
 
   def get_configured_domains(hosts_api_results)
-    configured_domains = Array.new
+    configured_domains = []
     hosts_api_results.each do |host|
       debug_output("Configured domain: #{host['hostname']}")
       configured_domains << host["hostname"]
@@ -148,12 +148,10 @@ class DeployBouncer
 
   def add_domains(service_id, version, domains)
     domains.each do |domain|
-      begin
-        puts "Adding #{domain} to the configuration".green
-        @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: "")
-      rescue StandardError
-        puts "Cannot add #{domain}, is it owned by another customer?".red
-      end
+      puts "Adding #{domain} to the configuration".green
+      @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: "")
+    rescue StandardError
+      puts "Cannot add #{domain}, is it owned by another customer?".red
     end
   end
 
@@ -182,7 +180,7 @@ class DeployBouncer
   def delete_ui_objects(service_id, version_number)
     # Delete objects created by the UI. We want VCL to be the source of truth.
     # Most of these don't have real objects in the Fastly API gem.
-    to_delete = %w{backend healthcheck condition request_settings cache_settings response_object header gzip}
+    to_delete = %w[backend healthcheck condition request_settings cache_settings response_object header gzip]
     to_delete.each do |type|
       type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
       @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|

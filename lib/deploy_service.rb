@@ -27,11 +27,15 @@ class DeployService
 private
 
   def get_config(args)
-    raise "Usage: #{$0} <configuration> <environment>" unless args.size == 2
+    raise "Usage: #{$PROGRAM_NAME} <configuration> <environment>" unless args.size == 2
 
     configuration = args[0]
     environment = args[1]
-    config_hash = CONFIGS[configuration][environment] rescue nil
+    config_hash = begin
+                    CONFIGS[configuration][environment]
+                  rescue StandardError
+                    nil
+                  end
 
     raise "ERROR: Unknown configuration/environment combination. Check this combination exists in fastly.yaml." unless config_hash
 
@@ -39,7 +43,7 @@ private
   end
 
   def get_git_version
-    ref = %x{git describe --always}.chomp
+    ref = `git describe --always`.chomp
     ref = "unknown" if ref.empty?
 
     ref
@@ -56,7 +60,7 @@ private
   def delete_ui_objects(service_id, version_number)
     # Delete objects created by the UI. We want VCL to be the source of truth.
     # Most of these don't have real objects in the Fastly API gem.
-    to_delete = %w{backend healthcheck cache_settings request_settings response_object header gzip}
+    to_delete = %w[backend healthcheck cache_settings request_settings response_object header gzip]
     to_delete.each do |type|
       type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
       @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
@@ -71,7 +75,7 @@ private
     settings = version.settings
     settings.settings.update(
       "general.default_host" => "",
-      "general.default_ttl"  => ttl,
+      "general.default_ttl" => ttl,
     )
     settings.save!
   end

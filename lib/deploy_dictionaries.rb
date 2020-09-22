@@ -25,7 +25,6 @@ class DeployDictionaries
       @fastly.delete_dictionary(dictionary)
     end
 
-
     dictionaries_to_add = expected_dictionaries - existing_dictionaries
 
     dictionaries_to_add.each do |name|
@@ -46,11 +45,11 @@ class DeployDictionaries
       items_to_update = existing_items.select { |item| expected_items.include?(item.item_key) }
       items_to_update.each do |item|
         new_value = expected_items[item.item_key]
-        if item.item_value != new_value.to_s
-          puts "Updating dictionary item #{item.item_key} from '#{item.item_value}' to '#{new_value}' in #{dictionary.name}"
-          item.item_value = new_value
-          @fastly.update_dictionary_item(item)
-        end
+        next unless item.item_value != new_value.to_s
+
+        puts "Updating dictionary item #{item.item_key} from '#{item.item_value}' to '#{new_value}' in #{dictionary.name}"
+        item.item_value = new_value
+        @fastly.update_dictionary_item(item)
       end
 
       items_to_delete = existing_items.reject { |item| expected_items.include?(item.item_key) }
@@ -68,11 +67,15 @@ class DeployDictionaries
   end
 
   def get_config(args)
-    raise "Usage: #{$0} <vhost> <environment>" unless args.size == 2
+    raise "Usage: #{$PROGRAM_NAME} <vhost> <environment>" unless args.size == 2
 
     vhost = args[0]
     environment = args[1]
-    config_hash = CONFIGS[vhost][environment] rescue nil
+    config_hash = begin
+                    CONFIGS[vhost][environment]
+                  rescue StandardError
+                    nil
+                  end
     raise "Unknown vhost/environment combination" unless config_hash
 
     config_hash
