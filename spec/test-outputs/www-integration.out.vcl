@@ -121,6 +121,12 @@ sub vcl_recv {
     return(pass);
   }
 
+  if (req.http.Cookie ~ "_finder-frontend_account_session") {
+    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedIn";
+  } else {
+    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedOut";
+  }
+
     # Begin dynamic section
 if (req.http.Cookie ~ "cookies_policy") {
   if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {

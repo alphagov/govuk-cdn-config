@@ -325,6 +325,12 @@ sub vcl_recv {
     return(pass);
   }
 
+  if (req.http.Cookie ~ "_finder-frontend_account_session") {
+    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedIn";
+  } else {
+    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedOut";
+  }
+
   <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
   <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
