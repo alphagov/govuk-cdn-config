@@ -162,110 +162,6 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "ElectricCarABTest") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "A";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=A(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "A";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=B(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "B";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=C(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "C";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=D(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "D";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=E(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "E";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=F(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "F";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=G(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "G";
-      } else if (req.url ~ "[\?\&]ABTest-ElectricCarABTest=H(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-ElectricCarABTest = "H";
-      } else if (req.http.Cookie ~ "ABTest-ElectricCarABTest") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-ElectricCarABTest = req.http.Cookie:ABTest-ElectricCarABTest;
-      } else {
-        declare local var.denominator_ElectricCarABTest INTEGER;
-        declare local var.denominator_ElectricCarABTest_A INTEGER;
-        declare local var.nominator_ElectricCarABTest_A INTEGER;
-        set var.nominator_ElectricCarABTest_A = std.atoi(table.lookup(electriccarabtest_percentages, "A"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_A;
-        declare local var.denominator_ElectricCarABTest_B INTEGER;
-        declare local var.nominator_ElectricCarABTest_B INTEGER;
-        set var.nominator_ElectricCarABTest_B = std.atoi(table.lookup(electriccarabtest_percentages, "B"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_B;
-        declare local var.denominator_ElectricCarABTest_C INTEGER;
-        declare local var.nominator_ElectricCarABTest_C INTEGER;
-        set var.nominator_ElectricCarABTest_C = std.atoi(table.lookup(electriccarabtest_percentages, "C"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_C;
-        declare local var.denominator_ElectricCarABTest_D INTEGER;
-        declare local var.nominator_ElectricCarABTest_D INTEGER;
-        set var.nominator_ElectricCarABTest_D = std.atoi(table.lookup(electriccarabtest_percentages, "D"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_D;
-        declare local var.denominator_ElectricCarABTest_E INTEGER;
-        declare local var.nominator_ElectricCarABTest_E INTEGER;
-        set var.nominator_ElectricCarABTest_E = std.atoi(table.lookup(electriccarabtest_percentages, "E"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_E;
-        declare local var.denominator_ElectricCarABTest_F INTEGER;
-        declare local var.nominator_ElectricCarABTest_F INTEGER;
-        set var.nominator_ElectricCarABTest_F = std.atoi(table.lookup(electriccarabtest_percentages, "F"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_F;
-        declare local var.denominator_ElectricCarABTest_G INTEGER;
-        declare local var.nominator_ElectricCarABTest_G INTEGER;
-        set var.nominator_ElectricCarABTest_G = std.atoi(table.lookup(electriccarabtest_percentages, "G"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_G;
-        declare local var.denominator_ElectricCarABTest_H INTEGER;
-        declare local var.nominator_ElectricCarABTest_H INTEGER;
-        set var.nominator_ElectricCarABTest_H = std.atoi(table.lookup(electriccarabtest_percentages, "H"));
-        set var.denominator_ElectricCarABTest += var.nominator_ElectricCarABTest_H;
-        set var.denominator_ElectricCarABTest_A = var.denominator_ElectricCarABTest;
-        set var.denominator_ElectricCarABTest_B = var.denominator_ElectricCarABTest_A;
-        set var.denominator_ElectricCarABTest_B -= var.nominator_ElectricCarABTest_A;
-        set var.denominator_ElectricCarABTest_C = var.denominator_ElectricCarABTest_B;
-        set var.denominator_ElectricCarABTest_C -= var.nominator_ElectricCarABTest_B;
-        set var.denominator_ElectricCarABTest_D = var.denominator_ElectricCarABTest_C;
-        set var.denominator_ElectricCarABTest_D -= var.nominator_ElectricCarABTest_C;
-        set var.denominator_ElectricCarABTest_E = var.denominator_ElectricCarABTest_D;
-        set var.denominator_ElectricCarABTest_E -= var.nominator_ElectricCarABTest_D;
-        set var.denominator_ElectricCarABTest_F = var.denominator_ElectricCarABTest_E;
-        set var.denominator_ElectricCarABTest_F -= var.nominator_ElectricCarABTest_E;
-        set var.denominator_ElectricCarABTest_G = var.denominator_ElectricCarABTest_F;
-        set var.denominator_ElectricCarABTest_G -= var.nominator_ElectricCarABTest_F;
-        if (randombool(var.nominator_ElectricCarABTest_A, var.denominator_ElectricCarABTest_A)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "A";
-        } else if (randombool(var.nominator_ElectricCarABTest_B, var.denominator_ElectricCarABTest_B)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "B";
-        } else if (randombool(var.nominator_ElectricCarABTest_C, var.denominator_ElectricCarABTest_C)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "C";
-        } else if (randombool(var.nominator_ElectricCarABTest_D, var.denominator_ElectricCarABTest_D)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "D";
-        } else if (randombool(var.nominator_ElectricCarABTest_E, var.denominator_ElectricCarABTest_E)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "E";
-        } else if (randombool(var.nominator_ElectricCarABTest_F, var.denominator_ElectricCarABTest_F)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "F";
-        } else if (randombool(var.nominator_ElectricCarABTest_G, var.denominator_ElectricCarABTest_G)) {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "G";
-        } else {
-          set req.http.GOVUK-ABTest-ElectricCarABTest = "H";
-        }
-      }
-    }
     if (table.lookup(active_ab_tests, "TransitionUrgency5") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-TransitionUrgency5 = "A";
@@ -403,16 +299,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "ElectricCarABTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-ElectricCarABTest" || req.url ~ "[\?\&]ABTest-ElectricCarABTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ElectricCarABTest"))));
-          add resp.http.Set-Cookie = "ABTest-ElectricCarABTest=" req.http.GOVUK-ABTest-ElectricCarABTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
   if (req.http.Cookie ~ "cookies_policy") {
     if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
       if (table.lookup(active_ab_tests, "TransitionUrgency5") == "true") {
