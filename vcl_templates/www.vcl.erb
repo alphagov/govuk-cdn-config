@@ -304,7 +304,7 @@ sub vcl_recv {
   }
   <% end %>
 
-  # Unspoofable original client address.
+  # Unspoofable original client address (e.g. for rate limiting).
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
   # Reset proxy headers at the boundary to our network.
