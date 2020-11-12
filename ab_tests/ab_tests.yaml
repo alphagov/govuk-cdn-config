@@ -7,3 +7,6 @@
 - TransitionUrgency5:
   - A
   - B
+- TransitionChecker1:
+  - A
+  - B
