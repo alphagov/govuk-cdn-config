@@ -7,3 +7,4 @@
 ---
 Example: 86400
 TransitionUrgency5: 1209600 # 2 weeks
+TransitionChecker1: 86400
