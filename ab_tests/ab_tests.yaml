@@ -4,9 +4,6 @@
 - Example:
   - A
   - B
-- TransitionUrgency5:
-  - A
-  - B
 - TransitionChecker1:
   - A
   - B
