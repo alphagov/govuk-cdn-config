@@ -203,6 +203,8 @@ sub vcl_recv {
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }
+  <%# See govuk-cdn-config-secrets/fastly/fastly.yaml %>
+  <%= config.fetch("private_extra_code_in_vcl_recv") %>
   <% end %>
 
   # Check whether the remote IP address is in the list of blocked IPs
