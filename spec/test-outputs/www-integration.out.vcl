@@ -328,6 +328,15 @@ sub vcl_error {
     return (deliver);
   }
 
+  # Arbitrary 302 redirects called from vcl_recv.
+  if (obj.status == 802) {
+    set obj.status = 302;
+    set obj.http.Location = "https://" req.http.host obj.response;
+    set obj.response = "Moved";
+    synthetic {""};
+    return (deliver);
+  }
+
   if (obj.status == 804) {
     set obj.status = 404;
     set obj.response = "Not Found";
