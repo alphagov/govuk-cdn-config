@@ -179,6 +179,9 @@ sub vcl_recv {
      error 801 "Force SSL";
   }
 
+  
+  # some private vcl code
+
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";

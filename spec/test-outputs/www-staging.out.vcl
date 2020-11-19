@@ -175,8 +175,6 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
   
-  # some private vcl code
-  
 
   # Check whether the remote IP address is in the list of blocked IPs
   if (table.lookup(ip_address_denylist, client.ip)) {
@@ -189,6 +187,9 @@ sub vcl_recv {
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
   }
+
+  
+  # some private vcl code
 
   # Serve a 404 Not Found response if request URL matches "/autodiscover/autodiscover.xml"
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
