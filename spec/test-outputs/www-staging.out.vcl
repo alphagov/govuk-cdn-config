@@ -332,38 +332,6 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "TransitionChecker1") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-TransitionChecker1 = "A";
-      } else if (req.url ~ "[\?\&]ABTest-TransitionChecker1=A(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-TransitionChecker1 = "A";
-      } else if (req.url ~ "[\?\&]ABTest-TransitionChecker1=B(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-TransitionChecker1 = "B";
-      } else if (req.http.Cookie ~ "ABTest-TransitionChecker1") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-TransitionChecker1 = req.http.Cookie:ABTest-TransitionChecker1;
-      } else {
-        declare local var.denominator_TransitionChecker1 INTEGER;
-        declare local var.denominator_TransitionChecker1_A INTEGER;
-        declare local var.nominator_TransitionChecker1_A INTEGER;
-        set var.nominator_TransitionChecker1_A = std.atoi(table.lookup(transitionchecker1_percentages, "A"));
-        set var.denominator_TransitionChecker1 += var.nominator_TransitionChecker1_A;
-        declare local var.denominator_TransitionChecker1_B INTEGER;
-        declare local var.nominator_TransitionChecker1_B INTEGER;
-        set var.nominator_TransitionChecker1_B = std.atoi(table.lookup(transitionchecker1_percentages, "B"));
-        set var.denominator_TransitionChecker1 += var.nominator_TransitionChecker1_B;
-        set var.denominator_TransitionChecker1_A = var.denominator_TransitionChecker1;
-        if (randombool(var.nominator_TransitionChecker1_A, var.denominator_TransitionChecker1_A)) {
-          set req.http.GOVUK-ABTest-TransitionChecker1 = "A";
-        } else {
-          set req.http.GOVUK-ABTest-TransitionChecker1 = "B";
-        }
-      }
-    }
   }
 }
 # End dynamic section
@@ -469,16 +437,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "TransitionChecker1") == "true") {
-        if (req.http.Cookie !~ "ABTest-TransitionChecker1" || req.url ~ "[\?\&]ABTest-TransitionChecker1" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "TransitionChecker1"))));
-          add resp.http.Set-Cookie = "ABTest-TransitionChecker1=" req.http.GOVUK-ABTest-TransitionChecker1 "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
   # End dynamic section
 
 #FASTLY deliver
