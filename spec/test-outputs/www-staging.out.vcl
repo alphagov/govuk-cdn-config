@@ -208,6 +208,9 @@ sub vcl_recv {
   # as a rollback mechanism should we ever need to stop showing these links.
   set req.http.Govuk-Use-Recommended-Related-Links = "true";
 
+  # Set a request id header to allow requests to be traced through the stack
+  set req.http.GOVUK-Request-Id = uuid.version4();
+
   
 
   # Save original request url because req.url changes after restarts.
