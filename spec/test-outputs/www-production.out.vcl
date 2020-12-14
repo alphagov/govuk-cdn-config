@@ -202,6 +202,23 @@ sub vcl_recv {
   # Set a request id header to allow requests to be traced through the stack
   set req.http.GOVUK-Request-Id = uuid.version4();
 
+  if (req.url.path == "/find-coronavirus-local-restrictions") {
+    # get rid of all but the postcode param
+    set req.url = querystring.filter_except(req.url, "postcode");
+
+    # lower case the postcode and strip any non-alnum chars
+    set req.url = querystring.set(
+      req.url,
+      "postcode",
+      regsuball(
+        std.tolower(
+          subfield(req.url.qs, "postcode", "&")
+        ),
+        "[^a-z0-9]",
+        "")
+    );
+  }
+
   
 
   # Save original request url because req.url changes after restarts.
