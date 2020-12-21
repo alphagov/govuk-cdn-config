@@ -205,18 +205,6 @@ sub vcl_recv {
   if (req.url.path == "/find-coronavirus-local-restrictions") {
     # get rid of all but the postcode param
     set req.url = querystring.filter_except(req.url, "postcode");
-
-    # lower case the postcode and strip any non-alnum chars
-    set req.url = querystring.set(
-      req.url,
-      "postcode",
-      regsuball(
-        std.tolower(
-          subfield(req.url.qs, "postcode", "&")
-        ),
-        "[^a-z0-9]",
-        "")
-    );
   }
 
   
