@@ -331,38 +331,6 @@ if (req.http.Cookie ~ "cookies_policy") {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "BrexitChecker") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-BrexitChecker = "A";
-      } else if (req.url ~ "[\?\&]ABTest-BrexitChecker=A(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-BrexitChecker = "A";
-      } else if (req.url ~ "[\?\&]ABTest-BrexitChecker=B(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-BrexitChecker = "B";
-      } else if (req.http.Cookie ~ "ABTest-BrexitChecker") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-BrexitChecker = req.http.Cookie:ABTest-BrexitChecker;
-      } else {
-        declare local var.denominator_BrexitChecker INTEGER;
-        declare local var.denominator_BrexitChecker_A INTEGER;
-        declare local var.nominator_BrexitChecker_A INTEGER;
-        set var.nominator_BrexitChecker_A = std.atoi(table.lookup(brexitchecker_percentages, "A"));
-        set var.denominator_BrexitChecker += var.nominator_BrexitChecker_A;
-        declare local var.denominator_BrexitChecker_B INTEGER;
-        declare local var.nominator_BrexitChecker_B INTEGER;
-        set var.nominator_BrexitChecker_B = std.atoi(table.lookup(brexitchecker_percentages, "B"));
-        set var.denominator_BrexitChecker += var.nominator_BrexitChecker_B;
-        set var.denominator_BrexitChecker_A = var.denominator_BrexitChecker;
-        if (randombool(var.nominator_BrexitChecker_A, var.denominator_BrexitChecker_A)) {
-          set req.http.GOVUK-ABTest-BrexitChecker = "A";
-        } else {
-          set req.http.GOVUK-ABTest-BrexitChecker = "B";
-        }
-      }
-    }
   }
 }
 # End dynamic section
@@ -468,16 +436,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "BrexitChecker") == "true") {
-        if (req.http.Cookie !~ "ABTest-BrexitChecker" || req.url ~ "[\?\&]ABTest-BrexitChecker" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BrexitChecker"))));
-          add resp.http.Set-Cookie = "ABTest-BrexitChecker=" req.http.GOVUK-ABTest-BrexitChecker "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
   # End dynamic section
 
 #FASTLY deliver
