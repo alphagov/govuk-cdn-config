@@ -408,6 +408,12 @@ sub vcl_fetch {
     return (pass);
   }
 
+  # Fastly doesn't recognise 307 as cacheable by default as it is based on an
+  # old version of Varnish that also lacked 307 support.
+  if (beresp.status == 307) {
+    set beresp.cacheable = true;
+  }
+
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
     # keep the ttl here
   } else {
