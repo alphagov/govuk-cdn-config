@@ -458,7 +458,7 @@ sub vcl_deliver {
   declare local var.expiry TIME;
 <% ab_tests.each do |test_config| -%>
 <% test_config.each do |test, _| -%>
-<% unless test == "Example" -%>
+<% unless %w[Example CookielessAATest].include?(test) -%>
   if (req.http.Cookie ~ "cookies_policy") {
     if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
       if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
