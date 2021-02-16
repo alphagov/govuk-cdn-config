@@ -12,7 +12,7 @@ This repo contains 3 scripts to configure our [Fastly CDN](https://fastly.com) a
 
 Script: [deploy-service.sh](/deploy-service.sh)
 
-Invoked via the [CDN: deploy service](https://deploy.publishing.service.gov.uk/job/Deploy_CDN) Jenkins job.
+Invoked via the [CDN: deploy service](https://deploy.blue.production.govuk.digital/job/Deploy_CDN) Jenkins job.
 
 This script allows you to configure a number of Fastly services:
 
@@ -29,7 +29,7 @@ This script allows you to configure a number of Fastly services:
 
 Script: [deploy-dictionaries.sh](/deploy-dictionaries.sh)
 
-Invoked via the [CDN: update dictionaries](https://deploy.publishing.service.gov.uk/job/Update_CDN_Dictionaries) Jenkins job.
+Invoked via the [CDN: update dictionaries](https://deploy.blue.production.govuk.digital/job/Update_CDN_Dictionaries) Jenkins job.
 
 Fastly provide a technology called [Edge Dictionaries](https://docs.fastly.com/guides/edge-dictionaries/)
 which can be used to provide dynamic configuration to VCL. This script takes updates dictionaries defined in YAML files in [configs/dictionaries](/configs/dictionaries). We use it for [A/B testing](#ab-testing) and blocking IP addresses (the dictionary for this lives in [alphagov/govuk-cdn-config-secrets](https://github.com/alphagov/govuk-cdn-config-secrets/blob/master/fastly/dictionaries/config/ip_address_denylist.yaml) - read [more about IP banning](https://docs.publishing.service.gov.uk/manual/cdn.html#banning-ip-addresses-at-the-cdn-edge) in the docs).
