@@ -12,7 +12,7 @@ describe DeployService do
         .to_return(body: File.read("spec/fixtures/fastly-put-clone.json"))
 
       # Stub calls to delete the "UI objects"
-      %w[backend healthcheck cache_settings request_settings response_object header gzip].each do |thing|
+      %w[healthcheck cache_settings request_settings response_object header gzip].each do |thing|
         @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/#{thing}")
           .to_return(body: "{}")
       end
