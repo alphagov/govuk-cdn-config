@@ -290,6 +290,11 @@ sub vcl_recv {
     return(pass);
   }
 
+  # RFC 134
+  set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
+
+  # TODO: Remove when we have switched existing apps to use the new
+  # session header
   if (req.http.Cookie ~ "_finder-frontend_account_session") {
     set req.http.GOVUK-ABTest-AccountExperiment = "LoggedIn";
   } else {
@@ -476,6 +481,21 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+  # RFC 134
+  if (resp.http.GOVUK-Account-End-Session) {
+    add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=strict; path=/; max-age=0";
+    unset resp.http.GOVUK-Account-End-Session;
+  } else if (resp.http.GOVUK-Account-Session) {
+    add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=strict; path=/";
+  }
+
+  if (resp.http.Vary ~ "GOVUK-Account-Session") {
+    unset resp.http.Vary:GOVUK-Account-Session;
+    set resp.http.Cache-Control:private = "";
+  }
+
+  unset resp.http.GOVUK-Account-Session;
+
   # Set the A/B cookies
   # Only set the A/B example cookie if the request is to the A/B test page. This
   # ensures that most visitors to the site aren't assigned an irrelevant test
