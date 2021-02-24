@@ -183,7 +183,7 @@ acl purge_ip_allowlist {
   "167.82.224.0"/20;  # Fastly cache node
 }
 
-<% if %w(staging integration).include?(environment) %>
+<% if %w(staging integration test).include?(environment) %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";

@@ -28,7 +28,7 @@ RSpec.describe "VCL generation" do
     next if service == "bouncer" # Bouncer is not deployed from this repo
     next if service == "test" # For another test
 
-    %w[production staging integration].each do |environment|
+    %w[production staging integration test].each do |environment|
       it "renders the #{service} VCL for #{environment} correctly" do
         generated_vcl = RenderTemplate.render_template(service, environment, config, "unused variable")
         expected_vcl_filename = "spec/test-outputs/#{service}-#{environment}.out.vcl"
