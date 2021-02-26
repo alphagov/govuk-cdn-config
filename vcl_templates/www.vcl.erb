@@ -343,14 +343,6 @@ sub vcl_recv {
   # RFC 134
   set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
 
-  # TODO: Remove when we have switched existing apps to use the new
-  # session header
-  if (req.http.Cookie ~ "_finder-frontend_account_session") {
-    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedIn";
-  } else {
-    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedOut";
-  }
-
   <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
   <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
