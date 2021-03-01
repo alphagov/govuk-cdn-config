@@ -293,14 +293,6 @@ sub vcl_recv {
   # RFC 134
   set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
 
-  # TODO: Remove when we have switched existing apps to use the new
-  # session header
-  if (req.http.Cookie ~ "_finder-frontend_account_session") {
-    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedIn";
-  } else {
-    set req.http.GOVUK-ABTest-AccountExperiment = "LoggedOut";
-  }
-
     # Begin dynamic section
 if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
   if (table.lookup(active_ab_tests, "Example") == "true") {
