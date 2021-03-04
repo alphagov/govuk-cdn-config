@@ -42,6 +42,14 @@ Invoked via the [CDN: deploy Bouncer configs](https://deploy.blue.production.gov
 
 This configures the `bouncer` Fastly service with transitioned domains from Transition ([read about Transition here](https://docs.publishing.service.gov.uk/manual/transition-architecture.html)). The Jenkins job is not usually run manually - it's triggered by the [one of the transition Jenkins jobs](https://deploy.blue.production.govuk.digital/job/Transition_load_site_config). Read [more about the Fastly service](https://docs.publishing.service.gov.uk/manual/cdn.html#bouncer39s-fastly-service) in the developer docs.
 
+## Making changes to VCL
+
+You will need to re-generate the spec files when making changes to `www.vcl.erb`.
+
+```sh
+REGENERATE_EXPECTATIONS=1 bundle exec rspec
+```
+
 ## A/B testing
 
 We use edge dictionaries to define the configuration for A/B and multivariate tests. The same configuration applies to A/B and multivariate tests, differing only on the number of variants.

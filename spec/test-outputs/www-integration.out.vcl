@@ -291,6 +291,10 @@ sub vcl_fetch {
     set beresp.cacheable = true;
   }
 
+  if (beresp.status == 406) {
+    set beresp.cacheable = true;
+  }
+
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~"(s-maxage|max-age)") {
     # keep the ttl here
   } else {
