@@ -475,10 +475,10 @@ sub vcl_miss {
 sub vcl_deliver {
   # RFC 134
   if (resp.http.GOVUK-Account-End-Session) {
-    add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=strict; path=/; max-age=0";
+    add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=lax; path=/; max-age=0";
     unset resp.http.GOVUK-Account-End-Session;
   } else if (resp.http.GOVUK-Account-Session) {
-    add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=strict; path=/";
+    add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=lax; path=/";
   }
 
   if (resp.http.Vary ~ "GOVUK-Account-Session") {
