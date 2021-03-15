@@ -336,12 +336,12 @@ sub vcl_recv {
 
 #FASTLY recv
 
+  # RFC 134
+  set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
+
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
   }
-
-  # RFC 134
-  set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
 
   <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
   <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
