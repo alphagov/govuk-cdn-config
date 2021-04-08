@@ -195,6 +195,10 @@ sub vcl_recv {
   if (req.url.path ~ "(?i)/autodiscover/autodiscover.xml$") {
     error 804 "Not Found";
   }
+  # Redirect to security.txt for "/.well-known/security.txt" or "/security.txt"
+  if (req.url.path ~ "(?i)^(?:/\.well[-_]known)?/security\.txt$") {
+    error 805 "security.txt";
+  }
 
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
@@ -599,6 +603,14 @@ sub vcl_error {
         </body>
       </html>"};
 
+    return (deliver);
+  }
+  # 302 redirect to vdp.cabinetoffice.gov.uk called from vcl_recv.
+  if (obj.status == 805) {
+    set obj.status = 302;
+    set obj.http.Location = "https://vdp.cabinetoffice.gov.uk/.well-known/security.txt";
+    set obj.response = "Moved";
+    synthetic {""};
     return (deliver);
   }
 
