@@ -269,6 +269,23 @@ else if (req.http.Cookie !~ "cookies_preferences_set") {
 sub vcl_fetch {
 #FASTLY fetch
 
+  # Enable brotli 
+  if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "^(text/html|application/x-javascript|text/css|application/javascript|text/javascript|application/json|application/vnd\.ms-fontobject|application/x-font-opentype|application/x-font-truetype|application/x-font-ttf|application/xml|font/eot|font/opentype|font/otf|image/svg\+xml|image/vnd\.microsoft\.icon|text/plain|text/xml)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+    # always set vary to make sure uncompressed versions dont always win
+    if (!beresp.http.Vary ~ "Accept-Encoding") {
+      if (beresp.http.Vary) {
+        set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
+      } else {
+        set beresp.http.Vary = "Accept-Encoding";
+      }
+    }
+    if (req.http.Accept-Encoding == "br") {
+      set beresp.brotli = true;
+    } elsif (req.http.Accept-Encoding == "gzip") {
+      set beresp.gzip = true;
+    }
+  }
+
   set beresp.http.Fastly-Backend-Name = req.http.Fastly-Backend-Name;
 
   if ((beresp.status >= 500 && beresp.status <= 599) && req.restarts < 3 && (req.request == "GET" || req.request == "HEAD") && !beresp.http.No-Fallback) {
