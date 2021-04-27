@@ -10,7 +10,7 @@ backend F_origin0 {
     .share_key = "<%= service_id %>";
 
     .probe = {
-        .request = "HEAD /healthcheck HTTP/1.1"  "Host: bouncer.<%= app_domain %>" "Connection: close";
+        .request = "HEAD /healthcheck/ready HTTP/1.1"  "Host: bouncer.<%= app_domain %>" "Connection: close";
         .window = 2;
         .threshold = 1;
         .timeout = 2s;
