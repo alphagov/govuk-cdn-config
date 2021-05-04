@@ -327,7 +327,7 @@ sub vcl_fetch {
     return (pass);
   }
 
-  if (beresp.http.Cache-Control ~ "max-age=0") {
+  if (beresp.http.Cache-Control ~ "max-age=0") && (req.url.path != "/alerts" || req.url !~ "^/alerts/")  {
     return (pass);
   }
 
