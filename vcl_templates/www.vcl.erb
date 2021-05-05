@@ -318,6 +318,13 @@ sub vcl_recv {
     set req.http.Date = now;
     set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
+  
+  # Add normalization vcl for Brotli support
+  if (req.http.Fastly-Orig-Accept-Encoding) {
+    if (req.http.Fastly-Orig-Accept-Encoding ~ "\bbr\b") {
+      set req.http.Accept-Encoding = "br";
+    }
+  }
   <% end %>
 
   # Unspoofable original client address (e.g. for rate limiting).
