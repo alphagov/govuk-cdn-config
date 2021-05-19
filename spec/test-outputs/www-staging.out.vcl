@@ -282,7 +282,7 @@ sub vcl_recv {
     set req.http.Date = now;
     set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
   }
-  
+
   # Add normalization vcl for Brotli support
   if (req.http.Fastly-Orig-Accept-Encoding) {
     if (req.http.Fastly-Orig-Accept-Encoding ~ "\bbr\b") {
@@ -290,6 +290,12 @@ sub vcl_recv {
     }
   }
   
+
+  # Protect header from modification at the edge of the Fastly network
+  # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
+  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
+    set req.http.Fastly-Client-IP = client.ip;
+  }
 
   # Unspoofable original client address (e.g. for rate limiting).
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
@@ -439,7 +445,7 @@ else if (req.http.Cookie !~ "cookies_preferences_set") {
 sub vcl_fetch {
 #FASTLY fetch
 
-  # Enable brotli 
+  # Enable brotli
   if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "^(text/html|application/x-javascript|text/css|application/javascript|text/javascript|application/json|application/vnd\.ms-fontobject|application/x-font-opentype|application/x-font-truetype|application/x-font-ttf|application/xml|font/eot|font/opentype|font/otf|image/svg\+xml|image/vnd\.microsoft\.icon|text/plain|text/xml)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
     # always set vary to make sure uncompressed versions dont always win
     if (!beresp.http.Vary ~ "Accept-Encoding") {
