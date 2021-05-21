@@ -117,6 +117,12 @@ sub vcl_recv {
 
   
 
+  # Protect header from modification at the edge of the Fastly network
+  # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
+  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
+    set req.http.Fastly-Client-IP = client.ip;
+  }
+
   # Unspoofable original client address (e.g. for rate limiting).
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
@@ -265,7 +271,7 @@ else if (req.http.Cookie !~ "cookies_preferences_set") {
 sub vcl_fetch {
 #FASTLY fetch
 
-  # Enable brotli 
+  # Enable brotli
   if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "^(text/html|application/x-javascript|text/css|application/javascript|text/javascript|application/json|application/vnd\.ms-fontobject|application/x-font-opentype|application/x-font-truetype|application/x-font-ttf|application/xml|font/eot|font/opentype|font/otf|image/svg\+xml|image/vnd\.microsoft\.icon|text/plain|text/xml)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
     # always set vary to make sure uncompressed versions dont always win
     if (!beresp.http.Vary ~ "Accept-Encoding") {
