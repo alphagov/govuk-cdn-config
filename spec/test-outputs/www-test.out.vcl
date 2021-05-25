@@ -140,7 +140,9 @@ sub vcl_recv {
 #FASTLY recv
 
   # RFC 134
-  set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
+  if (req.http.Cookie ~ "__Host-govuk_account_session") {
+    set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
+  }
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
