@@ -121,6 +121,11 @@ sub vcl_recv {
     set req.url = querystring.filter_except(req.url, "postcode");
   }
 
+  if (req.url.path == "/") {
+    # get rid of all query parameters
+    set req.url = querystring.remove(req.url);
+  }
+
   
 
   # Protect header from modification at the edge of the Fastly network
