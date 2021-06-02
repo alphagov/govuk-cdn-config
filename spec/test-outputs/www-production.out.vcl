@@ -192,6 +192,12 @@ sub vcl_recv {
     error 805 "security.txt";
   }
 
+  # Sort query params (improve cache hit rate)
+  set req.url = querystring.sort(req.url);
+
+  # Remove any Google Analytics campaign params
+  set req.url = querystring.globfilter(req.url, "utm_*");
+
   # Serve from stale for 24 hours if origin is sick
   set req.grace = 24h;
 
