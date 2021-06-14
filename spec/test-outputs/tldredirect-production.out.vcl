@@ -36,8 +36,9 @@ sub vcl_error {
   if (obj.status == 801) {
     set obj.status = 301;
     set obj.response = "Moved Permanently";
-    set obj.http.Location = "https://" req.http.host req.url;
+    set obj.http.Location = "https://www.gov.uk" req.url;
     set obj.http.Fastly-Backend-Name = "force_ssl";
+    # Strict-Transport-Security header is ignored for http:// requests
   }
 
   if (obj.status == 802) {
