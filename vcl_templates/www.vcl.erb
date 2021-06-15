@@ -108,41 +108,6 @@ backend F_mirrorS3Replica {
         .interval = 10s;
     }
 }
-
-# Mirror backend for GCS
-backend F_mirrorGCS {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "<%= config.fetch('gcs_mirror_port', 443) %>";
-    .host = "<%= config.fetch('gcs_mirror_hostname') %>";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('gcs_mirror_hostname')) %>";
-    .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('gcs_mirror_hostname')) %>";
-
-    .probe = {
-        .request =
-            "HEAD <%= config.fetch('gcs_mirror_probe_request', '/') %> HTTP/1.1"
-            "Host: <%= config.fetch('gcs_mirror_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 403;
-        .interval = 10s;
-    }
-}
 <% end %>
 
 acl purge_ip_allowlist {
@@ -315,19 +280,6 @@ sub vcl_recv {
 
     # Add bucket directory prefix to all the requests
     set req.url = "/<%= config.fetch('s3_mirror_replica_prefix') %>" req.url;
-  }
-
-  # Failover to GCS mirror.
-  if (req.restarts > 2) {
-    set req.backend = F_mirrorGCS;
-    set req.http.host = "<%= config.fetch('gcs_mirror_hostname') %>";
-    set req.http.Fastly-Backend-Name = "mirrorGCS";
-
-    # Add bucket directory prefix to all the requests
-    set req.url = "/<%= config.fetch('gcs_mirror_prefix') %>" req.url;
-
-    set req.http.Date = now;
-    set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
 
   # Add normalization vcl for Brotli support

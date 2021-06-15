@@ -94,38 +94,6 @@ backend F_mirrorS3Replica {
     }
 }
 
-# Mirror backend for GCS
-backend F_mirrorGCS {
-    .connect_timeout = 1s;
-    .dynamic = true;
-    .port = "443";
-    .host = "gcs-mirror.google.com";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "123";
-
-    .ssl = true;
-    .ssl_check_cert = always;
-    .min_tls_version = "1.2";
-    .ssl_cert_hostname = "gcs-mirror.google.com";
-    .ssl_sni_hostname = "gcs-mirror.google.com";
-
-    .probe = {
-        .request =
-            "HEAD / HTTP/1.1"
-            "Host: gcs-mirror.google.com"
-            "User-Agent: Fastly healthcheck (git version: )"
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 403;
-        .interval = 10s;
-    }
-}
-
 
 acl purge_ip_allowlist {
   "37.26.93.252";     # Skyscape mirrors
@@ -270,19 +238,6 @@ sub vcl_recv {
 
     # Add bucket directory prefix to all the requests
     set req.url = "/s3-mirror-replica" req.url;
-  }
-
-  # Failover to GCS mirror.
-  if (req.restarts > 2) {
-    set req.backend = F_mirrorGCS;
-    set req.http.host = "gcs-mirror.google.com";
-    set req.http.Fastly-Backend-Name = "mirrorGCS";
-
-    # Add bucket directory prefix to all the requests
-    set req.url = "/gcs-mirror" req.url;
-
-    set req.http.Date = now;
-    set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
   }
 
   # Add normalization vcl for Brotli support
