@@ -325,117 +325,70 @@ sub vcl_recv {
   }
 
     # Begin dynamic section
-if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-  if (table.lookup(active_ab_tests, "Example") == "true") {
-    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-Example = "A";
-    } else if (req.url ~ "[\?\&]ABTest-Example=A(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-Example = "A";
-    } else if (req.url ~ "[\?\&]ABTest-Example=B(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-Example = "B";
-    } else if (req.http.Cookie ~ "ABTest-Example") {
-      # Set the value of the header to whatever decision was previously made
-      set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
-    } else {
-      declare local var.denominator_Example INTEGER;
-      declare local var.denominator_Example_A INTEGER;
-      declare local var.nominator_Example_A INTEGER;
-      set var.nominator_Example_A = std.atoi(table.lookup(example_percentages, "A"));
-      set var.denominator_Example += var.nominator_Example_A;
-      declare local var.denominator_Example_B INTEGER;
-      declare local var.nominator_Example_B INTEGER;
-      set var.nominator_Example_B = std.atoi(table.lookup(example_percentages, "B"));
-      set var.denominator_Example += var.nominator_Example_B;
-      set var.denominator_Example_A = var.denominator_Example;
-      if (randombool(var.nominator_Example_A, var.denominator_Example_A)) {
+if (req.http.Cookie ~ "cookies_policy") {
+  if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+    if (table.lookup(active_ab_tests, "Example") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-Example = "A";
-      } else {
+      } else if (req.url ~ "[\?\&]ABTest-Example=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-Example = "A";
+      } else if (req.url ~ "[\?\&]ABTest-Example=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
         set req.http.GOVUK-ABTest-Example = "B";
+      } else if (req.http.Cookie ~ "ABTest-Example") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
+      } else {
+        declare local var.denominator_Example INTEGER;
+        declare local var.denominator_Example_A INTEGER;
+        declare local var.nominator_Example_A INTEGER;
+        set var.nominator_Example_A = std.atoi(table.lookup(example_percentages, "A"));
+        set var.denominator_Example += var.nominator_Example_A;
+        declare local var.denominator_Example_B INTEGER;
+        declare local var.nominator_Example_B INTEGER;
+        set var.nominator_Example_B = std.atoi(table.lookup(example_percentages, "B"));
+        set var.denominator_Example += var.nominator_Example_B;
+        set var.denominator_Example_A = var.denominator_Example;
+        if (randombool(var.nominator_Example_A, var.denominator_Example_A)) {
+          set req.http.GOVUK-ABTest-Example = "A";
+        } else {
+          set req.http.GOVUK-ABTest-Example = "B";
+        }
       }
     }
-  }
-  if (table.lookup(active_ab_tests, "CookielessAATest") == "true") {
-    set req.http.GOVUK-ABTest-CookielessAATest = "Z";
-  }
-  if (table.lookup(active_ab_tests, "AccountBankHols") == "true") {
-    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-AccountBankHols = "A";
-    } else if (req.url ~ "[\?\&]ABTest-AccountBankHols=A(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-AccountBankHols = "A";
-    } else if (req.url ~ "[\?\&]ABTest-AccountBankHols=B(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-AccountBankHols = "B";
-    } else if (req.http.Cookie ~ "ABTest-AccountBankHols") {
-      # Set the value of the header to whatever decision was previously made
-      set req.http.GOVUK-ABTest-AccountBankHols = req.http.Cookie:ABTest-AccountBankHols;
-    } else {
-      declare local var.denominator_AccountBankHols INTEGER;
-      declare local var.denominator_AccountBankHols_A INTEGER;
-      declare local var.nominator_AccountBankHols_A INTEGER;
-      set var.nominator_AccountBankHols_A = std.atoi(table.lookup(accountbankhols_percentages, "A"));
-      set var.denominator_AccountBankHols += var.nominator_AccountBankHols_A;
-      declare local var.denominator_AccountBankHols_B INTEGER;
-      declare local var.nominator_AccountBankHols_B INTEGER;
-      set var.nominator_AccountBankHols_B = std.atoi(table.lookup(accountbankhols_percentages, "B"));
-      set var.denominator_AccountBankHols += var.nominator_AccountBankHols_B;
-      set var.denominator_AccountBankHols_A = var.denominator_AccountBankHols;
-      if (randombool(var.nominator_AccountBankHols_A, var.denominator_AccountBankHols_A)) {
+    if (table.lookup(active_ab_tests, "AccountBankHols") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-AccountBankHols = "A";
-      } else {
+      } else if (req.url ~ "[\?\&]ABTest-AccountBankHols=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-AccountBankHols = "A";
+      } else if (req.url ~ "[\?\&]ABTest-AccountBankHols=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
         set req.http.GOVUK-ABTest-AccountBankHols = "B";
-      }
-    }
-  }
-}
-else if (req.http.Cookie !~ "cookies_preferences_set") {
-  if (table.lookup(active_ab_tests, "CookielessAATest") == "true") {
-    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-CookielessAATest = "Z";
-    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=A(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-CookielessAATest = "A";
-    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=B(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-CookielessAATest = "B";
-    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=Z(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-CookielessAATest = "Z";
-    } else {
-      declare local var.denominator_CookielessAATest INTEGER;
-      set req.http.Client-Bucket-Full = digest.hash_md5(req.http.Fastly-Client-IP req.http.User-Agent);
-      set req.http.Client-Bucket-Trimmed = regsub(req.http.Client-Bucket-Full, "^([a-fA-F0-9]{10}).*$","\1");
-      set req.http.Client-Bucket = std.strtol(req.http.Client-Bucket-Trimmed, 16);
-      declare local var.denominator_CookielessAATest_A INTEGER;
-      declare local var.nominator_CookielessAATest_A INTEGER;
-      set var.nominator_CookielessAATest_A = std.atoi(table.lookup(cookielessaatest_percentages, "A"));
-      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_A;
-      declare local var.denominator_CookielessAATest_B INTEGER;
-      declare local var.nominator_CookielessAATest_B INTEGER;
-      set var.nominator_CookielessAATest_B = std.atoi(table.lookup(cookielessaatest_percentages, "B"));
-      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_B;
-      declare local var.denominator_CookielessAATest_Z INTEGER;
-      declare local var.nominator_CookielessAATest_Z INTEGER;
-      set var.nominator_CookielessAATest_Z = std.atoi(table.lookup(cookielessaatest_percentages, "Z"));
-      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_Z;
-      set var.denominator_CookielessAATest_A = var.denominator_CookielessAATest;
-      set var.denominator_CookielessAATest_B = var.denominator_CookielessAATest_A;
-      set var.denominator_CookielessAATest_B -= var.nominator_CookielessAATest_A;
-      if (randombool_seeded(var.nominator_CookielessAATest_A, var.denominator_CookielessAATest_A, std.atoi(req.http.Client-Bucket))) {
-        set req.http.GOVUK-ABTest-CookielessAATest = "A";
-      } else if (randombool_seeded(var.nominator_CookielessAATest_B, var.denominator_CookielessAATest_B, std.atoi(req.http.Client-Bucket))) {
-        set req.http.GOVUK-ABTest-CookielessAATest = "B";
+      } else if (req.http.Cookie ~ "ABTest-AccountBankHols") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-AccountBankHols = req.http.Cookie:ABTest-AccountBankHols;
       } else {
-        set req.http.GOVUK-ABTest-CookielessAATest = "Z";
+        declare local var.denominator_AccountBankHols INTEGER;
+        declare local var.denominator_AccountBankHols_A INTEGER;
+        declare local var.nominator_AccountBankHols_A INTEGER;
+        set var.nominator_AccountBankHols_A = std.atoi(table.lookup(accountbankhols_percentages, "A"));
+        set var.denominator_AccountBankHols += var.nominator_AccountBankHols_A;
+        declare local var.denominator_AccountBankHols_B INTEGER;
+        declare local var.nominator_AccountBankHols_B INTEGER;
+        set var.nominator_AccountBankHols_B = std.atoi(table.lookup(accountbankhols_percentages, "B"));
+        set var.denominator_AccountBankHols += var.nominator_AccountBankHols_B;
+        set var.denominator_AccountBankHols_A = var.denominator_AccountBankHols;
+        if (randombool(var.nominator_AccountBankHols_A, var.denominator_AccountBankHols_A)) {
+          set req.http.GOVUK-ABTest-AccountBankHols = "A";
+        } else {
+          set req.http.GOVUK-ABTest-AccountBankHols = "B";
+        }
       }
     }
   }
