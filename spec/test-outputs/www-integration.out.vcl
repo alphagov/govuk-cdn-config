@@ -197,6 +197,9 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       }
     }
   }
+  if (table.lookup(active_ab_tests, "CookielessAATest") == "true") {
+    set req.http.GOVUK-ABTest-CookielessAATest = "Z";
+  }
   if (table.lookup(active_ab_tests, "AccountBankHols") == "true") {
     if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
       set req.http.GOVUK-ABTest-AccountBankHols = "A";
@@ -226,6 +229,52 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
         set req.http.GOVUK-ABTest-AccountBankHols = "A";
       } else {
         set req.http.GOVUK-ABTest-AccountBankHols = "B";
+      }
+    }
+  }
+}
+else if (req.http.Cookie !~ "cookies_preferences_set") {
+  if (table.lookup(active_ab_tests, "CookielessAATest") == "true") {
+    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+      set req.http.GOVUK-ABTest-CookielessAATest = "Z";
+    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=A(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-CookielessAATest = "A";
+    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=B(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-CookielessAATest = "B";
+    } else if (req.url ~ "[\?\&]ABTest-CookielessAATest=Z(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-CookielessAATest = "Z";
+    } else {
+      declare local var.denominator_CookielessAATest INTEGER;
+      set req.http.Client-Bucket-Full = digest.hash_md5(req.http.Fastly-Client-IP req.http.User-Agent);
+      set req.http.Client-Bucket-Trimmed = regsub(req.http.Client-Bucket-Full, "^([a-fA-F0-9]{10}).*$","\1");
+      set req.http.Client-Bucket = std.strtol(req.http.Client-Bucket-Trimmed, 16);
+      declare local var.denominator_CookielessAATest_A INTEGER;
+      declare local var.nominator_CookielessAATest_A INTEGER;
+      set var.nominator_CookielessAATest_A = std.atoi(table.lookup(cookielessaatest_percentages, "A"));
+      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_A;
+      declare local var.denominator_CookielessAATest_B INTEGER;
+      declare local var.nominator_CookielessAATest_B INTEGER;
+      set var.nominator_CookielessAATest_B = std.atoi(table.lookup(cookielessaatest_percentages, "B"));
+      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_B;
+      declare local var.denominator_CookielessAATest_Z INTEGER;
+      declare local var.nominator_CookielessAATest_Z INTEGER;
+      set var.nominator_CookielessAATest_Z = std.atoi(table.lookup(cookielessaatest_percentages, "Z"));
+      set var.denominator_CookielessAATest += var.nominator_CookielessAATest_Z;
+      set var.denominator_CookielessAATest_A = var.denominator_CookielessAATest;
+      set var.denominator_CookielessAATest_B = var.denominator_CookielessAATest_A;
+      set var.denominator_CookielessAATest_B -= var.nominator_CookielessAATest_A;
+      if (randombool_seeded(var.nominator_CookielessAATest_A, var.denominator_CookielessAATest_A, std.atoi(req.http.Client-Bucket))) {
+        set req.http.GOVUK-ABTest-CookielessAATest = "A";
+      } else if (randombool_seeded(var.nominator_CookielessAATest_B, var.denominator_CookielessAATest_B, std.atoi(req.http.Client-Bucket))) {
+        set req.http.GOVUK-ABTest-CookielessAATest = "B";
+      } else {
+        set req.http.GOVUK-ABTest-CookielessAATest = "Z";
       }
     }
   }

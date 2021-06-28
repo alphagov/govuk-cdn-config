@@ -6,5 +6,6 @@
 # ExampleTest: 86400
 ---
 Example: 86400
+CookielessAATest: 86400
 # 91 days and 6 hours (~ 3 months)
 AccountBankHols: 7884000
