@@ -89,6 +89,4 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
     }
   }
 }
-else if (req.http.Cookie !~ "cookies_preferences_set") {
-}
 # End dynamic section

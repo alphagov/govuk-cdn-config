@@ -9,9 +9,6 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
 <%# test_config is a hash like { "MyTest" => ['foo', 'bar', 'baz'] } -%>
 <% test_config.each do |test, variants| -%>
   if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-<% if test == "CookielessAATest" -%>
-    set req.http.GOVUK-ABTest-<%= test %> = "<%= variants.last %>";
-<% else -%>
     if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
       set req.http.GOVUK-ABTest-<%= test %> = "<%= variants.first %>";
 <% variants.each do |variant| -%>
@@ -54,60 +51,7 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
 <% end -%>
 <% end # variants.each-%>
     }
-<% end # if CookielessAATest -%>
   }
-<% end # test_config.each -%>
-<% end # ab_tests.each -%>
-}
-else if (req.http.Cookie !~ "cookies_preferences_set") {
-<% ab_tests.each do |test_config| -%>
-<% test_config.each do |test, variants| -%>
-<% if test == "CookielessAATest" -%>
-  if (table.lookup(active_ab_tests, "CookielessAATest") == "true") {
-    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-<%= test %> = "<%= variants.last %>";
-<% variants.each do |variant| -%>
-    } else if (req.url ~ "[\?\&]ABTest-<%= test %>=<%= variant %>(&|$)") {
-      # Some users, such as remote testers, will be given a URL with a query string
-      # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
-<% end -%>
-    } else {
-      declare local var.denominator_<%= test %> INTEGER;
-      set req.http.Client-Bucket-Full = digest.hash_md5(req.http.Fastly-Client-IP req.http.User-Agent);
-      set req.http.Client-Bucket-Trimmed = regsub(req.http.Client-Bucket-Full, "^([a-fA-F0-9]{10}).*$","\1");
-      set req.http.Client-Bucket = std.strtol(req.http.Client-Bucket-Trimmed, 16);
-<% variants.each do |variant| -%>
-      declare local var.denominator_<%= test %>_<%= variant %> INTEGER;
-      declare local var.nominator_<%= test %>_<%= variant %> INTEGER;
-      set var.nominator_<%= test %>_<%= variant %> = std.atoi(table.lookup(<%= test.downcase %>_percentages, "<%= variant %>"));
-      set var.denominator_<%= test %> += var.nominator_<%= test %>_<%= variant %>;
-<% end -%>
-<% variants.each_with_index do |variant, idx| -%>
-<% if variant == variants.first -%>
-      set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>;
-<% elsif variant != variants.last -%>
-<% previous_variant = variants[idx - 1] -%>
-      set var.denominator_<%= test %>_<%= variant %> = var.denominator_<%= test %>_<%= previous_variant %>;
-      set var.denominator_<%= test %>_<%= variant %> -= var.nominator_<%= test %>_<%= previous_variant %>;
-<% end # if -%>
-<% end # variants.each_with_index -%>
-<% variants.each do |variant| -%>
-<% if variant == variants.first -%>
-      if (randombool_seeded(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>, std.atoi(req.http.Client-Bucket))) {
-        set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
-<% elsif variant != variants.first && variant != variants.last -%>
-      } else if (randombool_seeded(var.nominator_<%= test %>_<%= variant %>, var.denominator_<%= test %>_<%= variant %>, std.atoi(req.http.Client-Bucket))) {
-        set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
-<% else -%>
-      } else {
-        set req.http.GOVUK-ABTest-<%= test %> = "<%= variant %>";
-      }
-<% end -%>
-<% end # variants.each-%>
-    }
-  }
-<% end # if CookielessAATest -%>
 <% end # test_config.each -%>
 <% end # ab_tests.each -%>
 }

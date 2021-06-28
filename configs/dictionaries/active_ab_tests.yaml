@@ -4,5 +4,4 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-CookielessAATest: true
 AccountBankHols: true
