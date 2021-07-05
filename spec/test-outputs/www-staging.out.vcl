@@ -399,6 +399,38 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       }
     }
   }
+  if (table.lookup(active_ab_tests, "ExploreMenuAbTestable") == "true") {
+    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+      set req.http.GOVUK-ABTest-ExploreMenuAbTestable = "A";
+    } else if (req.url ~ "[\?\&]ABTest-ExploreMenuAbTestable=A(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-ExploreMenuAbTestable = "A";
+    } else if (req.url ~ "[\?\&]ABTest-ExploreMenuAbTestable=B(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-ExploreMenuAbTestable = "B";
+    } else if (req.http.Cookie ~ "ABTest-ExploreMenuAbTestable") {
+      # Set the value of the header to whatever decision was previously made
+      set req.http.GOVUK-ABTest-ExploreMenuAbTestable = req.http.Cookie:ABTest-ExploreMenuAbTestable;
+    } else {
+      declare local var.denominator_ExploreMenuAbTestable INTEGER;
+      declare local var.denominator_ExploreMenuAbTestable_A INTEGER;
+      declare local var.nominator_ExploreMenuAbTestable_A INTEGER;
+      set var.nominator_ExploreMenuAbTestable_A = std.atoi(table.lookup(exploremenuabtestable_percentages, "A"));
+      set var.denominator_ExploreMenuAbTestable += var.nominator_ExploreMenuAbTestable_A;
+      declare local var.denominator_ExploreMenuAbTestable_B INTEGER;
+      declare local var.nominator_ExploreMenuAbTestable_B INTEGER;
+      set var.nominator_ExploreMenuAbTestable_B = std.atoi(table.lookup(exploremenuabtestable_percentages, "B"));
+      set var.denominator_ExploreMenuAbTestable += var.nominator_ExploreMenuAbTestable_B;
+      set var.denominator_ExploreMenuAbTestable_A = var.denominator_ExploreMenuAbTestable;
+      if (randombool(var.nominator_ExploreMenuAbTestable_A, var.denominator_ExploreMenuAbTestable_A)) {
+        set req.http.GOVUK-ABTest-ExploreMenuAbTestable = "A";
+      } else {
+        set req.http.GOVUK-ABTest-ExploreMenuAbTestable = "B";
+      }
+    }
+  }
 }
 # End dynamic section
 
@@ -547,6 +579,16 @@ sub vcl_deliver {
         if (req.http.Cookie !~ "ABTest-AccountBankHols" || req.url ~ "[\?\&]ABTest-AccountBankHols" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
           set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "AccountBankHols"))));
           add resp.http.Set-Cookie = "ABTest-AccountBankHols=" req.http.GOVUK-ABTest-AccountBankHols "; secure; expires=" var.expiry "; path=/";
+        }
+      }
+    }
+  }
+  if (req.http.Cookie ~ "cookies_policy") {
+    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+      if (table.lookup(active_ab_tests, "ExploreMenuAbTestable") == "true") {
+        if (req.http.Cookie !~ "ABTest-ExploreMenuAbTestable" || req.url ~ "[\?\&]ABTest-ExploreMenuAbTestable" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "ExploreMenuAbTestable"))));
+          add resp.http.Set-Cookie = "ABTest-ExploreMenuAbTestable=" req.http.GOVUK-ABTest-ExploreMenuAbTestable "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
