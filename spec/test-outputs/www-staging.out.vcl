@@ -555,6 +555,7 @@ sub vcl_deliver {
 
   if (resp.http.Vary ~ "GOVUK-Account-Session") {
     unset resp.http.Vary:GOVUK-Account-Session;
+    set resp.http.Vary:Cookie = "";
     set resp.http.Cache-Control:private = "";
   }
 
