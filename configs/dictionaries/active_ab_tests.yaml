@@ -5,5 +5,5 @@
 ---
 Example: true
 AccountBankHols: true
-ExploreMenuAbTestable: false
+ExploreMenuAbTestable: true
 StartABusinessSegment: true
