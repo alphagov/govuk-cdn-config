@@ -329,13 +329,6 @@ sub vcl_recv {
     set req.http.Date = now;
     set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
-
-  # Add normalization vcl for Brotli support
-  if (req.http.Fastly-Orig-Accept-Encoding) {
-    if (req.http.Fastly-Orig-Accept-Encoding ~ "\bbr\b") {
-      set req.http.Accept-Encoding = "br";
-    }
-  }
   <% end %>
 
   # Protect header from modification at the edge of the Fastly network
@@ -362,6 +355,9 @@ sub vcl_recv {
     set req.http.Authorization = "Basic <%= config['basic_authentication'] %>";
   }
 <% end -%>
+
+  # Disable compression of backend responses (required for ESI)
+  unset req.http.Accept-Encoding;
 
 #FASTLY recv
 
@@ -418,6 +414,12 @@ sub vcl_fetch {
 
   # Enable brotli
   if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "^(text/html|application/x-javascript|text/css|application/javascript|text/javascript|application/json|application/vnd\.ms-fontobject|application/x-font-opentype|application/x-font-truetype|application/x-font-ttf|application/xml|font/eot|font/opentype|font/otf|image/svg\+xml|image/vnd\.microsoft\.icon|text/plain|text/xml)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+    # Add normalization vcl for Brotli support
+    if (req.http.Fastly-Orig-Accept-Encoding) {
+      if (req.http.Fastly-Orig-Accept-Encoding ~ "\bbr\b") {
+        set req.http.Accept-Encoding = "br";
+      }
+    }
     # always set vary to make sure uncompressed versions dont always win
     if (!beresp.http.Vary ~ "Accept-Encoding") {
       if (beresp.http.Vary) {
@@ -441,6 +443,11 @@ sub vcl_fetch {
   }
 
   if (req.restarts == 0) {
+    # Handle ESI for non-5xx origin responses
+    if (beresp.http.Content-Type ~ "^text/html") {
+      esi;
+    }
+
     # Keep stale for origin
     set beresp.grace = 24h;
   }
@@ -524,8 +531,13 @@ sub vcl_deliver {
   if (resp.http.GOVUK-Account-End-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=lax; path=/; max-age=0";
     unset resp.http.GOVUK-Account-End-Session;
+    # for ESI
+    unset req.http.Cookie:__Host-govuk_account_session;
   } else if (resp.http.GOVUK-Account-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=lax; path=/";
+    # for ESI
+    unset req.http.Cookie:__Host-govuk_account_session;
+    add req.http.Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=lax; path=/";
   }
 
   if (resp.http.Vary ~ "GOVUK-Account-Session") {
