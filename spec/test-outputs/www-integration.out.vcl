@@ -154,9 +154,10 @@ sub vcl_recv {
 
 #FASTLY recv
 
-  # RFC 134
+  # GOV.UK accounts
   if (req.http.Cookie ~ "__Host-govuk_account_session") {
     set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
+    set req.http.GOVUK-Account-Session-Exists = "1";
   }
 
   if (req.http.Cookie ~ "cookies_policy") {
@@ -408,21 +409,22 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
-  # RFC 134
+  # GOV.UK accounts
   if (resp.http.GOVUK-Account-End-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=lax; path=/; max-age=0";
-    unset resp.http.GOVUK-Account-End-Session;
   } else if (resp.http.GOVUK-Account-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=lax; path=/";
   }
 
   if (resp.http.Vary ~ "GOVUK-Account-Session") {
-    unset resp.http.Vary:GOVUK-Account-Session;
     set resp.http.Vary:Cookie = "";
     set resp.http.Cache-Control:private = "";
   }
 
   unset resp.http.GOVUK-Account-Session;
+  unset resp.http.GOVUK-Account-End-Session;
+  unset resp.http.Vary:GOVUK-Account-Session;
+  unset resp.http.Vary:GOVUK-Account-Session-Exists;
 
   # Set the A/B cookies
   # Only set the A/B example cookie if the request is to the A/B test page. This
