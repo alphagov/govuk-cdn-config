@@ -299,6 +299,12 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
 # End dynamic section
 
 
+  # Bypass cache if there is a flash message to show (see
+  # govuk_personalisation gem for session encoding logic)
+  if (req.http.GOVUK-Account-Session ~ "\$\$") {
+    return (pass);
+  }
+
   return(lookup);
 }
 
