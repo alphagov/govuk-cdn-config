@@ -411,6 +411,12 @@ sub vcl_recv {
   <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
   <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
 
+  # Bypass cache if there is a flash message to show (see
+  # govuk_personalisation gem for session encoding logic)
+  if (req.http.GOVUK-Account-Session ~ "\$\$") {
+    return (pass);
+  }
+
   return(lookup);
 }
 
