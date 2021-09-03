@@ -398,6 +398,13 @@ sub vcl_fetch {
   if (beresp.http.Set-Cookie) {
     return (deliver);
   }
+
+  # Never cache responses which manipulate the user's session
+  if (beresp.http.GOVUK-Account-End-Session) {
+    return (pass);
+  } else if (beresp.http.GOVUK-Account-Session) {
+    return (pass);
+  }
 }
 
 sub vcl_hit {
@@ -412,8 +419,10 @@ sub vcl_deliver {
   # GOV.UK accounts
   if (resp.http.GOVUK-Account-End-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=; secure; httponly; samesite=lax; path=/; max-age=0";
+    set resp.http.Cache-Control:no-store = "";
   } else if (resp.http.GOVUK-Account-Session) {
     add resp.http.Set-Cookie = "__Host-govuk_account_session=" + resp.http.GOVUK-Account-Session + "; secure; httponly; samesite=lax; path=/";
+    set resp.http.Cache-Control:no-store = "";
   }
 
   if (resp.http.Vary ~ "GOVUK-Account-Session") {
