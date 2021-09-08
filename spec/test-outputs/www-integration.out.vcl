@@ -158,6 +158,14 @@ sub vcl_recv {
   if (req.http.Cookie ~ "__Host-govuk_account_session") {
     set req.http.GOVUK-Account-Session = req.http.Cookie:__Host-govuk_account_session;
     set req.http.GOVUK-Account-Session-Exists = "1";
+
+    if (req.http.GOVUK-Account-Session ~ "\$\$(.+)$") {
+      # Not directly used by apps (govuk_personalisation extracts the
+      # flash from the `GOVUK-Account-Session` header), but this is so
+      # we can have `Vary: GOVUK-Account-Session-Flash` as a response
+      # header for pages with success banners (etc).
+      set req.http.GOVUK-Account-Session-Flash = re.group.1;
+    }
   }
 
   if (req.http.Cookie ~ "cookies_policy") {
@@ -299,12 +307,6 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
 # End dynamic section
 
 
-  # Bypass cache if there is a flash message to show (see
-  # govuk_personalisation gem for session encoding logic)
-  if (req.http.GOVUK-Account-Session ~ "\$\$") {
-    return (pass);
-  }
-
   return(lookup);
 }
 
@@ -440,6 +442,7 @@ sub vcl_deliver {
   unset resp.http.GOVUK-Account-End-Session;
   unset resp.http.Vary:GOVUK-Account-Session;
   unset resp.http.Vary:GOVUK-Account-Session-Exists;
+  unset resp.http.Vary:GOVUK-Account-Session-Flash;
 
   # Set the A/B cookies
   # Only set the A/B example cookie if the request is to the A/B test page. This
