@@ -66,16 +66,21 @@ acl allowed_ip_addresses {
 
 
 sub vcl_recv {
+  # Protect header from modification at the edge of the Fastly network
+  # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
+  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
+    set req.http.Fastly-Client-IP = client.ip;
+  }
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
+  if (req.request == "FASTLYPURGE" && req.http.Fastly-Client-IP !~ purge_ip_allowlist) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
   
 
   # Check whether the remote IP address is in the list of blocked IPs
-  if (table.lookup(ip_address_denylist, client.ip)) {
+  if (table.lookup(ip_address_denylist, req.http.Fastly-Client-IP)) {
     error 403 "Forbidden";
   }
 
@@ -131,12 +136,6 @@ sub vcl_recv {
   }
 
   
-
-  # Protect header from modification at the edge of the Fastly network
-  # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
-  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
-    set req.http.Fastly-Client-IP = client.ip;
-  }
 
   # Unspoofable original client address (e.g. for rate limiting).
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
