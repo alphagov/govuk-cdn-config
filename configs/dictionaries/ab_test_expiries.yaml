@@ -8,3 +8,5 @@
 Example: 86400
 # 91 days and 6 hours (~ 3 months)
 AccountBankHols: 7884000
+# 91 days and 6 hours (~ 3 months)
+SearchAutocomplete: 7884000

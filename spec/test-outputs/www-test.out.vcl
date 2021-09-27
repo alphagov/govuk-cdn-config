@@ -267,6 +267,38 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       }
     }
   }
+  if (table.lookup(active_ab_tests, "SearchAutocomplete") == "true") {
+    if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+      set req.http.GOVUK-ABTest-SearchAutocomplete = "A";
+    } else if (req.url ~ "[\?\&]ABTest-SearchAutocomplete=A(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-SearchAutocomplete = "A";
+    } else if (req.url ~ "[\?\&]ABTest-SearchAutocomplete=B(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-SearchAutocomplete = "B";
+    } else if (req.http.Cookie ~ "ABTest-SearchAutocomplete") {
+      # Set the value of the header to whatever decision was previously made
+      set req.http.GOVUK-ABTest-SearchAutocomplete = req.http.Cookie:ABTest-SearchAutocomplete;
+    } else {
+      declare local var.denominator_SearchAutocomplete INTEGER;
+      declare local var.denominator_SearchAutocomplete_A INTEGER;
+      declare local var.nominator_SearchAutocomplete_A INTEGER;
+      set var.nominator_SearchAutocomplete_A = std.atoi(table.lookup(searchautocomplete_percentages, "A"));
+      set var.denominator_SearchAutocomplete += var.nominator_SearchAutocomplete_A;
+      declare local var.denominator_SearchAutocomplete_B INTEGER;
+      declare local var.nominator_SearchAutocomplete_B INTEGER;
+      set var.nominator_SearchAutocomplete_B = std.atoi(table.lookup(searchautocomplete_percentages, "B"));
+      set var.denominator_SearchAutocomplete += var.nominator_SearchAutocomplete_B;
+      set var.denominator_SearchAutocomplete_A = var.denominator_SearchAutocomplete;
+      if (randombool(var.nominator_SearchAutocomplete_A, var.denominator_SearchAutocomplete_A)) {
+        set req.http.GOVUK-ABTest-SearchAutocomplete = "A";
+      } else {
+        set req.http.GOVUK-ABTest-SearchAutocomplete = "B";
+      }
+    }
+  }
 }
 # End dynamic section
 
@@ -427,6 +459,16 @@ sub vcl_deliver {
         if (req.http.Cookie !~ "ABTest-AccountBankHols" || req.url ~ "[\?\&]ABTest-AccountBankHols" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
           set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "AccountBankHols"))));
           add resp.http.Set-Cookie = "ABTest-AccountBankHols=" req.http.GOVUK-ABTest-AccountBankHols "; secure; expires=" var.expiry "; path=/";
+        }
+      }
+    }
+  }
+  if (req.http.Cookie ~ "cookies_policy") {
+    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+      if (table.lookup(active_ab_tests, "SearchAutocomplete") == "true") {
+        if (req.http.Cookie !~ "ABTest-SearchAutocomplete" || req.url ~ "[\?\&]ABTest-SearchAutocomplete" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "SearchAutocomplete"))));
+          add resp.http.Set-Cookie = "ABTest-SearchAutocomplete=" req.http.GOVUK-ABTest-SearchAutocomplete "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
