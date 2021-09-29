@@ -394,6 +394,7 @@ sub vcl_recv {
         } else {
           # Cookie not set, default to A
           set var.sab_variant = "A";
+          THIS IS THE LINE OSCAR
         }
 
         if (table.lookup(start_a_business_ab_test_base_paths, querystring.remove(req.url)) == "true") {
@@ -403,8 +404,8 @@ sub vcl_recv {
           set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
         }
 
-        if (querystring.remove(req.url) ~ "next-steps-for-your-business") > 0) {
-          # If they've visited the SaB checker or opted not to see the banner,
+        if (querystring.remove(req.url) ~ "change-this-to-the-url-of-the-checker-you're-linking-to") > 0) {
+          # If they've visited the checker,
           # we shouldn't show them an intervention again
           set req.http.GOVUK-ABTest-StartABusinessSegment = "C";
         }
