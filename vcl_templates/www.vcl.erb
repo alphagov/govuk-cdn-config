@@ -403,7 +403,7 @@ sub vcl_recv {
           set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
         }
 
-        if (querystring.remove(req.url) ~ "next-steps-for-your-business" || std.strlen(querystring.get(req.url, "hide-intervention")) > 0) {
+        if (querystring.remove(req.url) ~ "next-steps-for-your-business") > 0) {
           # If they've visited the SaB checker or opted not to see the banner,
           # we shouldn't show them an intervention again
           set req.http.GOVUK-ABTest-StartABusinessSegment = "C";
