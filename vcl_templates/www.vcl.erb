@@ -383,30 +383,53 @@ sub vcl_recv {
     if (req.http.Cookie:cookies_policy ~ "%22usage%22:true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker" ) {
       if (table.lookup(active_ab_tests, "StartABusinessSegment") == "true") {
         declare local var.sab_variant STRING;
+        declare local var.intervention_variant STRING;
 
-        # Always send this header if they've already got a cookie
-        # This way, the cookie expiry gets updated in DELIVER, even if it's not a SaB page.
-        # Thus sessions that that have >=2 SaB pages but more than half an hour apart
-        # will be included.
-        if (req.http.Cookie ~ "ABTest-start_a_business_segment=(A|B|C)") {
-          set var.sab_variant = re.group.1;
-          set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
+        # The start_a_business_intervention_variant is split into A and B variants.
+        # Users with the A variant will never see the intervention, no matter what they do
+        # Users with the B variant could see the intervention, if they fulfil the conditions (i.e. visiting x number of pages)
+        # This variable is persisted in a cookie for the length of the A/B and never changes
+        if (req.http.Cookie ~ "ABTest-start_a_business_intervention_variant=(A|B)") {
+          # If they already have a start_a_business_intervention_variant cookie, we want to set the variable to the value of the cookie
+          set var.intervention_variant = re.group.1;
         } else {
-          # Cookie not set, default to A
-          set var.sab_variant = "A";
+          # Documentation on this here: https://developer.fastly.com/reference/vcl/functions/randomness/randombool/
+          # I don't know what percentages these will be but if we want to go 50/50, this is correct
+          if (randombool(1, 2)) {
+            set var.intervention_variant = "A";
+          } else {
+            set var.intervention_variant = "B";
+          }
         }
+        # Set the header for the start_a_business_intervention_variant
+        set req.http.GOVUK-ABTest-StartABusinessInterventionSegment = var.intervention_variant;
 
-        if (table.lookup(start_a_business_ab_test_base_paths, querystring.remove(req.url)) == "true") {
-          # Header so rendering app will know it's a SaB page (and the config is in just one place)
-          set req.http.GOVUK-ABTest-IsStartABusinessPage = "true";
-          # Segment header
-          set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
-        }
+        # Only set the headers for the segment if they're in the intervention_variant A (where they may see the intervention)
+        if (var.intervention_variant == "A"){
+          # Always send this header if they've already got a cookie
+          # This way, the cookie expiry gets updated in DELIVER, even if it's not a SaB page.
+          # Thus sessions that that have >=2 SaB pages but more than half an hour apart
+          # will be included.
+          if (req.http.Cookie ~ "ABTest-start_a_business_segment=(A|B|C)") {
+            set var.sab_variant = re.group.1;
+            set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
+          } else {
+            # Cookie not set, default to control (A)
+            set var.sab_variant = "A";
+          }
 
-        if (querystring.remove(req.url) ~ "next-steps-for-your-business" || std.strlen(querystring.get(req.url, "hide-intervention")) > 0) {
-          # If they've visited the SaB checker or opted not to see the banner,
-          # we shouldn't show them an intervention again
-          set req.http.GOVUK-ABTest-StartABusinessSegment = "C";
+          if (table.lookup(start_a_business_ab_test_base_paths, querystring.remove(req.url)) == "true") {
+            # Header so rendering app will know it's a SaB page (and the config is in just one place)
+            set req.http.GOVUK-ABTest-IsStartABusinessPage = "true";
+            # Segment header
+            set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
+          }
+
+          if (querystring.remove(req.url) ~ "change-this-to-the-base-path-of-the-checker-you're-linking-to" || std.strlen(querystring.get(req.url, "hide-intervention")) > 0) {
+            # If they've visited the checker,
+            # we shouldn't show them an intervention again
+            set req.http.GOVUK-ABTest-StartABusinessSegment = "C";
+          }
         }
       }
     }
@@ -592,25 +615,30 @@ sub vcl_deliver {
 if (req.http.Cookie ~ "cookies_policy") {
   if (req.http.Cookie:cookies_policy ~ "%22usage%22:true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"){
     if (table.lookup(active_ab_tests, "StartABusinessSegment") == "true") {
-      declare local var.variant STRING;
-      set var.variant = req.http.GOVUK-ABTest-StartABusinessSegment;
+      declare local var.sab_variant STRING;
+      set var.sab_variant = req.http.GOVUK-ABTest-StartABusinessSegment;
+      declare local var.intervention_variant STRING;
+      set var.intervention_variant = req.http.GOVUK-ABTest-StartABusinessInterventionSegment;
 
-      if (std.strlen(var.variant) > 0) {
+      if (std.strlen(var.sab_variant) > 0) {
         declare local var.sab_expiry TIME;
         # Default to 30 mins for A and B variant
         set var.sab_expiry = time.add(now, 30m);
 
-        if (var.variant == "C") {
+        if (var.sab_variant == "C") {
           # If they have opted out of the banner or have visited the SaB checker
-          # Expire in 26 weeks (approx 6 months)
-          set var.sab_expiry = time.add(now, 26w);
-        } else if (req.http.GOVUK-ABTest-IsStartABusinessPage == "true" && var.variant == "A") {
+          # Expire in 12 weeks (approx 3 months)
+          set var.sab_expiry = time.add(now, 12w);
+        } else if (req.http.GOVUK-ABTest-IsStartABusinessPage == "true" && var.sab_variant == "A") {
           # If the user is in variant A and has seen a SaB page then we need to move them to B
           # so they see the banner on the next SaB page they hit.
-          set var.variant = "B";
+          set var.sab_variant = "B";
         }
 
-        add resp.http.Set-Cookie = "ABTest-start_a_business_segment=" var.variant "; secure; expires=" var.sab_expiry "; path=/";
+        add resp.http.Set-Cookie = "ABTest-start_a_business_segment=" var.sab_variant "; secure; expires=" var.sab_expiry "; path=/";
+        # Set the start_a_business_intervention_variant (which controls whether or not anyone can ever see the intervention
+        # The expiry is 12 weeks, approx 3 months.
+        add resp.http.Set-Cookie = "ABTest-start_a_business_intervention_variant=" var.intervention_variant "; secure; expires=" time.add(now, 12w) "; path=/";
       }
     }
   }
