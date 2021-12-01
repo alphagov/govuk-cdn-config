@@ -333,39 +333,6 @@ sub vcl_recv {
     }
   }
 
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker" ) {
-      if (table.lookup(active_ab_tests, "StartABusinessSegment") == "true") {
-        declare local var.sab_variant STRING;
-
-        # Always send this header if they've already got a cookie
-        # This way, the cookie expiry gets updated in DELIVER, even if it's not a SaB page.
-        # Thus sessions that that have >=2 SaB pages but more than half an hour apart
-        # will be included.
-        if (req.http.Cookie ~ "ABTest-start_a_business_segment=(A|B|C)") {
-          set var.sab_variant = re.group.1;
-          set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
-        } else {
-          # Cookie not set, default to A
-          set var.sab_variant = "A";
-        }
-
-        if (table.lookup(start_a_business_ab_test_base_paths, querystring.remove(req.url)) == "true") {
-          # Header so rendering app will know it's a SaB page (and the config is in just one place)
-          set req.http.GOVUK-ABTest-IsStartABusinessPage = "true";
-          # Segment header
-          set req.http.GOVUK-ABTest-StartABusinessSegment = var.sab_variant;
-        }
-
-        if (querystring.remove(req.url) ~ "next-steps-for-your-business" || std.strlen(querystring.get(req.url, "hide-intervention")) > 0) {
-          # If they've visited the SaB checker or opted not to see the banner,
-          # we shouldn't show them an intervention again
-          set req.http.GOVUK-ABTest-StartABusinessSegment = "C";
-        }
-      }
-    }
-  }
-
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
     return(pass);
   }
@@ -602,32 +569,6 @@ sub vcl_deliver {
   }
   # End dynamic section
 
-if (req.http.Cookie ~ "cookies_policy") {
-  if (req.http.Cookie:cookies_policy ~ "%22usage%22:true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"){
-    if (table.lookup(active_ab_tests, "StartABusinessSegment") == "true") {
-      declare local var.variant STRING;
-      set var.variant = req.http.GOVUK-ABTest-StartABusinessSegment;
-
-      if (std.strlen(var.variant) > 0) {
-        declare local var.sab_expiry TIME;
-        # Default to 30 mins for A and B variant
-        set var.sab_expiry = time.add(now, 30m);
-
-        if (var.variant == "C") {
-          # If they have opted out of the banner or have visited the SaB checker
-          # Expire in 26 weeks (approx 6 months)
-          set var.sab_expiry = time.add(now, 26w);
-        } else if (req.http.GOVUK-ABTest-IsStartABusinessPage == "true" && var.variant == "A") {
-          # If the user is in variant A and has seen a SaB page then we need to move them to B
-          # so they see the banner on the next SaB page they hit.
-          set var.variant = "B";
-        }
-
-        add resp.http.Set-Cookie = "ABTest-start_a_business_segment=" var.variant "; secure; expires=" var.sab_expiry "; path=/";
-      }
-    }
-  }
-}
 #FASTLY deliver
 }
 
