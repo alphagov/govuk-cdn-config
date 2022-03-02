@@ -32,8 +32,6 @@ backend F_origin {
 
 
 acl purge_ip_allowlist {
-  "37.26.93.252";     # Skyscape mirrors
-  "31.210.241.100";   # Carrenza mirrors
 
   "34.248.229.46";    # AWS Integration NAT gateway
   "34.248.44.175";    # AWS Integration NAT gateway

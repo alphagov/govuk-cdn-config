@@ -128,10 +128,7 @@ backend F_mirrorGCS {
 
 
 acl purge_ip_allowlist {
-  "37.26.93.252";     # Skyscape mirrors
-  "31.210.241.100";   # Carrenza mirrors
 
-  "31.210.245.86";    # Carrenza Production
   "34.246.209.74";    # AWS NAT GW1
   "34.253.57.8";      # AWS NAT GW2
   "18.202.136.43";    # AWS NAT GW3
