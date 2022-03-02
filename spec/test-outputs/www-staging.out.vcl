@@ -133,24 +133,6 @@ acl purge_ip_allowlist {
   "18.203.90.80";     # AWS NAT GW2
   "18.203.108.248";   # AWS NAT GW3
 
-  "23.235.32.0"/20;   # Fastly cache node
-  "43.249.72.0"/22;   # Fastly cache node
-  "103.244.50.0"/24;  # Fastly cache node
-  "103.245.222.0"/23; # Fastly cache node
-  "103.245.224.0"/24; # Fastly cache node
-  "104.156.80.0"/20;  # Fastly cache node
-  "151.101.0.0"/16;   # Fastly cache node
-  "157.52.64.0"/18;   # Fastly cache node
-  "172.111.64.0"/18;  # Fastly cache node
-  "185.31.16.0"/22;   # Fastly cache node
-  "199.27.72.0"/21;   # Fastly cache node
-  "199.232.0.0"/16;   # Fastly cache node
-  "202.21.128.0"/24;  # Fastly cache node
-  "203.57.145.0"/24;  # Fastly cache node
-  "167.82.0.0"/17;    # Fastly cache node
-  "167.82.128.0"/20;  # Fastly cache node
-  "167.82.160.0"/20;  # Fastly cache node
-  "167.82.224.0"/20;  # Fastly cache node
 }
 
 
