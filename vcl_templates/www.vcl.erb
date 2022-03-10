@@ -7,6 +7,10 @@ backend F_origin {
     .max_connections = 200;
     .between_bytes_timeout = 10s;
     .share_key = "<%= config.fetch('service_id') %>";
+    <%- if config['set_backend_host_header'] %>
+    .host_header = "<%= config.fetch('origin_hostname') %>";
+    .always_use_host_header = true;
+    <%- end -%>
 
     .ssl = true;
     .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
