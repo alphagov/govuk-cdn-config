@@ -161,7 +161,7 @@ acl purge_ip_allowlist {
 <% end %>
 }
 
-<% if %w(staging integration test).include?(environment) %>
+<% if not %w(production production-eks).include?(environment) %>
 acl allowed_ip_addresses {
   <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
   "<%= ip_address %>";
