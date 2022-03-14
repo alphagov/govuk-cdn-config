@@ -14,6 +14,13 @@ class DeployService
     puts "Environment: #{environment}"
 
     vcl = RenderTemplate.render_template(configuration, environment, config, version)
+
+    dry_run = ENV.fetch("FASTLY_DRY_RUN", "").downcase
+    unless ["", "0", "false"].include?(dry_run)
+      puts vcl
+      exit
+    end
+
     delete_ui_objects(service.id, version.number)
     upload_vcl(version, vcl)
     diff_vcl(service, version)
