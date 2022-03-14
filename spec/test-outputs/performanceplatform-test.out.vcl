@@ -41,26 +41,17 @@ backend sick_force_grace {
 
 
 acl purge_ip_allowlist {
-  "37.26.93.252";     # Skyscape mirrors
-  "31.210.241.100";   # Carrenza mirrors
-  "23.235.32.0"/20;   # Fastly cache node
-  "43.249.72.0"/22;   # Fastly cache node
-  "103.244.50.0"/24;  # Fastly cache node
-  "103.245.222.0"/23; # Fastly cache node
-  "103.245.224.0"/24; # Fastly cache node
-  "104.156.80.0"/20;  # Fastly cache node
-  "151.101.0.0"/16;   # Fastly cache node
-  "157.52.64.0"/18;   # Fastly cache node
-  "172.111.64.0"/18;  # Fastly cache node
-  "185.31.16.0"/22;   # Fastly cache node
-  "199.27.72.0"/21;   # Fastly cache node
-  "199.232.0.0"/16;   # Fastly cache node
-  "202.21.128.0"/24;  # Fastly cache node
-  "203.57.145.0"/24;  # Fastly cache node
-  "167.82.0.0"/17;    # Fastly cache node
-  "167.82.128.0"/20;  # Fastly cache node
-  "167.82.160.0"/20;  # Fastly cache node
-  "167.82.224.0"/20;  # Fastly cache node
+  # See https://sites.google.com/a/digital.cabinet-office.gov.uk/gds/working-at-the-white-chapel-building/gds-internal-it/gds-internal-it-network-public-ip-addresses
+  "213.86.153.211";  # GDS Office (BYOD VPN)
+  "213.86.153.212";  # GDS Office
+  "213.86.153.213";  # GDS Office
+  "213.86.153.214";  # GDS Office
+  "213.86.153.231";  # GDS Office (BYOD VPN)
+  "213.86.153.235";  # GDS Office
+  "213.86.153.236";  # GDS Office
+  "213.86.153.237";  # GDS Office
+  "51.149.8.0"/25;   # GDS Office (DR VPN)
+  "51.149.8.128"/29; # GDS Office (DR BYOD VPN)
 }
 
 sub vcl_recv {
