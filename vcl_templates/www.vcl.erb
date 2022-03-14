@@ -167,9 +167,14 @@ acl purge_ip_allowlist {
 
 <% if not %w(production production-eks).include?(environment) %>
 acl allowed_ip_addresses {
-  <% config.fetch('allowed_ip_addresses', []).each do |ip_address| %>
-  "<%= ip_address %>";
-  <% end %>
+  <%- config.fetch('allowed_ip_addresses', []).each do |cidr| -%>
+  <%- ip_address, mask = cidr.split('/') -%>
+  <%- if mask -%>
+  "<%= ip_address %>"/<%= mask -%>;
+  <%- else -%>
+  "<%= ip_address -%>";
+  <%- end -%>
+  <%- end -%>
 }
 <% end %>
 
