@@ -128,16 +128,13 @@ backend F_mirrorGCS {
 
 
 acl purge_ip_allowlist {
-
   "18.202.183.143";   # AWS NAT GW1
   "18.203.90.80";     # AWS NAT GW2
   "18.203.108.248";   # AWS NAT GW3
-
 }
 
 
 acl allowed_ip_addresses {
-  
 }
 
 

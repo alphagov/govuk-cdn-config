@@ -32,12 +32,10 @@ backend F_origin {
 
 
 acl purge_ip_allowlist {
-
 }
 
 
 acl allowed_ip_addresses {
-  
 }
 
 
