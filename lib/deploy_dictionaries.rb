@@ -76,7 +76,7 @@ class DeployDictionaries
                   rescue StandardError
                     nil
                   end
-    raise "Unknown vhost/environment combination" unless config_hash
+    raise "Unknown vhost/environment combination: #{vhost} #{environment}" unless config_hash
 
     config_hash
   end

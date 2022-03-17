@@ -44,7 +44,7 @@ private
                     nil
                   end
 
-    raise "ERROR: Unknown configuration/environment combination. Check this combination exists in fastly.yaml." unless config_hash
+    raise "ERROR: Unknown configuration/environment combination: #{configuration} #{environment}. Check this combination exists in fastly.yaml." unless config_hash
 
     [configuration, environment, config_hash]
   end
