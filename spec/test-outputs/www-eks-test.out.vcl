@@ -121,6 +121,7 @@ sub vcl_recv {
   }
 
 
+
 #FASTLY recv
 
   # GOV.UK accounts
@@ -273,6 +274,7 @@ sub vcl_fetch {
       set beresp.http.Cache-Control = "max-age=900";
     }
   }
+
 
   # Override default.vcl behaviour of return(pass).
   if (beresp.http.Set-Cookie) {
