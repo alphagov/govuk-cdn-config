@@ -285,6 +285,17 @@ sub vcl_recv {
   }
 
 
+  # Strip cookies from inbound requests. Corresponding rule in vcl_fetch{}
+  # For simplicity and security most applications should not use cookies.
+  # With the exception of:
+  #   - Licensing
+  #   - email-alert-frontend (for subscription management)
+  #   - frontend (for sessions across funding registration form)
+  #   - smart answers coronavirus find support flow
+  if (req.url !~ "^/apply-for-a-licence" && req.url !~ "^/email")
+  {
+    unset req.http.Cookie;
+  }
 
 #FASTLY recv
 
@@ -439,6 +450,10 @@ sub vcl_fetch {
     }
   }
 
+  # Strip cookies from outbound requests. Corresponding rule in vcl_recv{}
+  if (req.url !~ "^/apply-for-a-licence" && req.url !~ "^/email") {
+    unset beresp.http.Set-Cookie;
+  }
 
   # Override default.vcl behaviour of return(pass).
   if (beresp.http.Set-Cookie) {
