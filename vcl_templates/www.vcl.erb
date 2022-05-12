@@ -204,6 +204,15 @@ sub vcl_recv {
   }
   <% end %>
 
+  <% if environment == 'integration' %>
+  # Strip Accept-Encoding header if the content is already compressed
+  if (req.http.Accept-Encoding) {
+    if (req.url ~ "\.(jpeg|jpg|png|gif|gz|tgz|bz2|tbz|zip|flv|pdf|mp3|ogg)$") {
+      remove req.http.Accept-Encoding;
+    }
+  }
+  <% end %>
+
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
