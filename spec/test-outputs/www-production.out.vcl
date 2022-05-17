@@ -645,7 +645,6 @@ sub vcl_error {
       <body>
         <header><h1>GOV.UK</h1></header>
         <p>We're experiencing technical difficulties. Please try again later.</p>
-        <p>You can <a href="/coronavirus">find coronavirus information</a> on GOV.UK.</p>
       </body>
     </html>"};
 
