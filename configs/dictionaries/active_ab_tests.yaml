@@ -4,4 +4,4 @@
 # bucket allocations. See example_percentages.yaml for format.
 ---
 Example: true
-NewBrowse: false
+NewBrowse: true
