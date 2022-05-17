@@ -17,9 +17,10 @@ backend F_origin {
     .ssl_cert_hostname = "<%= config.fetch('ssl_cert_hostname', config.fetch('origin_hostname')) %>";
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('origin_hostname')) %>";
 
+<% if config['probe'] -%>
     .probe = {
         .request =
-            "HEAD / HTTP/1.1"
+            "HEAD <%= config['probe'] %> HTTP/1.1"
             "Host: <%= config.fetch('origin_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] -%>
@@ -36,6 +37,7 @@ backend F_origin {
         .expected_response = 200;
         .interval = 10s;
     }
+<% end -%>
 }
 
 <% if %w(staging production).include?(environment) %>

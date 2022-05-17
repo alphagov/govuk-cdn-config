@@ -20,6 +20,7 @@ RSpec.describe "VCL generation" do
     "origin_domain_suffix" => "boo",
     "domain_suffix" => "boo",
     "private_extra_code_in_vcl_recv" => "# some private vcl code",
+    "probe" => "/",
   }
 
   Dir.glob("vcl_templates/*.erb").each do |template|

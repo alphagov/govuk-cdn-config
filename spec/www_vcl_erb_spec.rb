@@ -12,6 +12,7 @@ RSpec.describe "VCL template" do
       "s3_mirror_hostname" => "bar",
       "s3_mirror_prefix" => "foo_",
       "default_ttl" => "5000",
+      "probe" => "/",
     }
   end
   let!(:environment) { "test" }
