@@ -3,7 +3,7 @@ set -eu
 
 # Copy secret dictionaries over into /configs
 rm -rf govuk-cdn-config-secrets
-git clone git@github.com:alphagov/govuk-cdn-config-secrets.git
+git clone --depth 1 git@github.com:alphagov/govuk-cdn-config-secrets.git
 
 cp govuk-cdn-config-secrets/fastly/dictionaries/config/* configs/dictionaries
 cp govuk-cdn-config-secrets/fastly/fastly.yaml .
