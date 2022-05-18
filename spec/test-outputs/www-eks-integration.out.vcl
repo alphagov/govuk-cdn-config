@@ -123,7 +123,6 @@ sub vcl_recv {
     set req.http.TLSversion = tls.client.protocol;
   }
 
-
   # Strip cookies from inbound requests. Corresponding rule in vcl_fetch{}
   # For simplicity and security most applications should not use cookies.
   # With the exception of:
@@ -133,7 +132,6 @@ sub vcl_recv {
   if (req.url !~ "^/(apply-for-a-licence|email|sign-in/callback)") {
     unset req.http.Cookie;
   }
-
 #FASTLY recv
 
   # GOV.UK accounts
@@ -318,7 +316,6 @@ sub vcl_fetch {
       set beresp.http.Cache-Control = "max-age=900";
     }
   }
-
   # Strip cookies from outbound requests. Corresponding rule in vcl_recv{}
   if (req.url !~ "^/(apply-for-a-licence|email|sign-in/callback)") {
     unset beresp.http.Set-Cookie;
