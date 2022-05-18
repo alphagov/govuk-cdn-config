@@ -349,6 +349,10 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       # Some users, such as remote testers, will be given a URL with a query string
       # to place them into a specific bucket.
       set req.http.GOVUK-ABTest-NewBrowse = "B";
+    } else if (req.url ~ "[\?\&]ABTest-NewBrowse=Z(&|$)") {
+      # Some users, such as remote testers, will be given a URL with a query string
+      # to place them into a specific bucket.
+      set req.http.GOVUK-ABTest-NewBrowse = "Z";
     } else if (req.http.Cookie ~ "ABTest-NewBrowse") {
       # Set the value of the header to whatever decision was previously made
       set req.http.GOVUK-ABTest-NewBrowse = req.http.Cookie:ABTest-NewBrowse;
@@ -362,11 +366,19 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       declare local var.nominator_NewBrowse_B INTEGER;
       set var.nominator_NewBrowse_B = std.atoi(table.lookup(newbrowse_percentages, "B"));
       set var.denominator_NewBrowse += var.nominator_NewBrowse_B;
+      declare local var.denominator_NewBrowse_Z INTEGER;
+      declare local var.nominator_NewBrowse_Z INTEGER;
+      set var.nominator_NewBrowse_Z = std.atoi(table.lookup(newbrowse_percentages, "Z"));
+      set var.denominator_NewBrowse += var.nominator_NewBrowse_Z;
       set var.denominator_NewBrowse_A = var.denominator_NewBrowse;
+      set var.denominator_NewBrowse_B = var.denominator_NewBrowse_A;
+      set var.denominator_NewBrowse_B -= var.nominator_NewBrowse_A;
       if (randombool(var.nominator_NewBrowse_A, var.denominator_NewBrowse_A)) {
         set req.http.GOVUK-ABTest-NewBrowse = "A";
-      } else {
+      } else if (randombool(var.nominator_NewBrowse_B, var.denominator_NewBrowse_B)) {
         set req.http.GOVUK-ABTest-NewBrowse = "B";
+      } else {
+        set req.http.GOVUK-ABTest-NewBrowse = "Z";
       }
     }
   }
