@@ -40,7 +40,7 @@ backend F_origin {
 <% end -%>
 }
 
-<% if %w(staging production).include?(environment) %>
+<% if %w(staging production production-eks).include?(environment) %>
 # Mirror backend for S3
 backend F_mirrorS3 {
     .connect_timeout = 1s;
@@ -183,7 +183,7 @@ sub vcl_recv {
     set req.http.Fastly-Purge-Requires-Auth = "1";
   }
 
-  <% if environment == 'staging' %>
+  <% if %w(staging production-eks).include?(environment) %>
   # Only allow connections from allowed IP addresses in staging
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
@@ -248,7 +248,7 @@ sub vcl_recv {
     set req.url = querystring.remove(req.url);
   }
 
-  <% if %w(staging production).include?(environment) %>
+  <% if %w(staging production production-eks).include?(environment) %>
 
   # Save original request url because req.url changes after restarts.
   if (req.restarts < 1) {
