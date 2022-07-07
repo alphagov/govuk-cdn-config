@@ -151,6 +151,8 @@ sub vcl_recv {
 
   
 
+  
+
   # Force SSL.
   if (!req.http.Fastly-SSL) {
      error 801 "Force SSL";
