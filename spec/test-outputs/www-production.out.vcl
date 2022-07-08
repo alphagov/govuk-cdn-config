@@ -151,7 +151,12 @@ sub vcl_recv {
 
   
 
-  
+  # Strip Accept-Encoding header if the content is already compressed
+  if (req.http.Accept-Encoding) {
+    if (req.url ~ "\.(jpeg|jpg|png|gif|gz|tgz|bz2|tbz|zip|flv|pdf|mp3|ogg)$") {
+      remove req.http.Accept-Encoding;
+    }
+  }
 
   # Force SSL.
   if (!req.http.Fastly-SSL) {
