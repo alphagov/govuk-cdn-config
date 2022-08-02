@@ -353,47 +353,47 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
       }
     }
   }
-  if (table.lookup(active_ab_tests, "LevelTwoBrowse") == "true") {
+  if (table.lookup(active_ab_tests, "NewBrowse") == "true") {
     if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-      set req.http.GOVUK-ABTest-LevelTwoBrowse = "A";
-    } else if (req.url ~ "[\?\&]ABTest-LevelTwoBrowse=A(&|$)") {
+      set req.http.GOVUK-ABTest-NewBrowse = "A";
+    } else if (req.url ~ "[\?\&]ABTest-NewBrowse=A(&|$)") {
       # Some users, such as remote testers, will be given a URL with a query string
       # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-LevelTwoBrowse = "A";
-    } else if (req.url ~ "[\?\&]ABTest-LevelTwoBrowse=B(&|$)") {
+      set req.http.GOVUK-ABTest-NewBrowse = "A";
+    } else if (req.url ~ "[\?\&]ABTest-NewBrowse=B(&|$)") {
       # Some users, such as remote testers, will be given a URL with a query string
       # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-LevelTwoBrowse = "B";
-    } else if (req.url ~ "[\?\&]ABTest-LevelTwoBrowse=Z(&|$)") {
+      set req.http.GOVUK-ABTest-NewBrowse = "B";
+    } else if (req.url ~ "[\?\&]ABTest-NewBrowse=Z(&|$)") {
       # Some users, such as remote testers, will be given a URL with a query string
       # to place them into a specific bucket.
-      set req.http.GOVUK-ABTest-LevelTwoBrowse = "Z";
-    } else if (req.http.Cookie ~ "ABTest-LevelTwoBrowse") {
+      set req.http.GOVUK-ABTest-NewBrowse = "Z";
+    } else if (req.http.Cookie ~ "ABTest-NewBrowse") {
       # Set the value of the header to whatever decision was previously made
-      set req.http.GOVUK-ABTest-LevelTwoBrowse = req.http.Cookie:ABTest-LevelTwoBrowse;
+      set req.http.GOVUK-ABTest-NewBrowse = req.http.Cookie:ABTest-NewBrowse;
     } else {
-      declare local var.denominator_LevelTwoBrowse INTEGER;
-      declare local var.denominator_LevelTwoBrowse_A INTEGER;
-      declare local var.nominator_LevelTwoBrowse_A INTEGER;
-      set var.nominator_LevelTwoBrowse_A = std.atoi(table.lookup(leveltwobrowse_percentages, "A"));
-      set var.denominator_LevelTwoBrowse += var.nominator_LevelTwoBrowse_A;
-      declare local var.denominator_LevelTwoBrowse_B INTEGER;
-      declare local var.nominator_LevelTwoBrowse_B INTEGER;
-      set var.nominator_LevelTwoBrowse_B = std.atoi(table.lookup(leveltwobrowse_percentages, "B"));
-      set var.denominator_LevelTwoBrowse += var.nominator_LevelTwoBrowse_B;
-      declare local var.denominator_LevelTwoBrowse_Z INTEGER;
-      declare local var.nominator_LevelTwoBrowse_Z INTEGER;
-      set var.nominator_LevelTwoBrowse_Z = std.atoi(table.lookup(leveltwobrowse_percentages, "Z"));
-      set var.denominator_LevelTwoBrowse += var.nominator_LevelTwoBrowse_Z;
-      set var.denominator_LevelTwoBrowse_A = var.denominator_LevelTwoBrowse;
-      set var.denominator_LevelTwoBrowse_B = var.denominator_LevelTwoBrowse_A;
-      set var.denominator_LevelTwoBrowse_B -= var.nominator_LevelTwoBrowse_A;
-      if (randombool(var.nominator_LevelTwoBrowse_A, var.denominator_LevelTwoBrowse_A)) {
-        set req.http.GOVUK-ABTest-LevelTwoBrowse = "A";
-      } else if (randombool(var.nominator_LevelTwoBrowse_B, var.denominator_LevelTwoBrowse_B)) {
-        set req.http.GOVUK-ABTest-LevelTwoBrowse = "B";
+      declare local var.denominator_NewBrowse INTEGER;
+      declare local var.denominator_NewBrowse_A INTEGER;
+      declare local var.nominator_NewBrowse_A INTEGER;
+      set var.nominator_NewBrowse_A = std.atoi(table.lookup(newbrowse_percentages, "A"));
+      set var.denominator_NewBrowse += var.nominator_NewBrowse_A;
+      declare local var.denominator_NewBrowse_B INTEGER;
+      declare local var.nominator_NewBrowse_B INTEGER;
+      set var.nominator_NewBrowse_B = std.atoi(table.lookup(newbrowse_percentages, "B"));
+      set var.denominator_NewBrowse += var.nominator_NewBrowse_B;
+      declare local var.denominator_NewBrowse_Z INTEGER;
+      declare local var.nominator_NewBrowse_Z INTEGER;
+      set var.nominator_NewBrowse_Z = std.atoi(table.lookup(newbrowse_percentages, "Z"));
+      set var.denominator_NewBrowse += var.nominator_NewBrowse_Z;
+      set var.denominator_NewBrowse_A = var.denominator_NewBrowse;
+      set var.denominator_NewBrowse_B = var.denominator_NewBrowse_A;
+      set var.denominator_NewBrowse_B -= var.nominator_NewBrowse_A;
+      if (randombool(var.nominator_NewBrowse_A, var.denominator_NewBrowse_A)) {
+        set req.http.GOVUK-ABTest-NewBrowse = "A";
+      } else if (randombool(var.nominator_NewBrowse_B, var.denominator_NewBrowse_B)) {
+        set req.http.GOVUK-ABTest-NewBrowse = "B";
       } else {
-        set req.http.GOVUK-ABTest-LevelTwoBrowse = "Z";
+        set req.http.GOVUK-ABTest-NewBrowse = "Z";
       }
     }
   }
@@ -553,10 +553,10 @@ sub vcl_deliver {
   declare local var.expiry TIME;
   if (req.http.Cookie ~ "cookies_policy") {
     if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "LevelTwoBrowse") == "true") {
-        if (req.http.Cookie !~ "ABTest-LevelTwoBrowse" || req.url ~ "[\?\&]ABTest-LevelTwoBrowse" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "LevelTwoBrowse"))));
-          add resp.http.Set-Cookie = "ABTest-LevelTwoBrowse=" req.http.GOVUK-ABTest-LevelTwoBrowse "; secure; expires=" var.expiry "; path=/";
+      if (table.lookup(active_ab_tests, "NewBrowse") == "true") {
+        if (req.http.Cookie !~ "ABTest-NewBrowse" || req.url ~ "[\?\&]ABTest-NewBrowse" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "NewBrowse"))));
+          add resp.http.Set-Cookie = "ABTest-NewBrowse=" req.http.GOVUK-ABTest-NewBrowse "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
