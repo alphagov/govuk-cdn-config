@@ -127,20 +127,12 @@ backend F_mirrorGCS {
 }
 
 
-acl purge_ip_allowlist {
-  "34.246.209.74";    # AWS NAT GW1
-  "34.253.57.8";      # AWS NAT GW2
-  "18.202.136.43";    # AWS NAT GW3
-}
-
 
 
 sub vcl_recv {
 
-  # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
-    set req.http.Fastly-Purge-Requires-Auth = "1";
-  }
+  # Require authentication for PURGE requests
+  set req.http.Fastly-Purge-Requires-Auth = "1";
 
   
 
