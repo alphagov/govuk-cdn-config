@@ -31,12 +31,6 @@ backend F_origin {
 
 
 
-acl purge_ip_allowlist {
-  "34.248.229.46";    # AWS Integration NAT gateway
-  "34.248.44.175";    # AWS Integration NAT gateway
-  "52.51.97.232";     # AWS Integration NAT gateway
-}
-
 
 acl allowed_ip_addresses {
 }
@@ -44,10 +38,8 @@ acl allowed_ip_addresses {
 
 sub vcl_recv {
 
-  # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
-    set req.http.Fastly-Purge-Requires-Auth = "1";
-  }
+  # Require authentication for PURGE requests
+  set req.http.Fastly-Purge-Requires-Auth = "1";
 
   
 

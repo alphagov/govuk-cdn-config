@@ -127,12 +127,6 @@ backend F_mirrorGCS {
 }
 
 
-acl purge_ip_allowlist {
-  "18.202.183.143";   # AWS NAT GW1
-  "18.203.90.80";     # AWS NAT GW2
-  "18.203.108.248";   # AWS NAT GW3
-}
-
 
 acl allowed_ip_addresses {
 }
@@ -140,10 +134,8 @@ acl allowed_ip_addresses {
 
 sub vcl_recv {
 
-  # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
-    set req.http.Fastly-Purge-Requires-Auth = "1";
-  }
+  # Require authentication for PURGE requests
+  set req.http.Fastly-Purge-Requires-Auth = "1";
 
   
   # Only allow connections from allowed IP addresses in staging

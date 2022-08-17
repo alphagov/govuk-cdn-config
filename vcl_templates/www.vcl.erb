@@ -147,22 +147,6 @@ backend F_mirrorGCS {
 }
 <% end %>
 
-acl purge_ip_allowlist {
-<%- if environment.start_with? 'integration' -%>
-  "34.248.229.46";    # AWS Integration NAT gateway
-  "34.248.44.175";    # AWS Integration NAT gateway
-  "52.51.97.232";     # AWS Integration NAT gateway
-<%- elsif environment.start_with? 'staging' -%>
-  "18.202.183.143";   # AWS NAT GW1
-  "18.203.90.80";     # AWS NAT GW2
-  "18.203.108.248";   # AWS NAT GW3
-<%- elsif environment.start_with? 'production' -%>
-  "34.246.209.74";    # AWS NAT GW1
-  "34.253.57.8";      # AWS NAT GW2
-  "18.202.136.43";    # AWS NAT GW3
-<%- end -%>
-}
-
 <% if not %w(production).include?(environment) %>
 acl allowed_ip_addresses {
   <%- config.fetch('allowed_ip_addresses', []).each do |cidr| -%>
@@ -178,10 +162,8 @@ acl allowed_ip_addresses {
 
 sub vcl_recv {
 
-  # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
-    set req.http.Fastly-Purge-Requires-Auth = "1";
-  }
+  # Require authentication for PURGE requests
+  set req.http.Fastly-Purge-Requires-Auth = "1";
 
   <% if %w(staging production-eks).include?(environment) %>
   # Only allow connections from allowed IP addresses in staging

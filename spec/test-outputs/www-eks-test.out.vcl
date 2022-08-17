@@ -31,9 +31,6 @@ backend F_origin {
 
 
 
-acl purge_ip_allowlist {
-}
-
 
 acl allowed_ip_addresses {
 }
@@ -41,10 +38,8 @@ acl allowed_ip_addresses {
 
 sub vcl_recv {
 
-  # Require authentication for FASTLYPURGE requests unless from IP in ACL
-  if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
-    set req.http.Fastly-Purge-Requires-Auth = "1";
-  }
+  # Require authentication for PURGE requests
+  set req.http.Fastly-Purge-Requires-Auth = "1";
 
   
 
