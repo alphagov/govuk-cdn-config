@@ -39,10 +39,10 @@ private
     configuration = args[0]
     environment = args[1]
     config_hash = begin
-                    CONFIGS[configuration][environment]
-                  rescue StandardError
-                    nil
-                  end
+      CONFIGS[configuration][environment]
+    rescue StandardError
+      nil
+    end
 
     raise "ERROR: Unknown configuration/environment combination: #{configuration} #{environment}. Check this combination exists in fastly.yaml." unless config_hash
 
@@ -97,7 +97,7 @@ private
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + "/main")
+    @fastly.client.put("#{Fastly::VCL.put_path(vcl)}/main")
   end
 
   def diff_vcl(configuration, version_new)

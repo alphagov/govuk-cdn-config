@@ -159,9 +159,7 @@ class DeployBouncer
     @app_domain = app_domain
 
     vcl_file = File.join(File.dirname(__FILE__), "..", "vcl_templates", "bouncer.vcl.erb")
-    vcl_contents = ERB.new(File.read(vcl_file)).result(binding)
-
-    vcl_contents
+    ERB.new(File.read(vcl_file)).result(binding)
   end
 
   def upload_vcl(version, contents)
@@ -174,7 +172,7 @@ class DeployBouncer
     end
 
     vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put(Fastly::VCL.put_path(vcl) + "/main")
+    @fastly.client.put("#{Fastly::VCL.put_path(vcl)}/main")
   end
 
   def delete_ui_objects(service_id, version_number)

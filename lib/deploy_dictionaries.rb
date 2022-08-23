@@ -72,10 +72,10 @@ class DeployDictionaries
     vhost = args[0]
     environment = args[1]
     config_hash = begin
-                    CONFIGS[vhost][environment]
-                  rescue StandardError
-                    nil
-                  end
+      CONFIGS[vhost][environment]
+    rescue StandardError
+      nil
+    end
     raise "Unknown vhost/environment combination: #{vhost} #{environment}" unless config_hash
 
     config_hash
