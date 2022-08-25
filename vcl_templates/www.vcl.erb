@@ -45,7 +45,7 @@ backend F_eks_origin {
     .connect_timeout = 5s;
     .dynamic = true;
     .port = "443";
-    .host = "www-origin.eks.production.govuk.digital";
+    .host = "<%= config['eks_origin_hostname'] %>";
     .first_byte_timeout = 15s;
     .max_connections = 200;
     .between_bytes_timeout = 10s;
@@ -57,8 +57,8 @@ backend F_eks_origin {
     <%- if config['ssl_ciphers'] -%>
     .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
     <%- end -%>
-    .ssl_cert_hostname = "www-origin.eks.production.govuk.digital";
-    .ssl_sni_hostname = "www-origin.eks.production.govuk.digital";
+    .ssl_cert_hostname = "<%= config['eks_origin_hostname'] %>";
+    .ssl_sni_hostname = "<%= config['eks_origin_hostname'] %>";
 
 <% if config['probe'] -%>
     .probe = {
@@ -83,8 +83,8 @@ backend F_eks_origin {
 <% end -%>
 }
 
-director D_traffic_split random {
-  { .backend = F_origin; .weight = 20; }
+director D_traffic_split client {
+  { .backend = F_origin; .weight = 1; }
   { .backend = F_eks_origin; .weight = 1; }
 }
 <%- end %>
