@@ -1,56 +1,62 @@
 describe DeployDictionaries do
   describe "#deploy" do
+    let(:service_id) { "123321abc" }
+
     it "deploys the dictionaries" do
-      @requests = []
+      @requests = stub_fastly_get_service(service_id)
 
-      # Fastly#get_service. Return a service with two VCL "versions" (https://docs.fastly.com/api/config#version)
-      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc")
-        .to_return(body: File.read("spec/fixtures/fastly-get-service-response.json"))
-
-      # We clone the latest active VCL version, which returns the latest version
-      @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/2/clone")
-        .to_return(body: File.read("spec/fixtures/fastly-put-clone.json"))
-
-      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/version/3/dictionary")
+      @requests << stub_request(:get, "https://api.fastly.com/service/#{service_id}/version/3/dictionary")
         .to_return do |_request|
           if @deleted
-            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: "123321abc" }]) }
+            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: service_id }]) }
           else
             @deleted = true
-            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: "123321abc" }, { name: "to_be_deleted_because_theres_no_yaml_file", version: 1, service_id: "123321abc" }]) }
+            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: service_id }, { name: "to_be_deleted_because_theres_no_yaml_file", version: 1, service_id: service_id }]) }
           end
         end
 
-      @requests << stub_request(:delete, "https://api.fastly.com/service/123321abc/version/1/dictionary/to_be_deleted_because_theres_no_yaml_file")
+      @requests << stub_request(:delete, "https://api.fastly.com/service/#{service_id}/version/1/dictionary/to_be_deleted_because_theres_no_yaml_file")
         .to_return(body: "{}")
 
-      @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/version/3/dictionary")
+      @requests << stub_request(:post, "https://api.fastly.com/service/#{service_id}/version/3/dictionary")
         .to_return(body: "{}")
 
-      @requests << stub_request(:get, "https://api.fastly.com/service/123321abc/dictionary/qwerty/items")
+      @requests << stub_request(:get, "https://api.fastly.com/service/#{service_id}/dictionary/qwerty/items")
           .to_return(body: "{}")
 
-      @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/dictionary/qwerty/item")
+      @requests << stub_request(:post, "https://api.fastly.com/service/#{service_id}/dictionary/qwerty/item")
         .with(
-          body: { "dictionary_id" => "qwerty", "item_key" => "A", "item_value" => "50", "service_id" => "123321abc" },
+          body: { "dictionary_id" => "qwerty", "item_key" => "A", "item_value" => "50", "service_id" => service_id },
         )
         .to_return(body: "{}")
 
-      @requests << stub_request(:post, "https://api.fastly.com/service/123321abc/dictionary/qwerty/item")
+      @requests << stub_request(:post, "https://api.fastly.com/service/#{service_id}/dictionary/qwerty/item")
         .with(
-          body: { "dictionary_id" => "qwerty", "item_key" => "B", "item_value" => "50", "service_id" => "123321abc" },
+          body: { "dictionary_id" => "qwerty", "item_key" => "B", "item_value" => "50", "service_id" => service_id },
         )
         .to_return(body: "{}")
 
-      @requests << stub_request(:put, "https://api.fastly.com/service/123321abc/version/3/activate")
+      @requests << stub_request(:put, "https://api.fastly.com/service/#{service_id}/version/3/activate")
           .to_return(body: "{}")
 
       ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         DeployDictionaries.new.deploy!(%w[test production])
 
-        @requests.each do |request|
-          expect(request).to have_been_requested.at_least_once
-        end
+        expect(@requests).to all(have_been_requested.at_least_once)
+      end
+    end
+
+    it "raises error when vhost or environment is missing" do
+      ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
+        expect { DeployDictionaries.new.deploy!(%w[test]) }
+        .to raise_error(RuntimeError, /Usage: #{$PROGRAM_NAME} <vhost> <environment>/)
+      end
+    end
+
+    it "raises error when vhost and environment combination is not in fastly.yaml" do
+      ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
+        expect { DeployDictionaries.new.deploy!(%w[test staging]) }
+        .to raise_error(RuntimeError, /Unknown vhost\/environment combination: test staging/)
       end
     end
   end
