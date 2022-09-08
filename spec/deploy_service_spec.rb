@@ -39,7 +39,7 @@ describe DeployService do
     it "raises error when vhost and environment combination is not in fastly.yaml" do
       ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         expect { DeployService.new.deploy!(%w[test staging]) }
-        .to raise_error(RuntimeError, /ERROR: Unknown configuration\/environment combination: test staging. Check this combination exists in fastly.yaml./)
+        .to raise_error(RuntimeError, /Error: Unknown configuration\/environment combination: test staging. Check this combination exists in fastly.yaml./)
       end
     end
 
@@ -49,7 +49,7 @@ describe DeployService do
 
       ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         expect { DeployService.new.deploy!(%w[test production]) }
-        .to raise_error(RuntimeError, /ERROR: Failed to delete configuration/)
+        .to raise_error(RuntimeError, /Error: Failed to delete configuration/)
 
         expect(@requests).to all(have_been_requested.at_least_once)
       end
@@ -108,7 +108,7 @@ describe DeployService do
 
       ClimateControl.modify FASTLY_API_KEY: "fastly@example.com" do
         expect { DeployService.new.deploy!(%w[test production]) }
-        .to raise_error(RuntimeError, /ERROR: Invalid configuration:\n Error message/)
+        .to raise_error(RuntimeError, /Error: Invalid configuration:\n Error message/)
 
         expect(@requests).to all(have_been_requested.at_least_once)
       end
