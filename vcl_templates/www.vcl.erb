@@ -276,7 +276,7 @@ sub vcl_recv {
 
   # Set header to show recommended related links for Whitehall content. This is to be used
   # as a rollback mechanism should we ever need to stop showing these links.
-  set req.http.Govuk-Use-Recommended-Related-Links = "true";
+  set req.http.Govuk-Use-Recommended-Related-Links = "false";
 
   # Set a request id header to allow requests to be traced through the stack
   set req.http.GOVUK-Request-Id = uuid.version4();
