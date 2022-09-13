@@ -64,7 +64,7 @@ describe DeployBouncer do
 
       ClimateControl.modify APP_DOMAIN: "gov.uk", FASTLY_SERVICE_ID: service_id, FASTLY_API_KEY: "fastly@example.com" do
         expect { DeployBouncer.new.deploy! }
-        .to raise_error(RuntimeError, /Delete failed/)
+        .to raise_error(RuntimeError, /Error: Failed to delete configuration/)
 
         expect(@requests).to all(have_been_requested.at_least_once)
       end

@@ -5,6 +5,7 @@ require "fastly"
 require "open-uri"
 require "yaml"
 
+require_relative "./deploy_base"
 require_relative "./deploy_bouncer"
 require_relative "./deploy_dictionaries"
 require_relative "./deploy_service"

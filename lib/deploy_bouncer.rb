@@ -1,4 +1,4 @@
-class DeployBouncer
+class DeployBouncer < DeployBase
   def deploy!
     if ENV["APP_DOMAIN"]
       app_domain = ENV["APP_DOMAIN"]
@@ -77,7 +77,8 @@ class DeployBouncer
       end
 
       vcl = render_vcl(service.id, app_domain)
-      delete_ui_objects(service.id, version.number)
+      service_types = %w[backend healthcheck condition request_settings cache_settings response_object header gzip]
+      delete_ui_objects(service.id, version.number, service_types)
       upload_vcl(version, vcl)
       diff = diff_vcl(service, version)
 
@@ -94,14 +95,6 @@ class DeployBouncer
     if ENV["FASTLY_DEBUG"] == "TRUE"
       puts output.blue
     end
-  end
-
-  def get_dev_version(service)
-    # Sometimes the latest version isn't the development version.
-    version = service.version
-    version = version.clone if version.active?
-
-    version
   end
 
   def get_hosts(hostnames)
@@ -160,46 +153,5 @@ class DeployBouncer
 
     vcl_file = File.join(File.dirname(__FILE__), "..", "vcl_templates", "bouncer.vcl.erb")
     ERB.new(File.read(vcl_file)).result(binding)
-  end
-
-  def upload_vcl(version, contents)
-    vcl_name = "main"
-
-    begin
-      version.vcl(vcl_name) && version.delete_vcl(vcl_name)
-    rescue Fastly::Error => e
-      puts "Error: #{e.inspect}"
-    end
-
-    vcl = version.upload_vcl(vcl_name, contents)
-    @fastly.client.put("#{Fastly::VCL.put_path(vcl)}/main")
-  end
-
-  def delete_ui_objects(service_id, version_number)
-    # Delete objects created by the UI. We want VCL to be the source of truth.
-    # Most of these don't have real objects in the Fastly API gem.
-    to_delete = %w[backend healthcheck condition request_settings cache_settings response_object header gzip]
-    to_delete.each do |type|
-      type_path = "/service/#{service_id}/version/#{version_number}/#{type}"
-      @fastly.client.get(type_path).map { |i| i["name"] }.each do |name|
-        puts "Deleting #{type}: #{name}"
-        resp = @fastly.client.delete("#{type_path}/#{ERB::Util.url_encode(name)}")
-        raise "Delete failed" unless resp
-      end
-    end
-  end
-
-  def diff_vcl(service, version_new)
-    version_current = service.versions.find(&:active?)
-    diff = Diffy::Diff.new(
-      version_current.generated_vcl.content,
-      version_new.generated_vcl.content,
-      context: 3,
-    )
-
-    puts "Diff versions: #{version_current.number} -> #{version_new.number}"
-    puts diff.to_s(:color)
-
-    diff
   end
 end
