@@ -508,6 +508,7 @@ sub vcl_hit {
 }
 
 sub vcl_miss {
+  set bereq.http.X-Forwarded-Host = req.http.host;
 #FASTLY miss
 }
 
@@ -661,6 +662,7 @@ sub vcl_error {
 # pipe cannot be included.
 
 sub vcl_pass {
+  set bereq.http.X-Forwarded-Host = req.http.host;
 #FASTLY pass
 }
 
