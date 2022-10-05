@@ -36,28 +36,6 @@ RSpec.describe "VCL template" do
   end
 end
 
-describe "AB Tests partial" do
-  let(:expected) do
-    @expected ||= File.new(File.join(cwd, "fixtures/_multivariate_tests.vcl.erb.out")).read
-  end
-
-  let!(:ab_tests) do
-    [
-      { "MyTest" => %w[foo bar] },
-      { "YourTest" => %w[variant1 variant2 variant3 variant4] },
-    ]
-  end
-
-  subject do
-    partial_path = File.join(cwd, "../vcl_templates/_multivariate_tests.vcl.erb")
-    @rendered ||= ERB.new(File.new(partial_path).read, trim_mode: "-").result(binding)
-  end
-
-  it "renders ab test output for each test in the configuration" do
-    expect(subject).to eq(expected)
-  end
-end
-
 describe "Expected AB test files" do
   let(:expiries) { YAML.load_file(File.join(cwd, "../configs/dictionaries/ab_test_expiries.yaml")) }
   let(:active_tests) { YAML.load_file(File.join(cwd, "../configs/dictionaries/active_ab_tests.yaml")) }
