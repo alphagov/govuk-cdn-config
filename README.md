@@ -25,7 +25,6 @@ replaces the old configuration.
 | --- | --- | --- |
 | apt | apt.publishing.service.gov.uk | GOV.UK's Debian package repository |
 | assets | assets.publishing.service.gov.uk | the GOV.UK domain for uploads and static assets |
-| performanceplatform | www.performance.service.gov.uk | the Performance Platform (https://www.gov.uk/performance) |
 | servicegovuk | service.gov.uk | redirect from https://service.gov.uk to https://www.gov.uk |
 | tldredirect | gov.uk | redirect from https://gov.uk to https://www.gov.uk |
 | www | www.gov.uk | the single government domain |
