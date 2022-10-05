@@ -512,6 +512,11 @@ sub vcl_miss {
 #FASTLY miss
 }
 
+sub vcl_pass {
+  set bereq.http.X-Forwarded-Host = req.http.host;
+#FASTLY pass
+}
+
 sub vcl_deliver {
   # GOV.UK accounts
   if (resp.http.GOVUK-Account-End-Session) {
@@ -660,11 +665,6 @@ sub vcl_error {
 }
 
 # pipe cannot be included.
-
-sub vcl_pass {
-  set bereq.http.X-Forwarded-Host = req.http.host;
-#FASTLY pass
-}
 
 sub vcl_hash {
 #FASTLY hash

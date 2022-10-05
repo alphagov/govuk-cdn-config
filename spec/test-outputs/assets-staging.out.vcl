@@ -293,6 +293,11 @@ sub vcl_miss {
 #FASTLY miss
 }
 
+sub vcl_pass {
+  set bereq.http.X-Forwarded-Host = req.http.host;
+#FASTLY pass
+}
+
 sub vcl_deliver {
 #FASTLY deliver
 }
@@ -330,11 +335,6 @@ sub vcl_error {
   return (deliver);
 
 #FASTLY error
-}
-
-sub vcl_pass {
-  set bereq.http.X-Forwarded-Host = req.http.host;
-#FASTLY pass
 }
 
 sub vcl_hash {
