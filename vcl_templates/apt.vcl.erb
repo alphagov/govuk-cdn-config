@@ -23,15 +23,14 @@ backend F_apt {
 }
 
 sub vcl_recv {
+<%= render_partial("boundary_headers", indentation: "  ") %>
+
 #FASTLY recv
 
     # Require authentication for FASTLYPURGE requests
     if (req.request == "FASTLYPURGE") {
       set req.http.Fastly-Purge-Requires-Auth = "1";
     }
-
-    # Unspoofable original client address
-    set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
