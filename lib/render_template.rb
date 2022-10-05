@@ -1,8 +1,20 @@
 class RenderTemplate
-  def self.render_template(configuration, environment, config, version)
-    # Both config and ab_tests are used inside the vcl.erb template
-    vcl_file = File.join(File.dirname(__FILE__), "..", "vcl_templates", "#{configuration}.vcl.erb")
-    ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
-    ERB.new(File.read(vcl_file), trim_mode: "-").result(binding)
+  attr_reader :template, :locals
+
+  def self.call(...)
+    new(...).call
+  end
+
+  def initialize(template, locals: {})
+    @template = template
+    @locals = locals
+  end
+
+  def call
+    bind = binding
+    locals.each { |k, v| bind.local_variable_set(k, v) }
+
+    embedded_ruby = File.read("#{__dir__}/../vcl_templates/#{template}.vcl.erb")
+    ERB.new(embedded_ruby, trim_mode: "-").result(bind)
   end
 end

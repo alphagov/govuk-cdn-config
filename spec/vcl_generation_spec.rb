@@ -23,6 +23,8 @@ RSpec.describe "VCL generation" do
     "probe" => "/",
   }
 
+  ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
+
   Dir.glob("vcl_templates/*.erb").each do |template|
     service = template.sub("vcl_templates/", "").sub(".vcl.erb", "")
     next if service[0] == "_" # Skip partials
@@ -31,7 +33,10 @@ RSpec.describe "VCL generation" do
 
     %w[production staging integration test].each do |environment|
       it "renders the #{service} VCL for #{environment} correctly" do
-        generated_vcl = RenderTemplate.render_template(service, environment, config, "unused variable")
+        generated_vcl = RenderTemplate.call(
+          service,
+          locals: { environment: environment, config: config, version: "unused variable", ab_tests: ab_tests },
+        )
         expected_vcl_filename = "spec/test-outputs/#{service}-#{environment}.out.vcl"
 
         if ENV["REGENERATE_EXPECTATIONS"]
