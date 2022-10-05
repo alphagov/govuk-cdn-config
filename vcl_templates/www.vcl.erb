@@ -412,8 +412,7 @@ sub vcl_recv {
     return(pass);
   }
 
-  <% template_path = File.join(File.dirname(__FILE__), "vcl_templates/_multivariate_tests.vcl.erb") -%>
-  <%= ERB.new(File.new(template_path).read, nil, "-", "_erbout2").result(binding) %>
+<%= render_partial("multivariate_tests", indentation: "  ", locals: { ab_tests: ab_tests }) %>
 
   return(lookup);
 }
