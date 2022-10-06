@@ -278,6 +278,7 @@ sub vcl_recv {
   # Reset proxy headers at the boundary to our network.
   unset req.http.Client-IP;
   set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
+  set req.http.X-Forwarded-Host = req.http.host;
 
   # Set a TLSversion request header for requests going to the Licensify application
   # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify

@@ -215,6 +215,9 @@ sub vcl_recv {
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
+  # Reset proxy headers at the boundary to our network.
+  set req.http.X-Forwarded-Host = req.http.host;
+
 #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
