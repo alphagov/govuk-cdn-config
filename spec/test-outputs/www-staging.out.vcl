@@ -139,6 +139,11 @@ sub vcl_recv {
   # Require authentication for PURGE requests
   set req.http.Fastly-Purge-Requires-Auth = "1";
 
+  # Reset proxy headers at the boundary to our network.
+  unset req.http.Client-IP;
+  set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
+  set req.http.X-Forwarded-Host = req.http.host;
+
   
   # Only allow connections from allowed IP addresses in staging
   if (! (client.ip ~ allowed_ip_addresses)) {
@@ -282,11 +287,6 @@ sub vcl_recv {
 
   # Unspoofable original client address (e.g. for rate limiting).
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
-
-  # Reset proxy headers at the boundary to our network.
-  unset req.http.Client-IP;
-  set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
-  set req.http.X-Forwarded-Host = req.http.host;
 
   # Set a TLSversion request header for requests going to the Licensify application
   # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify

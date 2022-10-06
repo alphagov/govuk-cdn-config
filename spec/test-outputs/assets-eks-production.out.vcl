@@ -135,6 +135,8 @@ acl purge_ip_allowlist {
 }
 
 sub vcl_recv {
+  # Reset proxy headers at the boundary to our network.
+  set req.http.X-Forwarded-Host = req.http.host;
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
   if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
@@ -214,9 +216,6 @@ sub vcl_recv {
 
   # Unspoofable original client address.
   set req.http.True-Client-IP = req.http.Fastly-Client-IP;
-
-  # Reset proxy headers at the boundary to our network.
-  set req.http.X-Forwarded-Host = req.http.host;
 
 #FASTLY recv
 
