@@ -130,6 +130,9 @@ backend F_mirrorGCS {
 
 
 
+acl allowed_ip_addresses {
+}
+
 
 sub vcl_recv {
 
@@ -141,6 +144,11 @@ sub vcl_recv {
   set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
   set req.http.X-Forwarded-Host = req.http.host;
 
+  
+  # Only allow connections from allowed IP addresses in staging and production EKS
+  if (! (client.ip ~ allowed_ip_addresses)) {
+    error 403 "Forbidden";
+  }
   
 
   # Check whether the remote IP address is in the list of blocked IPs

@@ -145,7 +145,7 @@ sub vcl_recv {
   set req.http.X-Forwarded-Host = req.http.host;
 
   
-  # Only allow connections from allowed IP addresses in staging
+  # Only allow connections from allowed IP addresses in staging and production EKS
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }

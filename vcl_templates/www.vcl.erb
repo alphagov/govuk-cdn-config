@@ -89,7 +89,7 @@ director D_traffic_split client {
 }
 <%- end %>
 
-<% if %w(staging production production-eks).include?(environment) %>
+<% if %w(staging production).include?(environment) %>
 # Mirror backend for S3
 backend F_mirrorS3 {
     .connect_timeout = 1s;
@@ -196,7 +196,7 @@ backend F_mirrorGCS {
 }
 <% end %>
 
-<% if not %w(production).include?(environment) %>
+<% if environment != "production" || "www-eks" == configuration %>
 acl allowed_ip_addresses {
   <%- config.fetch('allowed_ip_addresses', []).each do |cidr| -%>
   <%- ip_address, mask = cidr.split('/') -%>
@@ -219,8 +219,8 @@ sub vcl_recv {
   set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
   set req.http.X-Forwarded-Host = req.http.host;
 
-  <% if %w(staging production-eks).include?(environment) %>
-  # Only allow connections from allowed IP addresses in staging
+  <% if ("staging" == environment) || ("production" == environment && "www-eks" == configuration) %>
+  # Only allow connections from allowed IP addresses in staging and production EKS
   if (! (client.ip ~ allowed_ip_addresses)) {
     error 403 "Forbidden";
   }
@@ -291,7 +291,7 @@ sub vcl_recv {
     set req.url = querystring.remove(req.url);
   }
 
-  <% if %w(staging production production-eks).include?(environment) %>
+  <% if %w(staging production).include?(environment) %>
 
   # Save original request url because req.url changes after restarts.
   if (req.restarts < 1) {
