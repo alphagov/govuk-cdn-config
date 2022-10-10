@@ -149,8 +149,9 @@ class DeployBouncer < DeployBase
   end
 
   def render_vcl(service_id, app_domain)
-    locals = { service_id: service_id, app_domain: app_domain }
+    @app_domain = app_domain
 
-    RenderTemplate.call("bouncer", locals: locals)
+    vcl_file = File.join(File.dirname(__FILE__), "..", "vcl_templates", "bouncer.vcl.erb")
+    ERB.new(File.read(vcl_file)).result(binding)
   end
 end

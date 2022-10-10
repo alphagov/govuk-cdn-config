@@ -23,23 +23,15 @@ RSpec.describe "VCL generation" do
     "probe" => "/",
   }
 
-  ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
-
   Dir.glob("vcl_templates/*.erb").each do |template|
     service = template.sub("vcl_templates/", "").sub(".vcl.erb", "")
     next if service[0] == "_" # Skip partials
+    next if service == "bouncer" # Bouncer is not deployed from this repo
     next if service == "test" # For another test
 
     %w[production staging integration test].each do |environment|
-      template_variables = case service
-                           when "bouncer"
-                             { app_domain: "test.gov.uk", service_id: "12345" }
-                           else
-                             { environment: environment, config: config, version: "unused variable", ab_tests: ab_tests }
-                           end
-
       it "renders the #{service} VCL for #{environment} correctly" do
-        generated_vcl = RenderTemplate.call(service, locals: template_variables)
+        generated_vcl = RenderTemplate.render_template(service, environment, config, "unused variable")
         expected_vcl_filename = "spec/test-outputs/#{service}-#{environment}.out.vcl"
 
         if ENV["REGENERATE_EXPECTATIONS"]
