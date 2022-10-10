@@ -35,7 +35,7 @@ RSpec.describe "VCL generation" do
                            when "bouncer"
                              { app_domain: "test.gov.uk", service_id: "12345" }
                            else
-                             { environment: environment, config: config, version: "unused variable", ab_tests: ab_tests }
+                             { configuration: service, environment: environment, config: config, version: "unused variable", ab_tests: ab_tests }
                            end
 
       it "renders the #{service} VCL for #{environment} correctly" do

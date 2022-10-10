@@ -16,6 +16,7 @@ class DeployService < DeployBase
     vcl = RenderTemplate.call(
       configuration,
       locals: {
+        configuration: configuration,
         environment: environment,
         config: config,
         version: version,
