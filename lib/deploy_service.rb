@@ -13,15 +13,7 @@ class DeployService < DeployBase
     puts "Configuration: #{configuration}"
     puts "Environment: #{environment}"
 
-    vcl = RenderTemplate.call(
-      configuration,
-      locals: {
-        environment: environment,
-        config: config,
-        version: version,
-        ab_tests: ab_tests_config,
-      },
-    )
+    vcl = RenderTemplate.render_template(configuration, environment, config, version)
 
     dry_run = ENV.fetch("FASTLY_DRY_RUN", "").downcase
     unless ["", "0", "false"].include?(dry_run)
@@ -41,10 +33,6 @@ class DeployService < DeployBase
   end
 
 private
-
-  def ab_tests_config
-    @ab_tests_config ||= YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
-  end
 
   def get_config(args)
     raise "Usage: #{$PROGRAM_NAME} <configuration> <environment>" unless args.size == 2
