@@ -155,8 +155,7 @@ acl purge_ip_allowlist {
 }
 
 sub vcl_recv {
-  # Reset proxy headers at the boundary to our network.
-  set req.http.X-Forwarded-Host = req.http.host;
+<%= render_partial("boundary_headers", indentation: "  ") %>
 
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
   if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
@@ -233,9 +232,6 @@ sub vcl_recv {
     set req.http.Authorization = "AWS <%= config.fetch('gcs_mirror_access_id') %>:" digest.hmac_sha1_base64("<%= config.fetch('gcs_mirror_secret_key') %>", "GET" LF LF LF now LF "/<%= config.fetch('gcs_mirror_bucket_name') %>" req.url.path);
   }
   <% end %>
-
-  # Unspoofable original client address.
-  set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
 #FASTLY recv
 

@@ -23,15 +23,29 @@ backend F_apt {
 }
 
 sub vcl_recv {
+  # Protect header from modification at the edge of the Fastly network
+  # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
+  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
+    set req.http.Fastly-Client-IP = client.ip;
+  }
+
+  # Original client address (e.g. for rate limiting).
+  set req.http.True-Client-IP = req.http.Fastly-Client-IP;
+
+  # Reset proxy headers at the boundary to our network so we can trust them in our stack
+  set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
+  set req.http.X-Forwarded-Host = req.http.host;
+  set req.http.X-Forwarded-Server = server.hostname;
+
+  # Discard user specified headers that we don't want to trust
+  unset req.http.Client-IP;
+
 #FASTLY recv
 
     # Require authentication for FASTLYPURGE requests
     if (req.request == "FASTLYPURGE") {
       set req.http.Fastly-Purge-Requires-Auth = "1";
     }
-
-    # Unspoofable original client address
-    set req.http.True-Client-IP = req.http.Fastly-Client-IP;
 
     if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
       return(pass);
