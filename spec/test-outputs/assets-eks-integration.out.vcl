@@ -74,7 +74,6 @@ sub vcl_recv {
   # Default backend.
   set req.backend = F_awsorigin;
   set req.http.Fastly-Backend-Name = "awsorigin";
-  set req.http.host = "foo";
 
   
 
