@@ -1,1 +1,5 @@
 coverage
+
+/compute@edge/node_modules
+/compute@edge/bin
+/compute@edge/pkg
