@@ -58,7 +58,7 @@ backend F_eks_origin {
     .probe = {
         .request =
             "HEAD /__canary__ HTTP/1.1"
-            "Host: <%= config.fetch('eks_origin_hostname') %>"
+            "Host: <%= config.fetch('healthcheck_hostname') %>"
             "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
 <% if config['rate_limit_token'] %>
             "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
