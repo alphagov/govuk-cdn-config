@@ -74,7 +74,7 @@ backend F_eks_origin {
 }
 
 director D_traffic_split client {
-    { .backend = F_awsorigin; .weight = 19; }
+    { .backend = F_awsorigin; .weight = 1; }
     { .backend = F_eks_origin; .weight = 1; }
 }
 <%- end %>
