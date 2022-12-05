@@ -64,4 +64,4 @@ We use edge dictionaries to define the configuration for A/B and multivariate te
 
 ## Licence
 
-[MIT License](LICENSE.MD)
+[MIT License](LICENCE)
