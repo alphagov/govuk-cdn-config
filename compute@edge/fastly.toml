@@ -12,4 +12,4 @@ service_id = "0yW7THGQHtorLIDxhrcWx4"
 [local_server]
   [local_server.backends]
     [local_server.backends.origin]
-      url="http://localhost:8080"
+      url="http://localhost:3000"
