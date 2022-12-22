@@ -190,6 +190,13 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
+  # Block requests that match a known bad signature
+  if (req.restarts == 0 && fastly.ff.visits_this_service == 0) {
+    if (table.lookup(ja3_signature_denylist, tls.client.ja3_md5, "false") == "true") {
+      error 403 "Forbidden";
+    }
+  }
+
   <% if config['basic_authentication'] %>
   if (! (client.ip ~ allowed_ip_addresses)) {
     # Check whether the basic auth credentials are correct in integration

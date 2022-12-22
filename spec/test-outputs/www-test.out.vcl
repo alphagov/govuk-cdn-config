@@ -71,6 +71,13 @@ sub vcl_recv {
     error 403 "Forbidden";
   }
 
+  # Block requests that match a known bad signature
+  if (req.restarts == 0 && fastly.ff.visits_this_service == 0) {
+    if (table.lookup(ja3_signature_denylist, tls.client.ja3_md5, "false") == "true") {
+      error 403 "Forbidden";
+    }
+  }
+
   
 
   # Strip Accept-Encoding header if the content is already compressed
