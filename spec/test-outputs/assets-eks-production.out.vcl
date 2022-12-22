@@ -154,6 +154,11 @@ sub vcl_recv {
   # Discard user specified headers that we don't want to trust
   unset req.http.Client-IP;
 
+  # Enable real time logging of JA3 signatures for future analysis
+  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
+    set req.http.Client-JA3 = tls.client.ja3_md5;
+  }
+
   # Require authentication for FASTLYPURGE requests unless from IP in ACL
   if (req.request == "FASTLYPURGE" && client.ip !~ purge_ip_allowlist) {
     set req.http.Fastly-Purge-Requires-Auth = "1";
@@ -166,7 +171,7 @@ sub vcl_recv {
 
   # Block requests that match a known bad signature
   if (req.restarts == 0 && fastly.ff.visits_this_service == 0) {
-    if (table.lookup(ja3_signature_denylist, tls.client.ja3_md5, "false") == "true") {
+    if (table.lookup(ja3_signature_denylist, req.http.Client-JA3, "false") == "true") {
       error 403 "Forbidden";
     }
   }
