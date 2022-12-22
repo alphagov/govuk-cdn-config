@@ -160,10 +160,6 @@ sub vcl_recv {
   set req.http.X-Forwarded-For = req.http.Fastly-Client-IP;
   set req.http.X-Forwarded-Host = req.http.host;
 
-  if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
-    set req.http.Client-JA3 = tls.client.ja3_md5;
-  }
-
   
   # Only allow connections from allowed IP addresses in staging and production EKS
   if (! (client.ip ~ allowed_ip_addresses)) {
@@ -174,13 +170,6 @@ sub vcl_recv {
   # Check whether the remote IP address is in the list of blocked IPs
   if (table.lookup(ip_address_denylist, client.ip)) {
     error 403 "Forbidden";
-  }
-
-  # Block requests that match a known bad signature
-  if (req.restarts == 0 && fastly.ff.visits_this_service == 0) {
-    if (table.lookup(ja3_signature_denylist, req.http.Client-JA3, "false") == "true") {
-      error 403 "Forbidden";
-    }
   }
 
   
