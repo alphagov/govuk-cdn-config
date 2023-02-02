@@ -384,17 +384,6 @@ sub vcl_recv {
     set req.http.Authorization = "Basic <%= config['basic_authentication'] %>";
   }
 <% end -%>
-<% if config['origin_hostname'].include? "eks" -%>
-  # Strip cookies from inbound requests. Corresponding rule in vcl_fetch{}
-  # For simplicity and security most applications should not use cookies.
-  # With the exception of:
-  #   - Licensing
-  #   - email-alert-frontend (for subscription management)
-  #   - sign-in (digital identity) callback
-  if (req.url !~ "^/(apply-for-a-licence|email|sign-in/callback)") {
-    unset req.http.Cookie;
-  }
-<% end -%>
 #FASTLY recv
 
   # GOV.UK accounts
@@ -416,6 +405,18 @@ sub vcl_recv {
   }
 
 <%= render_partial("multivariate_tests", indentation: "  ", locals: { ab_tests: ab_tests }) %>
+
+<% if config['origin_hostname'].include? "eks" -%>
+  # Strip cookies from inbound requests. Corresponding rule in vcl_fetch{}
+  # For simplicity and security most applications should not use cookies.
+  # With the exception of:
+  #   - Licensing
+  #   - email-alert-frontend (for subscription management)
+  #   - sign-in (digital identity) callback
+  if (req.url !~ "^/(apply-for-a-licence|email|sign-in/callback)") {
+    unset req.http.Cookie;
+  }
+<% end -%>
 
   return(lookup);
 }
