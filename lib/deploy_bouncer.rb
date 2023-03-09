@@ -142,15 +142,15 @@ class DeployBouncer < DeployBase
   def add_domains(service_id, version, domains)
     domains.each do |domain|
       puts "Adding #{domain} to the configuration".green
-      @fastly.create_domain(service_id: service_id, version: version, name: domain, comment: "")
+      @fastly.create_domain(service_id:, version:, name: domain, comment: "")
     rescue StandardError
       puts "Cannot add #{domain}, is it owned by another customer?".red
     end
   end
 
   def render_vcl(service_id, app_domain)
-    locals = { service_id: service_id, app_domain: app_domain }
+    locals = { service_id:, app_domain: }
 
-    RenderTemplate.call("bouncer", locals: locals)
+    RenderTemplate.call("bouncer", locals:)
   end
 end

@@ -19,7 +19,7 @@ RSpec.describe "VCL template" do
   let!(:ab_tests) { [{ "ATest" => %w[meh boom] }, { "Example" => %w[A B] }] }
 
   subject(:rendered) do
-    RenderTemplate.call("www", locals: { config: config, environment: environment, ab_tests: ab_tests })
+    RenderTemplate.call("www", locals: { config:, environment:, ab_tests: })
   end
 
   it "renders the AB tests partial" do

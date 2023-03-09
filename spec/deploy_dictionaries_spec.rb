@@ -8,10 +8,10 @@ describe DeployDictionaries do
       @requests << stub_request(:get, "https://api.fastly.com/service/#{service_id}/version/3/dictionary")
         .to_return do |_request|
           if @deleted
-            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: service_id }]) }
+            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: }]) }
           else
             @deleted = true
-            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: service_id }, { name: "to_be_deleted_because_theres_no_yaml_file", version: 1, service_id: service_id }]) }
+            { body: JSON.dump([{ id: "qwerty", name: "example_percentages", version: 1, service_id: }, { name: "to_be_deleted_because_theres_no_yaml_file", version: 1, service_id: }]) }
           end
         end
 

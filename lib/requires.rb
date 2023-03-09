@@ -16,7 +16,7 @@ require_relative "./render_template"
 class Fastly
   class Version < Base
     def domains
-      fetcher.list_domains(service_id: service_id, version: number)
+      fetcher.list_domains(service_id:, version: number)
     end
   end
 end

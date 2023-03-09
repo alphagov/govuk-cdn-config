@@ -29,7 +29,7 @@ class DeployDictionaries
 
     dictionaries_to_add.each do |name|
       puts "Creating dictionary: #{name}"
-      @fastly.create_dictionary(service_id: service.id, version: version.number, name: name)
+      @fastly.create_dictionary(service_id: service.id, version: version.number, name:)
     end
 
     version.dictionaries.each do |dictionary|
