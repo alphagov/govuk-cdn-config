@@ -131,9 +131,12 @@ backend F_mirrorGCS {
 
 
 acl purge_ip_allowlist {
-  "18.203.108.248";   # AWS Staging
-  "18.202.183.143";   # AWS Staging
-  "18.203.90.80";     # AWS Staging
+  "18.203.108.248";  # AWS Staging NAT gateways
+  "18.202.183.143";
+  "18.203.90.80";
+  "54.246.115.159";  # EKS Staging NAT gateways
+  "54.220.171.242";
+  "54.228.115.164";
 }
 
 sub vcl_recv {
