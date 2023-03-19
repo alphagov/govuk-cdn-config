@@ -37,10 +37,10 @@ RSpec.describe "VCL template" do
 end
 
 describe "Expected AB test files" do
-  let(:expiries) { YAML.load_file(File.join(cwd, "../configs/dictionaries/ab_test_expiries.yaml")) }
-  let(:active_tests) { YAML.load_file(File.join(cwd, "../configs/dictionaries/active_ab_tests.yaml")) }
+  let(:expiries) { YAML.load_file(File.join(cwd, "../configs/dictionaries/ab_test_expiries.yaml"), aliases: true) }
+  let(:active_tests) { YAML.load_file(File.join(cwd, "../configs/dictionaries/active_ab_tests.yaml"), aliases: true) }
 
-  configured_tests = YAML.load_file(File.join(cwd, "../ab_tests/ab_tests.yaml")).map(&:keys).flatten
+  configured_tests = YAML.load_file(File.join(cwd, "../ab_tests/ab_tests.yaml"), aliases: true).map(&:keys).flatten
 
   configured_tests.each do |test_name|
     it "includes #{test_name}'s percentage file" do

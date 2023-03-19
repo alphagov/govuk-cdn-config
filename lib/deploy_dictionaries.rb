@@ -1,5 +1,5 @@
 class DeployDictionaries
-  CONFIGS = YAML.load_file("fastly.yaml")
+  CONFIGS = YAML.load_file("fastly.yaml", aliases: true)
 
   def deploy!(argv)
     config = get_config(argv)
@@ -33,7 +33,7 @@ class DeployDictionaries
     end
 
     version.dictionaries.each do |dictionary|
-      expected_items = YAML.load_file("configs/dictionaries/#{dictionary.name}.yaml") || []
+      expected_items = YAML.load_file("configs/dictionaries/#{dictionary.name}.yaml", aliases: true) || []
       existing_items = dictionary.items
 
       items_to_add = expected_items.reject { |key, _| existing_items.map(&:item_key).include?(key) }

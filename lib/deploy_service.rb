@@ -1,5 +1,5 @@
 class DeployService < DeployBase
-  CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"))
+  CONFIGS = YAML.load_file(File.join(__dir__, "..", "fastly.yaml"), aliases: true)
 
   def deploy!(argv)
     configuration, environment, config = get_config(argv)
@@ -44,7 +44,7 @@ class DeployService < DeployBase
 private
 
   def ab_tests_config
-    @ab_tests_config ||= YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
+    @ab_tests_config ||= YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"), aliases: true)
   end
 
   def get_config(args)
