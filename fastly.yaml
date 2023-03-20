@@ -20,7 +20,7 @@ api:
     service_id: 97skasfiasy2j9dsm
 
 frontend:
-  production:
+  production: &anchors-should-work
     service_id: 2817hasu29jasgu29
   staging:
     service_id: asj298asgy2j9asdf
@@ -29,4 +29,5 @@ frontend:
 
 test:
   production:
+    <<: *anchors-should-work
     service_id: 123321abc

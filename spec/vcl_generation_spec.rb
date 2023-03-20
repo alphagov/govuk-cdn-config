@@ -23,7 +23,7 @@ RSpec.describe "VCL generation" do
     "probe" => "/",
   }
 
-  ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"))
+  ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"), aliases: true)
 
   Dir.glob("vcl_templates/*.erb").each do |template|
     service = template.sub("vcl_templates/", "").sub(".vcl.erb", "")
