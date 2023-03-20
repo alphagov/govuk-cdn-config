@@ -35,6 +35,12 @@ backend F_awsorigin {
 
 
 acl purge_ip_allowlist {
+  "34.248.229.46";  # AWS Integration NAT gateways
+  "34.248.44.175";
+  "52.51.97.232";
+  "18.203.77.149";  # EKS Integration NAT gateways
+  "52.212.155.150";
+  "18.202.190.16";
 }
 
 sub vcl_recv {

@@ -32,9 +32,12 @@ backend F_origin {
 
 
 acl purge_ip_allowlist {
-  "34.248.229.46";    # AWS Integration NAT gateway
-  "34.248.44.175";    # AWS Integration NAT gateway
-  "52.51.97.232";     # AWS Integration NAT gateway
+  "34.248.229.46";  # AWS Integration NAT gateways
+  "34.248.44.175";
+  "52.51.97.232";
+  "18.203.77.149";  # EKS Integration NAT gateways
+  "52.212.155.150";
+  "18.202.190.16";
 }
 
 acl allowed_ip_addresses {

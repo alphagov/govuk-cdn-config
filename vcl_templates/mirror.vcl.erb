@@ -147,17 +147,26 @@ backend F_mirrorGCS {
 
 acl purge_ip_allowlist {
 <%- if environment.start_with? 'integration' -%>
-  "34.248.229.46";    # AWS Integration NAT gateway
-  "34.248.44.175";    # AWS Integration NAT gateway
-  "52.51.97.232";     # AWS Integration NAT gateway
+  "34.248.229.46";  # AWS Integration NAT gateways
+  "34.248.44.175";
+  "52.51.97.232";
+  "18.203.77.149";  # EKS Integration NAT gateways
+  "52.212.155.150";
+  "18.202.190.16";
 <%- elsif environment.start_with? 'staging' -%>
-  "18.202.183.143";   # AWS NAT GW1
-  "18.203.90.80";     # AWS NAT GW2
-  "18.203.108.248";   # AWS NAT GW3
+  "18.203.108.248";  # AWS Staging NAT gateways
+  "18.202.183.143";
+  "18.203.90.80";
+  "54.246.115.159";  # EKS Staging NAT gateways
+  "54.220.171.242";
+  "54.228.115.164";
 <%- elsif environment.start_with? 'production' -%>
-  "34.246.209.74";    # AWS NAT GW1
-  "34.253.57.8";      # AWS NAT GW2
-  "18.202.136.43";    # AWS NAT GW3
+  "18.202.136.43";   # AWS Production NAT gateways
+  "34.246.209.74";
+  "34.253.57.8";
+  "63.33.241.191";   # EKS Production NAT gateways
+  "52.208.193.230";
+  "54.220.6.200";
 <%- end -%>
 }
 
