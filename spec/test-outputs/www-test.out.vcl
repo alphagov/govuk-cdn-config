@@ -135,6 +135,11 @@ sub vcl_recv {
     set req.url = querystring.remove(req.url);
   }
 
+  if (req.url.path ~ "^\/alerts(?:\/|$)") {
+    # get rid of all query parameters
+    set req.url = querystring.remove(req.url);
+  }
+
   
 
   # Set a TLSversion request header for requests going to the Licensify application
