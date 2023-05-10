@@ -415,6 +415,50 @@ sub vcl_recv {
         }
       }
     }
+    if (table.lookup(active_ab_tests, "EsSixPointSeven") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=Z(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "Z";
+      } else if (req.http.Cookie ~ "ABTest-EsSixPointSeven") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-EsSixPointSeven = req.http.Cookie:ABTest-EsSixPointSeven;
+      } else {
+        declare local var.denominator_EsSixPointSeven INTEGER;
+        declare local var.denominator_EsSixPointSeven_A INTEGER;
+        declare local var.nominator_EsSixPointSeven_A INTEGER;
+        set var.nominator_EsSixPointSeven_A = std.atoi(table.lookup(essixpointseven_percentages, "A"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_A;
+        declare local var.denominator_EsSixPointSeven_B INTEGER;
+        declare local var.nominator_EsSixPointSeven_B INTEGER;
+        set var.nominator_EsSixPointSeven_B = std.atoi(table.lookup(essixpointseven_percentages, "B"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_B;
+        declare local var.denominator_EsSixPointSeven_Z INTEGER;
+        declare local var.nominator_EsSixPointSeven_Z INTEGER;
+        set var.nominator_EsSixPointSeven_Z = std.atoi(table.lookup(essixpointseven_percentages, "Z"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_Z;
+        set var.denominator_EsSixPointSeven_A = var.denominator_EsSixPointSeven;
+        set var.denominator_EsSixPointSeven_B = var.denominator_EsSixPointSeven_A;
+        set var.denominator_EsSixPointSeven_B -= var.nominator_EsSixPointSeven_A;
+        if (randombool(var.nominator_EsSixPointSeven_A, var.denominator_EsSixPointSeven_A)) {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+        } else if (randombool(var.nominator_EsSixPointSeven_B, var.denominator_EsSixPointSeven_B)) {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+        } else {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "Z";
+        }
+      }
+    }
   }
   # End dynamic section
 
@@ -575,6 +619,16 @@ sub vcl_deliver {
         if (req.http.Cookie !~ "ABTest-UxmPracticeTest" || req.url ~ "[\?\&]ABTest-UxmPracticeTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
           set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "UxmPracticeTest"))));
           add resp.http.Set-Cookie = "ABTest-UxmPracticeTest=" req.http.GOVUK-ABTest-UxmPracticeTest "; secure; expires=" var.expiry "; path=/";
+        }
+      }
+    }
+  }
+  if (req.http.Cookie ~ "cookies_policy") {
+    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+      if (table.lookup(active_ab_tests, "EsSixPointSeven") == "true") {
+        if (req.http.Cookie !~ "ABTest-EsSixPointSeven" || req.url ~ "[\?\&]ABTest-EsSixPointSeven" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "EsSixPointSeven"))));
+          add resp.http.Set-Cookie = "ABTest-EsSixPointSeven=" req.http.GOVUK-ABTest-EsSixPointSeven "; secure; expires=" var.expiry "; path=/";
         }
       }
     }
