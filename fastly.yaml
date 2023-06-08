@@ -22,8 +22,12 @@ api:
 frontend:
   production: &anchors-should-work
     service_id: 2817hasu29jasgu29
+    probe_interval: 10s
+    probe_dns_only: false
   staging:
     service_id: asj298asgy2j9asdf
+    probe_interval: 15s
+    probe_dns_only: true
   preview:
     service_id: 9uask39agyhskasoj
 

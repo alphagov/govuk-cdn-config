@@ -15,6 +15,7 @@ backend F_awsorigin {
     .ssl_sni_hostname = "foo";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD /__canary__ HTTP/1.1"
             "Host: foo"
@@ -29,8 +30,6 @@ backend F_awsorigin {
         .interval = 10s;
       }
 }
-
-
 
 
 

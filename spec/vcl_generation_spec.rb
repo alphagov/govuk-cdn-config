@@ -21,6 +21,8 @@ RSpec.describe "VCL generation" do
     "domain_suffix" => "boo",
     "private_extra_code_in_vcl_recv" => "# some private vcl code",
     "probe" => "/",
+    "probe_dns_only" => "false",
+    "probe_interval" => "10s",
   }
 
   ab_tests = YAML.load_file(File.join(__dir__, "..", "ab_tests", "ab_tests.yaml"), aliases: true)
