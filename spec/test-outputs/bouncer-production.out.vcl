@@ -71,6 +71,11 @@ sub vcl_recv {
     error 804 "Not Found";
   }
 
+  # Redirect to security.txt for "/.well-known/security.txt" or "/security.txt"
+  if (req.url.path ~ "(?i)^(?:/\.well[-_]known)?/security\.txt$") {
+    error 805 "security.txt";
+  }
+
   # Keep stale.
   set req.grace = 86400s;
 
@@ -169,6 +174,16 @@ sub vcl_error {
         </body>
       </html>"};
 
+    return (deliver);
+  }
+
+# Error 805
+  # 302 redirect to vdp.cabinetoffice.gov.uk called from vcl_recv.
+  if (obj.status == 805) {
+    set obj.status = 302;
+    set obj.http.Location = "https://vdp.cabinetoffice.gov.uk/.well-known/security.txt";
+    set obj.response = "Moved";
+    synthetic {""};
     return (deliver);
   }
 

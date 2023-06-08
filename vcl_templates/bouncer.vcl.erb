@@ -56,6 +56,8 @@ sub vcl_recv {
     error 804 "Not Found";
   }
 
+<%= render_partial("security_txt_request", indentation: "  ") %>
+
   # Keep stale.
   set req.grace = 86400s;
 
@@ -156,6 +158,9 @@ sub vcl_error {
 
     return (deliver);
   }
+
+# Error 805
+<%= render_partial("security_txt_response", indentation: "  ") %>
 
   # Assume we've hit vcl_error() because the backend is unavailable
   if (req.restarts < 2) {

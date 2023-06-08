@@ -644,6 +644,7 @@ sub vcl_error {
     return (deliver);
   }
 
+# Error 805
 <%= render_partial("security_txt_response", indentation: "  ") %>
 
   <% if config['basic_authentication'] %>
