@@ -58,8 +58,8 @@ sub vcl_recv {
 
 <%= render_partial("security_txt_request", indentation: "  ") %>
 
-  # Keep stale.
-  set req.grace = 86400s;
+  # Serve from stale for 24 hours if origin is sick
+  set req.grace = 24h;
 
   # Default backend.
   set req.backend = F_origin0;

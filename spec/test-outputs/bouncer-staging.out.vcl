@@ -76,8 +76,8 @@ sub vcl_recv {
     error 805 "security.txt";
   }
 
-  # Keep stale.
-  set req.grace = 86400s;
+  # Serve from stale for 24 hours if origin is sick
+  set req.grace = 24h;
 
   # Default backend.
   set req.backend = F_origin0;
