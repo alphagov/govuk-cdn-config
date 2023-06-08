@@ -19,6 +19,7 @@ backend F_origin {
 
 <% if config['probe'] -%>
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config['probe'] %> HTTP/1.1"
             "Host: <%= config.fetch('origin_hostname') %>"
@@ -35,7 +36,7 @@ backend F_origin {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 <% end -%>
 }
@@ -111,6 +112,7 @@ backend F_mirrorS3 {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('s3_mirror_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('s3_mirror_hostname') %>"
@@ -121,7 +123,7 @@ backend F_mirrorS3 {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 
@@ -146,6 +148,7 @@ backend F_mirrorS3Replica {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_replica_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('s3_mirror_replica_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('s3_mirror_replica_hostname') %>"
@@ -156,7 +159,7 @@ backend F_mirrorS3Replica {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 
@@ -181,6 +184,7 @@ backend F_mirrorGCS {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('gcs_mirror_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('gcs_mirror_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('gcs_mirror_hostname') %>"
@@ -191,7 +195,7 @@ backend F_mirrorGCS {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 403;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 <% end %>
