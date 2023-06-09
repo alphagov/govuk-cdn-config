@@ -198,7 +198,7 @@ sub vcl_recv {
   set req.grace = 24h;
 
   # Default backend.
-  set req.backend = <%= config['replatforming_traffic_split'] ? 'D_traffic_split' : 'F_awsorigin' %>;
+  set req.backend = F_awsorigin;
   set req.http.Fastly-Backend-Name = "awsorigin";
 
   <% if %w(staging production).include?(environment) %>
