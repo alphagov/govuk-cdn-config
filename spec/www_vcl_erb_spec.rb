@@ -13,6 +13,8 @@ RSpec.describe "VCL template" do
       "s3_mirror_prefix" => "foo_",
       "default_ttl" => "5000",
       "probe" => "/",
+      "probe_dns_only" => "false",
+      "probe_interval" => "10s",
     }
   end
   let!(:environment) { "test" }

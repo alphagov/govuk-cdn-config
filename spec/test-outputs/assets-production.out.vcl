@@ -15,6 +15,7 @@ backend F_awsorigin {
     .ssl_sni_hostname = "foo";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD /__canary__ HTTP/1.1"
             "Host: foo"
@@ -29,8 +30,6 @@ backend F_awsorigin {
         .interval = 10s;
       }
 }
-
-
 
 
 # Mirror backend for S3
@@ -51,6 +50,7 @@ backend F_mirrorS3 {
     .ssl_sni_hostname = "bar";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD / HTTP/1.1"
             "Host: bar"
@@ -83,6 +83,7 @@ backend F_mirrorS3Replica {
     .ssl_sni_hostname = "s3-mirror-replica.aws.com";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD / HTTP/1.1"
             "Host: s3-mirror-replica.aws.com"
@@ -115,6 +116,7 @@ backend F_mirrorGCS {
     .ssl_sni_hostname = "gcs-mirror.google.com";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD / HTTP/1.1"
             "Host: gcs-mirror.google.com"

@@ -19,6 +19,7 @@ backend F_origin {
 
 <% if config['probe'] -%>
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config['probe'] %> HTTP/1.1"
             "Host: <%= config.fetch('origin_hostname') %>"
@@ -35,59 +36,10 @@ backend F_origin {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 <% end -%>
 }
-
-<%- if config['replatforming_traffic_split'] %>
-backend F_eks_origin {
-    .connect_timeout = 5s;
-    .dynamic = true;
-    .port = "443";
-    .host = "<%= config['eks_origin_hostname'] %>";
-    .first_byte_timeout = 15s;
-    .max_connections = 200;
-    .between_bytes_timeout = 10s;
-    .share_key = "<%= config.fetch('service_id') %>";
-
-    .ssl = true;
-    .ssl_check_cert = <%= config['disable_tls_validation'] ? 'never' : 'always' %>;
-    .min_tls_version = "<%= config.fetch('min_tls_version', '1.2') %>";
-    <%- if config['ssl_ciphers'] -%>
-    .ssl_ciphers = "<%= config['ssl_ciphers'] -%>";
-    <%- end -%>
-    .ssl_cert_hostname = "<%= config['eks_origin_hostname'] %>";
-    .ssl_sni_hostname = "<%= config['eks_origin_hostname'] %>";
-
-<% if config['probe'] -%>
-    .probe = {
-        .request =
-            "HEAD <%= config['probe'] %> HTTP/1.1"
-            "Host: <%= config.fetch('healthcheck_hostname') %>"
-            "User-Agent: Fastly healthcheck (git version: <%= config['git_version'] %>)"
-<% if config['rate_limit_token'] -%>
-            "Rate-Limit-Token: <%= config['rate_limit_token'] %>"
-<% end -%>
-<% if config['basic_authentication'] -%>
-            "Authorization: Basic <%= config['basic_authentication'] %>"
-<% end -%>
-            "Connection: close";
-        .threshold = 1;
-        .window = 2;
-        .timeout = 5s;
-        .initial = 1;
-        .expected_response = 200;
-        .interval = 10s;
-    }
-<% end -%>
-}
-
-director D_traffic_split client {
-  { .backend = F_origin; .weight = 1; }
-  { .backend = F_eks_origin; .weight = 1; }
-}
-<%- end %>
 
 <% if %w(staging production).include?(environment) %>
 # Mirror backend for S3
@@ -111,6 +63,7 @@ backend F_mirrorS3 {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('s3_mirror_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('s3_mirror_hostname') %>"
@@ -121,7 +74,7 @@ backend F_mirrorS3 {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 
@@ -146,6 +99,7 @@ backend F_mirrorS3Replica {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('s3_mirror_replica_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('s3_mirror_replica_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('s3_mirror_replica_hostname') %>"
@@ -156,7 +110,7 @@ backend F_mirrorS3Replica {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 200;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 
@@ -181,6 +135,7 @@ backend F_mirrorGCS {
     .ssl_sni_hostname = "<%= config.fetch('ssl_sni_hostname', config.fetch('gcs_mirror_hostname')) %>";
 
     .probe = {
+        .dummy = <%= config['probe_dns_only'] %>;
         .request =
             "HEAD <%= config.fetch('gcs_mirror_probe_request', '/') %> HTTP/1.1"
             "Host: <%= config.fetch('gcs_mirror_hostname') %>"
@@ -191,7 +146,7 @@ backend F_mirrorGCS {
         .timeout = 5s;
         .initial = 1;
         .expected_response = 403;
-        .interval = 10s;
+        .interval = <%= config['probe_interval'] %>;
     }
 }
 <% end %>

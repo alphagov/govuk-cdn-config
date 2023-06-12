@@ -15,6 +15,7 @@ backend F_origin {
     .ssl_sni_hostname = "foo";
 
     .probe = {
+        .dummy = false;
         .request =
             "HEAD / HTTP/1.1"
             "Host: foo"
@@ -28,8 +29,6 @@ backend F_origin {
         .interval = 10s;
     }
 }
-
-
 
 
 
