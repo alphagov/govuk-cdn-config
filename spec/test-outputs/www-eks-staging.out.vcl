@@ -373,50 +373,6 @@ sub vcl_recv {
         }
       }
     }
-    if (table.lookup(active_ab_tests, "UxmPracticeTest") == "true") {
-      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
-        set req.http.GOVUK-ABTest-UxmPracticeTest = "A";
-      } else if (req.url ~ "[\?\&]ABTest-UxmPracticeTest=A(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-UxmPracticeTest = "A";
-      } else if (req.url ~ "[\?\&]ABTest-UxmPracticeTest=B(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-UxmPracticeTest = "B";
-      } else if (req.url ~ "[\?\&]ABTest-UxmPracticeTest=Z(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-UxmPracticeTest = "Z";
-      } else if (req.http.Cookie ~ "ABTest-UxmPracticeTest") {
-        # Set the value of the header to whatever decision was previously made
-        set req.http.GOVUK-ABTest-UxmPracticeTest = req.http.Cookie:ABTest-UxmPracticeTest;
-      } else {
-        declare local var.denominator_UxmPracticeTest INTEGER;
-        declare local var.denominator_UxmPracticeTest_A INTEGER;
-        declare local var.nominator_UxmPracticeTest_A INTEGER;
-        set var.nominator_UxmPracticeTest_A = std.atoi(table.lookup(uxmpracticetest_percentages, "A"));
-        set var.denominator_UxmPracticeTest += var.nominator_UxmPracticeTest_A;
-        declare local var.denominator_UxmPracticeTest_B INTEGER;
-        declare local var.nominator_UxmPracticeTest_B INTEGER;
-        set var.nominator_UxmPracticeTest_B = std.atoi(table.lookup(uxmpracticetest_percentages, "B"));
-        set var.denominator_UxmPracticeTest += var.nominator_UxmPracticeTest_B;
-        declare local var.denominator_UxmPracticeTest_Z INTEGER;
-        declare local var.nominator_UxmPracticeTest_Z INTEGER;
-        set var.nominator_UxmPracticeTest_Z = std.atoi(table.lookup(uxmpracticetest_percentages, "Z"));
-        set var.denominator_UxmPracticeTest += var.nominator_UxmPracticeTest_Z;
-        set var.denominator_UxmPracticeTest_A = var.denominator_UxmPracticeTest;
-        set var.denominator_UxmPracticeTest_B = var.denominator_UxmPracticeTest_A;
-        set var.denominator_UxmPracticeTest_B -= var.nominator_UxmPracticeTest_A;
-        if (randombool(var.nominator_UxmPracticeTest_A, var.denominator_UxmPracticeTest_A)) {
-          set req.http.GOVUK-ABTest-UxmPracticeTest = "A";
-        } else if (randombool(var.nominator_UxmPracticeTest_B, var.denominator_UxmPracticeTest_B)) {
-          set req.http.GOVUK-ABTest-UxmPracticeTest = "B";
-        } else {
-          set req.http.GOVUK-ABTest-UxmPracticeTest = "Z";
-        }
-      }
-    }
   }
   # End dynamic section
 
@@ -571,16 +527,6 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "UxmPracticeTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-UxmPracticeTest" || req.url ~ "[\?\&]ABTest-UxmPracticeTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "UxmPracticeTest"))));
-          add resp.http.Set-Cookie = "ABTest-UxmPracticeTest=" req.http.GOVUK-ABTest-UxmPracticeTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
-    }
-  }
   # End dynamic section
 
 #FASTLY deliver
