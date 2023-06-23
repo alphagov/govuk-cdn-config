@@ -201,6 +201,50 @@ sub vcl_recv {
         }
       }
     }
+    if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+        set req.http.GOVUK-ABTest-BankHolidaysTest = "A";
+      } else if (req.url ~ "[\?\&]ABTest-BankHolidaysTest=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-BankHolidaysTest = "A";
+      } else if (req.url ~ "[\?\&]ABTest-BankHolidaysTest=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-BankHolidaysTest = "B";
+      } else if (req.url ~ "[\?\&]ABTest-BankHolidaysTest=Z(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-BankHolidaysTest = "Z";
+      } else if (req.http.Cookie ~ "ABTest-BankHolidaysTest") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-BankHolidaysTest = req.http.Cookie:ABTest-BankHolidaysTest;
+      } else {
+        declare local var.denominator_BankHolidaysTest INTEGER;
+        declare local var.denominator_BankHolidaysTest_A INTEGER;
+        declare local var.nominator_BankHolidaysTest_A INTEGER;
+        set var.nominator_BankHolidaysTest_A = std.atoi(table.lookup(bankholidaystest_percentages, "A"));
+        set var.denominator_BankHolidaysTest += var.nominator_BankHolidaysTest_A;
+        declare local var.denominator_BankHolidaysTest_B INTEGER;
+        declare local var.nominator_BankHolidaysTest_B INTEGER;
+        set var.nominator_BankHolidaysTest_B = std.atoi(table.lookup(bankholidaystest_percentages, "B"));
+        set var.denominator_BankHolidaysTest += var.nominator_BankHolidaysTest_B;
+        declare local var.denominator_BankHolidaysTest_Z INTEGER;
+        declare local var.nominator_BankHolidaysTest_Z INTEGER;
+        set var.nominator_BankHolidaysTest_Z = std.atoi(table.lookup(bankholidaystest_percentages, "Z"));
+        set var.denominator_BankHolidaysTest += var.nominator_BankHolidaysTest_Z;
+        set var.denominator_BankHolidaysTest_A = var.denominator_BankHolidaysTest;
+        set var.denominator_BankHolidaysTest_B = var.denominator_BankHolidaysTest_A;
+        set var.denominator_BankHolidaysTest_B -= var.nominator_BankHolidaysTest_A;
+        if (randombool(var.nominator_BankHolidaysTest_A, var.denominator_BankHolidaysTest_A)) {
+          set req.http.GOVUK-ABTest-BankHolidaysTest = "A";
+        } else if (randombool(var.nominator_BankHolidaysTest_B, var.denominator_BankHolidaysTest_B)) {
+          set req.http.GOVUK-ABTest-BankHolidaysTest = "B";
+        } else {
+          set req.http.GOVUK-ABTest-BankHolidaysTest = "Z";
+        }
+      }
+    }
   }
   # End dynamic section
 
@@ -355,6 +399,16 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
+  if (req.http.Cookie ~ "cookies_policy") {
+    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+      if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
+        if (req.http.Cookie !~ "ABTest-BankHolidaysTest" || req.url ~ "[\?\&]ABTest-BankHolidaysTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
+          add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
+        }
+      }
+    }
+  }
   # End dynamic section
 
 #FASTLY deliver
