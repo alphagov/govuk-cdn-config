@@ -384,10 +384,6 @@ sub vcl_recv {
         # Some users, such as remote testers, will be given a URL with a query string
         # to place them into a specific bucket.
         set req.http.GOVUK-ABTest-BankHolidaysTest = "B";
-      } else if (req.url ~ "[\?\&]ABTest-BankHolidaysTest=Z(&|$)") {
-        # Some users, such as remote testers, will be given a URL with a query string
-        # to place them into a specific bucket.
-        set req.http.GOVUK-ABTest-BankHolidaysTest = "Z";
       } else if (req.http.Cookie ~ "ABTest-BankHolidaysTest") {
         # Set the value of the header to whatever decision was previously made
         set req.http.GOVUK-ABTest-BankHolidaysTest = req.http.Cookie:ABTest-BankHolidaysTest;
@@ -401,19 +397,11 @@ sub vcl_recv {
         declare local var.nominator_BankHolidaysTest_B INTEGER;
         set var.nominator_BankHolidaysTest_B = std.atoi(table.lookup(bankholidaystest_percentages, "B"));
         set var.denominator_BankHolidaysTest += var.nominator_BankHolidaysTest_B;
-        declare local var.denominator_BankHolidaysTest_Z INTEGER;
-        declare local var.nominator_BankHolidaysTest_Z INTEGER;
-        set var.nominator_BankHolidaysTest_Z = std.atoi(table.lookup(bankholidaystest_percentages, "Z"));
-        set var.denominator_BankHolidaysTest += var.nominator_BankHolidaysTest_Z;
         set var.denominator_BankHolidaysTest_A = var.denominator_BankHolidaysTest;
-        set var.denominator_BankHolidaysTest_B = var.denominator_BankHolidaysTest_A;
-        set var.denominator_BankHolidaysTest_B -= var.nominator_BankHolidaysTest_A;
         if (randombool(var.nominator_BankHolidaysTest_A, var.denominator_BankHolidaysTest_A)) {
           set req.http.GOVUK-ABTest-BankHolidaysTest = "A";
-        } else if (randombool(var.nominator_BankHolidaysTest_B, var.denominator_BankHolidaysTest_B)) {
-          set req.http.GOVUK-ABTest-BankHolidaysTest = "B";
         } else {
-          set req.http.GOVUK-ABTest-BankHolidaysTest = "Z";
+          set req.http.GOVUK-ABTest-BankHolidaysTest = "B";
         }
       }
     }
