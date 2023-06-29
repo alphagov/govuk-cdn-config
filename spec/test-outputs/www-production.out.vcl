@@ -549,13 +549,6 @@ sub vcl_deliver {
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
-  # Hard coded test to check things are working ok because so far things aren't
-  if (req.url ~ "^/bank-holidays"
-    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-BankHolidaysTest") {
-    add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" now + 1d;
-  }
-
   # Begin dynamic section
   declare local var.expiry TIME;
   if (req.http.Cookie ~ "cookies_policy") {
