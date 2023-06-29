@@ -341,6 +341,7 @@ sub vcl_recv {
 
   # Begin dynamic section
   if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+    set req.http.Usage-Cookies-Opt-In = "true";
     if (table.lookup(active_ab_tests, "Example") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-Example = "A";
@@ -559,13 +560,11 @@ sub vcl_deliver {
 
   # Begin dynamic section
   declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-BankHolidaysTest" || req.url ~ "[\?\&]ABTest-BankHolidaysTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
-          add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
-        }
+  if (req.http.Usage-Cookies-Opt-In == "true") {
+    if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
+      if (req.http.Cookie !~ "ABTest-BankHolidaysTest" || req.url ~ "[\?\&]ABTest-BankHolidaysTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+        set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
+        add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
       }
     }
   }
