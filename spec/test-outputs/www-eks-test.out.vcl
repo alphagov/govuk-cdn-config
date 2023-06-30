@@ -389,15 +389,15 @@ sub vcl_deliver {
   }
 
   # Begin dynamic section
-  declare local var.expiry TIME;
-  if (req.http.Usage-Cookies-Opt-In == "true") {
-    if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
-      if (req.http.GOVUK-ABTest-BankHolidaysTest-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-BankHolidaysTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-        set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
-        add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
-      }
+declare local var.expiry TIME;
+if (req.http.Usage-Cookies-Opt-In == "true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+  if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
+    if (req.http.GOVUK-ABTest-BankHolidaysTest-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-BankHolidaysTest") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
+      add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
     }
   }
+}
   # End dynamic section
 
 #FASTLY deliver

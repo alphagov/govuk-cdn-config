@@ -534,21 +534,21 @@ sub vcl_deliver {
 
   # Begin dynamic section
 <% if ab_tests -%>
-  declare local var.expiry TIME;
+declare local var.expiry TIME;
+if (req.http.Usage-Cookies-Opt-In == "true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
 <% ab_tests.each do |test_config| -%>
 <% test_config.each do |test, _| -%>
 <% unless test == "Example" -%>
-  if (req.http.Usage-Cookies-Opt-In == "true") {
-    if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-      if (req.http.GOVUK-ABTest-<%= test %>-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-        set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
-        add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
-      }
+  if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
+    if (req.http.GOVUK-ABTest-<%= test %>-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-<%= test %>") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
+      add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
     }
   }
 <% end # unless -%>
 <% end # test_config.each -%>
 <% end # ab_tests.each -%>
+}
 <% end # if -%>
   # End dynamic section
 
