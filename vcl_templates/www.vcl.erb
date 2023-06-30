@@ -527,7 +527,7 @@ sub vcl_deliver {
   # cookie.
   if (req.url ~ "^/help/ab-testing"
     && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-Example") {
+    && req.http.GOVUK-ABTest-Example-Cookie != "sent_in_request") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
@@ -540,7 +540,7 @@ sub vcl_deliver {
 <% unless test == "Example" -%>
   if (req.http.Usage-Cookies-Opt-In == "true") {
     if (table.lookup(active_ab_tests, "<%= test %>") == "true") {
-      if (req.http.Cookie !~ "ABTest-<%= test %>" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+      if (req.http.GOVUK-ABTest-<%= test %>-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-<%= test %>" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
         set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "<%= test %>"))));
         add resp.http.Set-Cookie = "ABTest-<%= test %>=" req.http.GOVUK-ABTest-<%= test %> "; secure; expires=" var.expiry "; path=/";
       }

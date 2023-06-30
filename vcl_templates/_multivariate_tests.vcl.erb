@@ -21,6 +21,7 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
     } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
       # Set the value of the header to whatever decision was previously made
       set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
+      set req.http.GOVUK-ABTest-<%= test %>-Cookie = "sent_in_request";
     } else {
       declare local var.denominator_<%= test %> INTEGER;
 <% variants.each do |variant| -%>
