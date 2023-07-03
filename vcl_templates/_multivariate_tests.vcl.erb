@@ -5,6 +5,7 @@
 # Begin dynamic section
 <% if ab_tests -%>
 if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+  set req.http.Usage-Cookies-Opt-In = "true";
 <% ab_tests.each do |test_config| -%>
 <%# test_config is a hash like { "MyTest" => ['foo', 'bar', 'baz'] } -%>
 <% test_config.each do |test, variants| -%>
@@ -20,6 +21,7 @@ if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22u
     } else if (req.http.Cookie ~ "ABTest-<%= test %>") {
       # Set the value of the header to whatever decision was previously made
       set req.http.GOVUK-ABTest-<%= test %> = req.http.Cookie:ABTest-<%= test %>;
+      set req.http.GOVUK-ABTest-<%= test %>-Cookie = "sent_in_request";
     } else {
       declare local var.denominator_<%= test %> INTEGER;
 <% variants.each do |variant| -%>

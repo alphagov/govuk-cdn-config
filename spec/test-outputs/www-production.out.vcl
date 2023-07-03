@@ -333,6 +333,7 @@ sub vcl_recv {
 
   # Begin dynamic section
   if (req.http.Cookie ~ "cookies_policy" && req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
+    set req.http.Usage-Cookies-Opt-In = "true";
     if (table.lookup(active_ab_tests, "Example") == "true") {
       if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
         set req.http.GOVUK-ABTest-Example = "A";
@@ -347,6 +348,7 @@ sub vcl_recv {
       } else if (req.http.Cookie ~ "ABTest-Example") {
         # Set the value of the header to whatever decision was previously made
         set req.http.GOVUK-ABTest-Example = req.http.Cookie:ABTest-Example;
+        set req.http.GOVUK-ABTest-Example-Cookie = "sent_in_request";
       } else {
         declare local var.denominator_Example INTEGER;
         declare local var.denominator_Example_A INTEGER;
@@ -379,6 +381,7 @@ sub vcl_recv {
       } else if (req.http.Cookie ~ "ABTest-BankHolidaysTest") {
         # Set the value of the header to whatever decision was previously made
         set req.http.GOVUK-ABTest-BankHolidaysTest = req.http.Cookie:ABTest-BankHolidaysTest;
+        set req.http.GOVUK-ABTest-BankHolidaysTest-Cookie = "sent_in_request";
       } else {
         declare local var.denominator_BankHolidaysTest INTEGER;
         declare local var.denominator_BankHolidaysTest_A INTEGER;
@@ -544,30 +547,21 @@ sub vcl_deliver {
   # cookie.
   if (req.url ~ "^/help/ab-testing"
     && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-Example") {
+    && req.http.GOVUK-ABTest-Example-Cookie != "sent_in_request") {
     # Set a fairly short cookie expiry because this is just an A/B test demo.
     add resp.http.Set-Cookie = "ABTest-Example=" req.http.GOVUK-ABTest-Example "; secure; expires=" now + 1d;
   }
 
-  # Hard coded test to check things are working ok because so far things aren't
-  if (req.url ~ "^/bank-holidays"
-    && req.http.User-Agent !~ "^GOV\.UK Crawler Worker"
-    && req.http.Cookie !~ "ABTest-BankHolidaysTest") {
-    add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" now + 1d;
-  }
-
   # Begin dynamic section
-  declare local var.expiry TIME;
-  if (req.http.Cookie ~ "cookies_policy") {
-    if (req.http.Cookie:cookies_policy ~ "%22usage%22:true") {
-      if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
-        if (req.http.Cookie !~ "ABTest-BankHolidaysTest" || req.url ~ "[\?\&]ABTest-BankHolidaysTest" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
-          set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
-          add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
-        }
-      }
+declare local var.expiry TIME;
+if (req.http.Usage-Cookies-Opt-In == "true" && req.http.User-Agent !~ "^GOV\.UK Crawler Worker") {
+  if (table.lookup(active_ab_tests, "BankHolidaysTest") == "true") {
+    if (req.http.GOVUK-ABTest-BankHolidaysTest-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-BankHolidaysTest") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
+      add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
     }
   }
+}
   # End dynamic section
 
 #FASTLY deliver
