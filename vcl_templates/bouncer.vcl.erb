@@ -56,8 +56,10 @@ sub vcl_recv {
     error 804 "Not Found";
   }
 
-  # Keep stale.
-  set req.grace = 86400s;
+<%= render_partial("security_txt_request", indentation: "  ") %>
+
+  # Serve from stale for 24 hours if origin is sick
+  set req.grace = 24h;
 
   # Default backend.
   set req.backend = F_origin0;
@@ -156,6 +158,9 @@ sub vcl_error {
 
     return (deliver);
   }
+
+# Error 805
+<%= render_partial("security_txt_response", indentation: "  ") %>
 
   # Assume we've hit vcl_error() because the backend is unavailable
   if (req.restarts < 2) {

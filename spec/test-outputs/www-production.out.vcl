@@ -612,6 +612,7 @@ sub vcl_error {
     return (deliver);
   }
 
+# Error 805
   # 302 redirect to vdp.cabinetoffice.gov.uk called from vcl_recv.
   if (obj.status == 805) {
     set obj.status = 302;
