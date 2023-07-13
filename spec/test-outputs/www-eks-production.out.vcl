@@ -313,12 +313,6 @@ sub vcl_recv {
   }
   
 
-  # Set a TLSversion request header for requests going to the Licensify application
-  # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
-  if (req.url ~ "^/apply-for-a-licence/.*") {
-    set req.http.TLSversion = tls.client.protocol;
-  }
-
 #FASTLY recv
 
   # GOV.UK accounts
