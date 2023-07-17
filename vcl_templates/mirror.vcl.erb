@@ -294,12 +294,6 @@ sub vcl_recv {
   }
   <% end %>
 
-  # Set a TLSversion request header for requests going to the Licensify application
-  # This is used to block unsecure requests at the application level for payment security reasons and an absence of caching in Licensify
-  if (req.url ~ "^/apply-for-a-licence/.*") {
-    set req.http.TLSversion = tls.client.protocol;
-  }
-
 <% if config['basic_authentication'] -%>
   if (req.backend == F_origin) {
     set req.http.Authorization = "Basic <%= config['basic_authentication'] %>";
