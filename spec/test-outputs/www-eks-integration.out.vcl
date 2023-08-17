@@ -230,6 +230,39 @@ sub vcl_recv {
         }
       }
     }
+    if (table.lookup(active_ab_tests, "EsSixPointSeven") == "true") {
+      if (req.http.User-Agent ~ "^GOV\.UK Crawler Worker") {
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=A(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=B(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+      } else if (req.http.Cookie ~ "ABTest-EsSixPointSeven") {
+        # Set the value of the header to whatever decision was previously made
+        set req.http.GOVUK-ABTest-EsSixPointSeven = req.http.Cookie:ABTest-EsSixPointSeven;
+        set req.http.GOVUK-ABTest-EsSixPointSeven-Cookie = "sent_in_request";
+      } else {
+        declare local var.denominator_EsSixPointSeven INTEGER;
+        declare local var.denominator_EsSixPointSeven_A INTEGER;
+        declare local var.nominator_EsSixPointSeven_A INTEGER;
+        set var.nominator_EsSixPointSeven_A = std.atoi(table.lookup(essixpointseven_percentages, "A"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_A;
+        declare local var.denominator_EsSixPointSeven_B INTEGER;
+        declare local var.nominator_EsSixPointSeven_B INTEGER;
+        set var.nominator_EsSixPointSeven_B = std.atoi(table.lookup(essixpointseven_percentages, "B"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_B;
+        set var.denominator_EsSixPointSeven_A = var.denominator_EsSixPointSeven;
+        if (randombool(var.nominator_EsSixPointSeven_A, var.denominator_EsSixPointSeven_A)) {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
+        } else {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+        }
+      }
+    }
   }
   # End dynamic section
 
@@ -389,6 +422,12 @@ if (req.http.Usage-Cookies-Opt-In == "true" && req.http.User-Agent !~ "^GOV\.UK 
     if (req.http.GOVUK-ABTest-BankHolidaysTest-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-BankHolidaysTest") {
       set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "BankHolidaysTest"))));
       add resp.http.Set-Cookie = "ABTest-BankHolidaysTest=" req.http.GOVUK-ABTest-BankHolidaysTest "; secure; expires=" var.expiry "; path=/";
+    }
+  }
+  if (table.lookup(active_ab_tests, "EsSixPointSeven") == "true") {
+    if (req.http.GOVUK-ABTest-EsSixPointSeven-Cookie != "sent_in_request" || req.url ~ "[\?\&]ABTest-EsSixPointSeven") {
+      set var.expiry = time.add(now, std.integer2time(std.atoi(table.lookup(ab_test_expiries, "EsSixPointSeven"))));
+      add resp.http.Set-Cookie = "ABTest-EsSixPointSeven=" req.http.GOVUK-ABTest-EsSixPointSeven "; secure; expires=" var.expiry "; path=/";
     }
   }
 }
