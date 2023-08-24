@@ -38,6 +38,8 @@ acl allowed_ip_addresses {
 
 
 sub vcl_recv {
+  declare local var.backend_override STRING;
+
   # Protect header from modification at the edge of the Fastly network
   # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
   if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {

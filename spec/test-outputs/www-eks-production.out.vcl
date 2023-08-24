@@ -137,6 +137,8 @@ acl allowed_ip_addresses {
 
 
 sub vcl_recv {
+  declare local var.backend_override STRING;
+
   # Protect header from modification at the edge of the Fastly network
   # https://developer.fastly.com/reference/http-headers/Fastly-Client-IP
   if (fastly.ff.visits_this_service == 0 && req.restarts == 0) {
@@ -250,8 +252,10 @@ sub vcl_recv {
     set req.http.original-url = req.url;
   }
 
+  
+
   # Common config when failover to mirror buckets
-  if (req.restarts > 0) {
+  if (req.restarts > 0 || std.prefixof(var.backend_override, "mirror")) {
     set req.url = req.http.original-url;
 
     # Don't serve from stale for mirrors
@@ -270,39 +274,39 @@ sub vcl_recv {
     if (req.url !~ "^([^#\?\s]+)\.(atom|chm|css|csv|diff|doc|docx|dot|dxf|eps|gif|gml|html|ico|ics|jpeg|jpg|JPG|js|json|kml|odp|ods|odt|pdf|PDF|png|ppt|pptx|ps|rdf|rtf|sch|txt|wsdl|xls|xlsm|xlsx|xlt|xml|xsd|xslt|zip)([\?#]+.*)?$") {
       set req.url = regsub(req.url, "^([^#\?\s]+)([\?#]+.*)?$", "\1.html\2");
     }
-  }
 
-  # Failover to primary s3 mirror.
-  if (req.restarts == 1) {
-      set req.backend = F_mirrorS3;
-      set req.http.host = "bar";
-      set req.http.Fastly-Backend-Name = "mirrorS3";
+    # Failover to primary s3 mirror.
+    if (req.restarts == 1  || var.backend_override == "mirrorS3") {
+        set req.backend = F_mirrorS3;
+        set req.http.host = "bar";
+        set req.http.Fastly-Backend-Name = "mirrorS3";
+
+        # Add bucket directory prefix to all the requests
+        set req.url = "/foo_" req.url;
+    }
+
+    # Failover to replica s3 mirror.
+    if (req.restarts == 2 || var.backend_override == "mirrorS3Replica") {
+      set req.backend = F_mirrorS3Replica;
+      set req.http.host = "s3-mirror-replica.aws.com";
+      set req.http.Fastly-Backend-Name = "mirrorS3Replica";
 
       # Add bucket directory prefix to all the requests
-      set req.url = "/foo_" req.url;
-  }
+      set req.url = "/s3-mirror-replica" req.url;
+    }
 
-  # Failover to replica s3 mirror.
-  if (req.restarts == 2) {
-    set req.backend = F_mirrorS3Replica;
-    set req.http.host = "s3-mirror-replica.aws.com";
-    set req.http.Fastly-Backend-Name = "mirrorS3Replica";
+    # Failover to GCS mirror.
+    if (req.restarts > 2 || var.backend_override == "mirrorGCS") {
+      set req.backend = F_mirrorGCS;
+      set req.http.host = "gcs-mirror.google.com";
+      set req.http.Fastly-Backend-Name = "mirrorGCS";
 
-    # Add bucket directory prefix to all the requests
-    set req.url = "/s3-mirror-replica" req.url;
-  }
+      # Add bucket directory prefix to all the requests
+      set req.url = "/gcs-mirror" req.url;
 
-  # Failover to GCS mirror.
-  if (req.restarts > 2) {
-    set req.backend = F_mirrorGCS;
-    set req.http.host = "gcs-mirror.google.com";
-    set req.http.Fastly-Backend-Name = "mirrorGCS";
-
-    # Add bucket directory prefix to all the requests
-    set req.url = "/gcs-mirror" req.url;
-
-    set req.http.Date = now;
-    set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
+      set req.http.Date = now;
+      set req.http.Authorization = "AWS gcs-mirror-access-id:" digest.hmac_sha1_base64("gcs-mirror-secret-key", "GET" LF LF LF now LF "/gcs-bucket" req.url.path);
+    }
   }
 
   # Add normalization vcl for Brotli support
