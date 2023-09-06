@@ -419,6 +419,10 @@ sub vcl_recv {
         # Some users, such as remote testers, will be given a URL with a query string
         # to place them into a specific bucket.
         set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+      } else if (req.url ~ "[\?\&]ABTest-EsSixPointSeven=C(&|$)") {
+        # Some users, such as remote testers, will be given a URL with a query string
+        # to place them into a specific bucket.
+        set req.http.GOVUK-ABTest-EsSixPointSeven = "C";
       } else if (req.http.Cookie ~ "ABTest-EsSixPointSeven") {
         # Set the value of the header to whatever decision was previously made
         set req.http.GOVUK-ABTest-EsSixPointSeven = req.http.Cookie:ABTest-EsSixPointSeven;
@@ -433,11 +437,19 @@ sub vcl_recv {
         declare local var.nominator_EsSixPointSeven_B INTEGER;
         set var.nominator_EsSixPointSeven_B = std.atoi(table.lookup(essixpointseven_percentages, "B"));
         set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_B;
+        declare local var.denominator_EsSixPointSeven_C INTEGER;
+        declare local var.nominator_EsSixPointSeven_C INTEGER;
+        set var.nominator_EsSixPointSeven_C = std.atoi(table.lookup(essixpointseven_percentages, "C"));
+        set var.denominator_EsSixPointSeven += var.nominator_EsSixPointSeven_C;
         set var.denominator_EsSixPointSeven_A = var.denominator_EsSixPointSeven;
+        set var.denominator_EsSixPointSeven_B = var.denominator_EsSixPointSeven_A;
+        set var.denominator_EsSixPointSeven_B -= var.nominator_EsSixPointSeven_A;
         if (randombool(var.nominator_EsSixPointSeven_A, var.denominator_EsSixPointSeven_A)) {
           set req.http.GOVUK-ABTest-EsSixPointSeven = "A";
-        } else {
+        } else if (randombool(var.nominator_EsSixPointSeven_B, var.denominator_EsSixPointSeven_B)) {
           set req.http.GOVUK-ABTest-EsSixPointSeven = "B";
+        } else {
+          set req.http.GOVUK-ABTest-EsSixPointSeven = "C";
         }
       }
     }
